@@ -2,6 +2,7 @@ import { CategoryNav } from "@/components/CategoryNav";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { CategoryNav as Category, Product } from "@/types";
+import { ProductCard } from "@/components/products/ProductCard";
 
 const sampleCategories: Category[] = [
   {
@@ -63,181 +64,286 @@ const sampleCategories: Category[] = [
 ];
 
 // Dữ liệu mẫu sản phẩm theo category
-const sampleProducts = {
+const sampleProducts: Record<string, Product[]> = {
   "mi-an-lien": [
     {
       id: 1,
       name: "Gấu Đỏ - Mì ăn liền",
-      image:
+      description: "Mì ăn liền Gấu Đỏ vị tôm chua cay thơm ngon",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "96.000₫",
-      discountPrice: "86.000₫",
+      unit_price: 96000,
+      final_price: 86000,
+      stock_quantity: 150,
+      discount_percent: 10,
+      is_hot: true,
+      slug: "gau-do-mi-an-lien",
     },
     {
       id: 2,
       name: "Hảo Hảo - Mì tôm",
-      image:
+      description: "Mì tôm Hảo Hảo vị chua cay đậm đà",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "50.000₫",
-      discountPrice: "45.000₫",
+      unit_price: 50000,
+      final_price: 45000,
+      stock_quantity: 200,
+      discount_percent: 10,
+      is_hot: false,
+      slug: "hao-hao-mi-tom",
     },
     {
       id: 3,
       name: "Kokomi - Mì lẩu",
-      image:
+      description: "Mì lẩu Kokomi vị tôm chua cay thơm ngon",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "58.000₫",
-      discountPrice: "52.000₫",
+      unit_price: 58000,
+      final_price: 52000,
+      stock_quantity: 80,
+      discount_percent: 10,
+      is_hot: true,
+      slug: "kokomi-mi-lau",
     },
     {
       id: 4,
       name: "Omachi - Mì tôm",
-      image:
+      description: "Mì tôm Omachi vị chua cay đặc biệt",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "42.000₫",
-      discountPrice: "38.000₫",
+      unit_price: 42000,
+      final_price: 38000,
+      stock_quantity: 120,
+      discount_percent: 10,
+      is_hot: false,
+      slug: "omachi-mi-tom",
     },
     {
       id: 5,
       name: "Acecook - Mì gói",
-      image:
+      description: "Mì gói Acecook vị tôm chua cay",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "35.000₫",
-      discountPrice: "32.000₫",
+      unit_price: 35000,
+      final_price: 32000,
+      stock_quantity: 300,
+      discount_percent: 9,
+      is_hot: false,
+      slug: "acecook-mi-goi",
     },
     {
       id: 6,
       name: "Miliket - Mì tôm",
-      image:
+      description: "Mì tôm Miliket vị chua cay đậm đà",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "48.000₫",
-      discountPrice: "43.000₫",
+      unit_price: 48000,
+      final_price: 43000,
+      stock_quantity: 90,
+      discount_percent: 10,
+      is_hot: false,
+      slug: "miliket-mi-tom",
     },
     {
       id: 7,
       name: "Sakura - Mì lẩu",
-      image:
+      description: "Mì lẩu Sakura vị tôm chua cay thơm ngon",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "65.000₫",
-      discountPrice: "58.000₫",
+      unit_price: 65000,
+      final_price: 58000,
+      stock_quantity: 60,
+      discount_percent: 11,
+      is_hot: true,
+      slug: "sakura-mi-lau",
     },
     {
       id: 8,
       name: "Vifon - Mì tôm",
-      image:
+      description: "Mì tôm Vifon vị chua cay đặc biệt",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "38.000₫",
-      discountPrice: "35.000₫",
+      unit_price: 38000,
+      final_price: 35000,
+      stock_quantity: 180,
+      discount_percent: 8,
+      is_hot: false,
+      slug: "vifon-mi-tom",
     },
     {
       id: 9,
       name: "Khong Guan - Mì ăn liền",
-      image:
+      description: "Mì ăn liền Khong Guan vị tôm chua cay",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "55.000₫",
-      discountPrice: "50.000₫",
+      unit_price: 55000,
+      final_price: 50000,
+      stock_quantity: 70,
+      discount_percent: 9,
+      is_hot: false,
+      slug: "khong-guan-mi-an-lien",
     },
     {
       id: 10,
       name: "Sapporo - Mì Nhật",
-      image:
+      description: "Mì Nhật Sapporo vị tôm chua cay cao cấp",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "75.000₫",
-      discountPrice: "68.000₫",
+      unit_price: 75000,
+      final_price: 68000,
+      stock_quantity: 45,
+      discount_percent: 9,
+      is_hot: true,
+      slug: "sapporo-mi-nhat",
     },
     {
       id: 11,
       name: "Maruchan - Mì Hàn",
-      image:
+      description: "Mì Hàn Maruchan vị tôm chua cay đặc biệt",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "42.000₫",
-      discountPrice: "38.000₫",
+      unit_price: 42000,
+      final_price: 38000,
+      stock_quantity: 100,
+      discount_percent: 10,
+      is_hot: false,
+      slug: "maruchan-mi-han",
     },
     {
       id: 12,
       name: "Nissin - Mì Nhật",
-      image:
+      description: "Mì Nhật Nissin vị tôm chua cay cao cấp",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-      price: "68.000₫",
-      discountPrice: "62.000₫",
+      unit_price: 68000,
+      final_price: 62000,
+      stock_quantity: 55,
+      discount_percent: 9,
+      is_hot: true,
+      slug: "nissin-mi-nhat",
     },
   ],
   "dau-an": [
     {
-      id: 5,
+      id: 13,
       name: "Dầu ăn Neptune",
-      image:
+      description: "Dầu ăn Neptune tinh luyện cao cấp",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
-      price: "85.000₫",
-      discountPrice: "75.000₫",
+      unit_price: 85000,
+      final_price: 75000,
+      stock_quantity: 200,
+      discount_percent: 12,
+      is_hot: true,
+      slug: "dau-an-neptune",
     },
     {
-      id: 6,
+      id: 14,
       name: "Dầu ăn Simply",
-      image:
+      description: "Dầu ăn Simply tinh luyện cao cấp",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
-      price: "95.000₫",
-      discountPrice: "85.000₫",
+      unit_price: 95000,
+      final_price: 85000,
+      stock_quantity: 150,
+      discount_percent: 11,
+      is_hot: false,
+      slug: "dau-an-simply",
     },
     {
-      id: 7,
+      id: 15,
       name: "Dầu ăn Tường An",
-      image:
+      description: "Dầu ăn Tường An tinh luyện cao cấp",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
-      price: "78.000₫",
-      discountPrice: "70.000₫",
+      unit_price: 78000,
+      final_price: 70000,
+      stock_quantity: 180,
+      discount_percent: 10,
+      is_hot: false,
+      slug: "dau-an-tuong-an",
     },
   ],
   "thit-heo": [
     {
-      id: 8,
+      id: 16,
       name: "Thịt heo ba chỉ",
-      image:
+      description: "Thịt heo ba chỉ tươi ngon, chất lượng cao",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
-      price: "120.000₫",
-      discountPrice: "110.000₫",
+      unit_price: 120000,
+      final_price: 110000,
+      stock_quantity: 50,
+      discount_percent: 8,
+      is_hot: true,
+      slug: "thit-heo-ba-chi",
     },
     {
-      id: 9,
+      id: 17,
       name: "Thịt heo nạc",
-      image:
+      description: "Thịt heo nạc tươi ngon, không mỡ",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
-      price: "135.000₫",
-      discountPrice: "125.000₫",
+      unit_price: 135000,
+      final_price: 125000,
+      stock_quantity: 40,
+      discount_percent: 7,
+      is_hot: false,
+      slug: "thit-heo-nac",
     },
     {
-      id: 10,
+      id: 18,
       name: "Thịt heo sườn",
-      image:
+      description: "Thịt heo sườn tươi ngon, nhiều thịt",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
-      price: "145.000₫",
-      discountPrice: "135.000₫",
+      unit_price: 145000,
+      final_price: 135000,
+      stock_quantity: 30,
+      discount_percent: 7,
+      is_hot: false,
+      slug: "thit-heo-suon",
     },
   ],
   "rau-la": [
     {
-      id: 11,
+      id: 19,
       name: "Rau muống",
-      image:
+      description: "Rau muống tươi xanh, không thuốc trừ sâu",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
-      price: "15.000₫",
-      discountPrice: "12.000₫",
+      unit_price: 15000,
+      final_price: 12000,
+      stock_quantity: 100,
+      discount_percent: 20,
+      is_hot: false,
+      slug: "rau-muong",
     },
     {
-      id: 12,
+      id: 20,
       name: "Rau cải",
-      image:
+      description: "Rau cải tươi xanh, giàu vitamin",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
-      price: "18.000₫",
-      discountPrice: "15.000₫",
+      unit_price: 18000,
+      final_price: 15000,
+      stock_quantity: 80,
+      discount_percent: 17,
+      is_hot: false,
+      slug: "rau-cai",
     },
     {
-      id: 13,
+      id: 21,
       name: "Rau xà lách",
-      image:
+      description: "Rau xà lách tươi giòn, làm salad",
+      image_url:
         "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
-      price: "22.000₫",
-      discountPrice: "20.000₫",
+      unit_price: 22000,
+      final_price: 20000,
+      stock_quantity: 60,
+      discount_percent: 9,
+      is_hot: false,
+      slug: "rau-xa-lach",
     },
   ],
 };
@@ -267,7 +373,7 @@ export default function ProductsPage() {
       // Sử dụng dữ liệu mẫu
       const categoryProducts =
         sampleProducts[categoryId as keyof typeof sampleProducts] || [];
-      setProducts(categoryProducts as unknown as Product[]);
+      setProducts(categoryProducts);
 
       // Khi có API thực tế, uncomment code bên dưới:
       // const response = await fetch(`/api/products?category=${categoryId}`);
@@ -292,6 +398,11 @@ export default function ProductsPage() {
     console.log("Đã chọn loại:", category.name);
   };
 
+  const handleAddToCart = (product: Product) => {
+    console.log("Thêm vào giỏ hàng:", product.name);
+    // TODO: Implement add to cart logic
+  };
+
   return (
     <div>
       <CategoryNav
@@ -310,7 +421,13 @@ export default function ProductsPage() {
               Chưa có sản phẩm nào trong danh mục này
             </p>
           ) : (
-            <></>
+            products.map((product: Product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
+            ))
           )}
         </div>
       </div>
