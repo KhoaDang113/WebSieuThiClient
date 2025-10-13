@@ -15,15 +15,15 @@ export default function HomePage() {
     // TODO: Implement add to cart logic
   };
 
-  const handleCategorySelect = (category: { id: string; name: string }) => {
-    console.log("Đã chọn loại:", category.name);
-  };
+  // const handleCategorySelect = (category: { id: string; name: string }) => {
+  //   console.log("Đã chọn loại:", category.name);
+  // };
 
   return (
     <div className="min-h-screen">
       <CategoryNav />
 
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <div className="container mx-auto py-4 sm:py-6">
         {/* Main Banner */}
         <MainBanner banners={mainBanners} />
 

@@ -148,7 +148,7 @@ export default function FilterBar({
               <Button
                 variant="outline"
                 size="sm"
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-100 bg-white/90 hover:bg-white shadow-lg"
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white/90 hover:bg-white shadow-lg"
                 onClick={prevSlide}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -156,7 +156,7 @@ export default function FilterBar({
               <Button
                 variant="outline"
                 size="sm"
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-100 bg-white/90 hover:bg-white shadow-lg"
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white/90 hover:bg-white shadow-lg"
                 onClick={nextSlide}
               >
                 <ChevronRight className="h-4 w-4" />
