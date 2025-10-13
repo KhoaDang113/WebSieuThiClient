@@ -6,7 +6,7 @@ import Banners from "@/components/productPage/Banners";
 import Article from "@/components/productPage/Article";
 import ProductGridWithBanners from "@/components/productPage/ProductGridWithBanners";
 import type { Article as ArticleType } from "@/types/article.type";
-import FilterBar from "@/components/productPage/FilterBar";
+// import FilterBar from "@/components/productPage/FilterBar";
 
 const sampleCategories: Category[] = [
   {
@@ -448,9 +448,9 @@ export default function ProductsPage() {
         selectedCategoryId={selectedCategoryId}
         onCategorySelect={handleCategorySelect}
       />
-      <div className="mt-5">
+      {/* <div className="mt-5">
         <FilterBar />
-      </div>
+      </div> */}
       <div className="mt-5">
         <Banners banners={sampleBanners} />
       </div>

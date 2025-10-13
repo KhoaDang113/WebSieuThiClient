@@ -1,19 +1,19 @@
 "use client";
 
-
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Flame } from "lucide-react";
 import { ProductModal } from "../products/ProductModal";
 import type { ProductCardProps, Product } from "@/types";
 
-
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const hasDiscount = product.discount_percent > 0;
   const isOutOfStock = product.stock_quantity === 0;
-
+  const navigate = useNavigate();
+  const productId = product.id;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -22,15 +22,11 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     }).format(price);
   };
 
-
   const handleAddToCart = (product: Product, quantity: number) => {
     // Tạo một sản phẩm với số lượng đã chọn
     const productWithQuantity = { ...product, selectedQuantity: quantity };
     onAddToCart?.(productWithQuantity);
   };
-
-
-
 
   return (
     <div className="group relative flex h-full min-h-[350px] flex-col overflow-hidden rounded-lg bg-white transition-all hover:shadow-lg">
@@ -46,13 +42,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           )}
         </div>
 
-
         {/* Product Image */}
         <div
           className="relative aspect-[4/3] overflow-hidden rounded-t-lg cursor-pointer"
           onClick={() => {
-            // Add your click handler here - could be navigation to product detail page
-            console.log('Product image clicked:', product.name);
+            if (productId) {
+              navigate(`/products-detail/${productId}`);
+            }
           }}
         >
           <img
@@ -69,14 +65,19 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           )}
         </div>
 
-
         {/* Product Info */}
         <div className="flex flex-1 flex-col p-4">
           {/* Product Name */}
-          <h3 className="mb-1 text-base font-bold leading-tight text-gray-700 sm:text-lg line-clamp-2 min-h-[2.5rem]">
+          <h3
+            className="mb-1 text-base font-bold leading-tight text-gray-700 sm:text-lg line-clamp-2 min-h-[2.5rem] cursor-pointer"
+            onClick={() => {
+              if (productId) {
+                navigate(`/products-detail/${productId}`);
+              }
+            }}
+          >
             {product.name}
           </h3>
-
 
           {/* Price Section */}
           <div className="mb-2 flex flex-col gap-1">
@@ -108,10 +109,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             )}
           </div>
 
-
           {/* Spacer to push button to bottom */}
           <div className="flex-1"></div>
-
 
           {/* Stock Status */}
           {!isOutOfStock && product.stock_quantity < 10 && (
@@ -119,7 +118,6 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               Chỉ còn {product.stock_quantity} sản phẩm
             </p>
           )}
-
 
           {/* Add to Cart Button */}
           <Button
@@ -133,7 +131,6 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           </Button>
         </div>
       </div>
-
 
       {/* Product Modal */}
       <ProductModal
