@@ -8,6 +8,7 @@ import {
   Menu,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { CategorySidebar } from "./CategorySideBar";
@@ -91,13 +92,15 @@ export function Navbar() {
           </div>
 
           {/* Shopping cart */}
-          <a 
+          <a
             href="/cart"
             className="relative cursor-pointer p-2 text-white hover:bg-white/10 rounded-full transition-colors duration-200 flex-shrink-0"
           >
             <ShoppingCart className="w-6 h-6" />
             <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-red-500 w-5 h-5 border-2 border-white min-w-[20px]">
-              <span className="text-white text-xs font-bold leading-none">0</span>
+              <span className="text-white text-xs font-bold leading-none">
+                0
+              </span>
             </span>
           </a>
 
@@ -113,9 +116,17 @@ export function Navbar() {
               </div>
               <ChevronDown className="ml-2 shrink-0 h-4 w-4" />
             </div>
-            <div className="hidden md:flex items-center gap-2 rounded-full bg-green-800 px-3 py-2.5 text-white shrink-0 hover:bg-green-700 transition-colors duration-200 cursor-pointer">
+            <Link
+              to="/login"
+              className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
+            >
+              <User className="w-5 h-5 text-white" />
+              <span className="whitespace-nowrap text-white">Đăng nhập</span>
+            </Link>
+            {/* <div className="hidden md:flex items-center gap-2 rounded-t-md bg-green-800 px-3 py-2 text-white shrink-0">
               <User className="w-5 h-5" />
-            </div>
+              <span className="whitespace-nowrap">Tài khoản của Bạn</span>
+            </div> */}
           </div>
         </div>
       </div>

@@ -4,6 +4,8 @@ import HomePage from "@/pages/home/index";
 import ProductsPage from "@/pages/products";
 import ShoppingCart from "@/pages/cart";
 import ProductDetail from "@/pages/products-detail";
+import LoginPage from "@/pages/login";
+import SignUpPage from "@/pages/sign_up";
 
 const router: RouteObject[] = [
   {
@@ -27,6 +29,14 @@ const router: RouteObject[] = [
         element: <ProductDetail />,
       },
     ],
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/sign_up",
+    element: <SignUpPage />,
   },
 ];
 
