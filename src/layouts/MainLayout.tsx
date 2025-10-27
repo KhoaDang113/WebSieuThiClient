@@ -1,11 +1,13 @@
-import { CategorySidebar } from "@/components/CategorySideBar";
+import { CategorySidebar } from "@/components/category/CategorySideBar";
 import { Footer } from "@/components/Footer";
-import { Navbar } from "@/components/Navbar";
+import { Navbar } from "@/components/Navbar/Navbar";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { Outlet } from "react-router-dom";
 
 export default function MainLayout() {
   return (
     <div className="main-layout w-full bg-[#e9edf0] pb-4">
+      <ScrollToTop />
       <Navbar />
       <div className="flex flex-row">
         <CategorySidebar />

@@ -3,7 +3,7 @@
 import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
-import { CategoryNav } from "@/components/CategoryNav" // Thêm import
+import { CategoryNav } from "@/components/category/CategoryNav" // Thêm import
 
 interface EmptyCartProps {
   onContinueShopping: () => void
@@ -11,19 +11,21 @@ interface EmptyCartProps {
 
 export default function EmptyCart({ onContinueShopping }: EmptyCartProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h bg-blue-50">
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
           <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
             <ChevronLeft className="w-6 h-6" />
           </Link>
-          <h1 className="text-xl font-semibold text-gray-800">Quay Về Trang Chủ</h1>
+          <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            Giỏ Hàng Của Bạn
+          </h1>
         </div>
       </div>
 
       {/* Empty Cart Content */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-12 pb-0">
         <div className="flex flex-col items-center justify-center">
           {/* Shopping Basket SVG */}
           <div className="mb-8">
@@ -53,7 +55,7 @@ export default function EmptyCart({ onContinueShopping }: EmptyCartProps) {
               <ellipse cx="140" cy="60" rx="90" ry="15" fill="#1e5631" />
 
               {/* Basket slots */}
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
                 <g key={i}>
                   <rect x={65 + i * 22} y="75" width="12" height="35" rx="6" fill="white" opacity="0.9" />
                   <rect x={68 + i * 22} y="120" width="12" height="35" rx="6" fill="white" opacity="0.9" />
@@ -70,14 +72,14 @@ export default function EmptyCart({ onContinueShopping }: EmptyCartProps) {
             Tiếp tục mua hàng
           </Button>
 
-          <p className="text-gray-600 mb-12">
+          <p className="text-gray-600 mb-8">
             Giỏ hàng của bạn đang trống. Hãy thêm sản phẩm để bắt đầu mua sắm!
           </p>
+        </div>
 
-          {/* Thay thế phần categories cũ bằng CategoryNav */}
-          <div className="w-full">
-            <CategoryNav />
-          </div>
+        {/* Thay thế phần categories cũ bằng CategoryNav */}
+        <div className="w-full bg-white rounded-lg overflow-hidden">
+          <CategoryNav />
         </div>
       </div>
     </div>

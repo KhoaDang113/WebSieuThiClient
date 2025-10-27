@@ -2,12 +2,14 @@
 export interface SubCategory {
   name: string;
   href: string;
+  mobileImage?: string;
 }
 
 export interface CategorySideBar {
   name: string;
   href: string;
   icon?: React.ReactNode;
+  mobileImage?: string;
   subCategories?: SubCategory[];
 }
 

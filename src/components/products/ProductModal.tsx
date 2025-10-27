@@ -1,11 +1,12 @@
 "use client";
 
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Minus, Plus, X } from "lucide-react";
-import type { Product } from "@/types";
+import type { Product } from "@/types/product.type";
 
 
 interface ProductModalProps {
@@ -80,10 +81,9 @@ export function ProductModal({
 }: ProductModalProps) {
   const [quantity, setQuantity] = useState(1);
   const [relatedQuantities, setRelatedQuantities] = useState<Record<number, number>>({});
-
+  const productImageRef = useRef<HTMLImageElement>(null);
 
   if (!isOpen) return null;
-
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -92,10 +92,8 @@ export function ProductModal({
     }).format(price);
   };
 
-
   const hasDiscount = product.discount_percent > 0;
   const maxQuantity = Math.min(10, product.stock_quantity);
-
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 1 && newQuantity <= maxQuantity) {
@@ -103,18 +101,74 @@ export function ProductModal({
     }
   };
 
+  const createFlyingAnimation = () => {
+    if (!productImageRef.current) return;
 
+    const imgRect = productImageRef.current.getBoundingClientRect();
+    const cartIcon = document.querySelector('[data-cart-icon]');
+    
+    if (!cartIcon) return;
 
+    const cartRect = cartIcon.getBoundingClientRect();
+
+    // Tạo clone của hình ảnh
+    const flyingImg = document.createElement('img');
+    flyingImg.src = product.image_url || '/placeholder.svg';
+    flyingImg.style.position = 'fixed';
+    flyingImg.style.left = `${imgRect.left}px`;
+    flyingImg.style.top = `${imgRect.top}px`;
+    flyingImg.style.width = `${imgRect.width}px`;
+    flyingImg.style.height = `${imgRect.height}px`;
+    flyingImg.style.zIndex = '9999';
+    flyingImg.style.transition = 'all 0.8s cubic-bezier(0.45, 0, 0.55, 1)';
+    flyingImg.style.pointerEvents = 'none';
+    flyingImg.style.objectFit = 'contain';
+
+    document.body.appendChild(flyingImg);
+
+    // Trigger animation sau một frame để CSS transition hoạt động
+    requestAnimationFrame(() => {
+      flyingImg.style.left = `${cartRect.left + cartRect.width / 2}px`;
+      flyingImg.style.top = `${cartRect.top + cartRect.height / 2}px`;
+      flyingImg.style.width = '0px';
+      flyingImg.style.height = '0px';
+      flyingImg.style.opacity = '0.5';
+    });
+
+    // Xóa element sau khi animation xong
+    setTimeout(() => {
+      document.body.removeChild(flyingImg);
+    }, 800);
+  };
 
   const handleComplete = () => {
-    onAddToCart(product, quantity);
-    onClose();
-    setQuantity(1);
+    // Tạo hiệu ứng bay vào giỏ hàng
+    createFlyingAnimation();
+    
+    // Delay một chút để animation diễn ra trước khi thực hiện các hành động
+    setTimeout(() => {
+      // Thêm sản phẩm chính vào giỏ hàng
+      onAddToCart(product, quantity);
+      
+      // Thêm các sản phẩm liên quan có số lượng > 0 vào giỏ hàng
+      Object.entries(relatedQuantities).forEach(([productId, qty]) => {
+        if (qty > 0) {
+          const relatedProduct = relatedProducts.find(p => p.id === Number(productId));
+          if (relatedProduct) {
+            onAddToCart(relatedProduct, qty);
+          }
+        }
+      });
+      
+      onClose();
+      setQuantity(1);
+      setRelatedQuantities({});
+    }, 400);
   };
 
   const handleRelatedQuantityChange = (productId: number, newQuantity: number) => {
     const relatedProduct = relatedProducts.find(p => p.id === productId);
-    if (relatedProduct && newQuantity >= 1 && newQuantity <= relatedProduct.stock_quantity) {
+    if (relatedProduct && newQuantity >= 0 && newQuantity <= relatedProduct.stock_quantity) {
       setRelatedQuantities(prev => ({
         ...prev,
         [productId]: newQuantity
@@ -122,13 +176,8 @@ export function ProductModal({
     }
   };
 
-  const handleAddRelatedToCart = (relatedProduct: Product) => {
-    const qty = relatedQuantities[relatedProduct.id] || 1;
-    onAddToCart(relatedProduct, qty);
-  };
 
-
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="relative mx-4 w-full max-w-3xl rounded-lg bg-white shadow-xl">
         {/* Header */}
@@ -146,7 +195,6 @@ export function ProductModal({
           </Button>
         </div>
 
-
         {/* Content */}
         <div className="max-h-[60vh] overflow-y-auto">
           {/* Product Info */}
@@ -154,19 +202,18 @@ export function ProductModal({
             {/* Product Image */}
             <div className="flex-shrink-0">
               <img
+                ref={productImageRef}
                 src={product.image_url || "/placeholder.svg"}
                 alt={product.name}
                 className="h-32 w-32 rounded-lg object-contain"
               />
             </div>
 
-
             {/* Product Details */}
             <div className="flex-1">
               <h3 className="mb-2 text-lg font-bold text-gray-900">
                 {product.name}
               </h3>
-
 
               {/* Price Section */}
               <div className="mb-4">
@@ -184,19 +231,14 @@ export function ProductModal({
                     <>
                       <span className="text-base text-gray-400 line-through">
                         {formatPrice(product.unit_price)}
+                        {product.quantity && `/${product.quantity}`}
                       </span>
-                      {product.quantity && (
-                        <span className="text-xs text-gray-400">
-                          /{product.quantity}
-                        </span>
-                      )}
                       <Badge className="bg-red-600 text-white">
                         -{product.discount_percent}%
                       </Badge>
                     </>
                   )}
                 </div>
-
 
                 <p className="mt-2 text-sm text-gray-600">
                   Tối đa {maxQuantity} sp/đơn
@@ -205,7 +247,6 @@ export function ProductModal({
                   Còn {product.stock_quantity} suất
                 </p>
               </div>
-
 
               {/* Quantity Selector */}
               <div className="mb-4">
@@ -244,88 +285,81 @@ export function ProductModal({
         <div className="border-t bg-gray-50 p-4">
           <h3 className="mb-3 text-base font-semibold text-gray-900">Sản phẩm liên quan</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {relatedProducts.map((relatedProduct) => (
-              <div key={relatedProduct.id} className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                {/* Product Image */}
-                <div className="relative">
-                  <img
-                    src={relatedProduct.image_url || "/placeholder.svg"}
-                    alt={relatedProduct.name}
-                    className="w-full h-24 object-contain bg-gray-50"
-                  />
-                  {relatedProduct.is_hot && (
-                    <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs">
-                      HOT
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Product Info */}
-                <div className="p-2">
-                  <h4 className="text-xs font-medium text-green-600 mb-1 line-clamp-2">
-                    {relatedProduct.name}
-                  </h4>
-                  
-                  {/* Price */}
-                  <div className="mb-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-red-600">
-                        {formatPrice(relatedProduct.final_price)}
-                      </span>
-                      {relatedProduct.discount_percent > 0 && (
-                        <>
-                          <span className="text-xs text-gray-400 line-through">
-                            {formatPrice(relatedProduct.unit_price)}
-                          </span>
-                          <Badge className="bg-red-600 text-white text-xs px-1 py-0">
-                            -{relatedProduct.discount_percent}%
-                          </Badge>
-                        </>
-                      )}
-                    </div>
+            {relatedProducts.map((relatedProduct) => {
+              const currentQuantity = relatedQuantities[relatedProduct.id] || 0;
+              
+              return (
+                <div key={relatedProduct.id} className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                  {/* Product Image */}
+                  <div className="relative">
+                    <img
+                      src={relatedProduct.image_url || "/placeholder.svg"}
+                      alt={relatedProduct.name}
+                      className="w-full h-24 object-contain bg-gray-50"
+                    />
+                    {relatedProduct.is_hot && (
+                      <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs">
+                        HOT
+                      </Badge>
+                    )}
                   </div>
 
-                  {/* Quantity Selector */}
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-600">Số lượng:</span>
-                    <div className="flex items-center gap-1 rounded border">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRelatedQuantityChange(relatedProduct.id, (relatedQuantities[relatedProduct.id] || 1) - 1)}
-                        disabled={(relatedQuantities[relatedProduct.id] || 1) <= 1}
-                        className="h-5 w-5 p-0"
-                      >
-                        <Minus className="h-2 w-2" />
-                      </Button>
-                      <span className="min-w-[1.5rem] text-center text-xs font-medium">
-                        {relatedQuantities[relatedProduct.id] || 1}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRelatedQuantityChange(relatedProduct.id, (relatedQuantities[relatedProduct.id] || 1) + 1)}
-                        disabled={(relatedQuantities[relatedProduct.id] || 1) >= relatedProduct.stock_quantity}
-                        className="h-5 w-5 p-0"
-                      >
-                        <Plus className="h-2 w-2" />
-                      </Button>
+                  {/* Product Info */}
+                  <div className="p-2">
+                    <h4 className="text-xs font-medium text-green-600 mb-1 line-clamp-2">
+                      {relatedProduct.name}
+                    </h4>
+                    
+                    {/* Price */}
+                    <div className="mb-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold text-red-600">
+                          {formatPrice(relatedProduct.final_price)}
+                        </span>
+                        {relatedProduct.discount_percent > 0 && (
+                          <>
+                            <span className="text-xs text-gray-400 line-through">
+                              {formatPrice(relatedProduct.unit_price)}
+                            </span>
+                            <Badge className="bg-red-600 text-white text-xs px-1 py-0">
+                              -{relatedProduct.discount_percent}%
+                            </Badge>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-600">Số lượng:</span>
+                      <div className="flex items-center gap-1 rounded border">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRelatedQuantityChange(relatedProduct.id, currentQuantity - 1)}
+                          disabled={currentQuantity <= 0}
+                          className="h-5 w-5 p-0"
+                        >
+                          <Minus className="h-2 w-2" />
+                        </Button>
+                        <span className="min-w-[1.5rem] text-center text-xs font-medium">
+                          {currentQuantity}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRelatedQuantityChange(relatedProduct.id, currentQuantity + 1)}
+                          disabled={currentQuantity >= relatedProduct.stock_quantity}
+                          className="h-5 w-5 p-0"
+                        >
+                          <Plus className="h-2 w-2" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Add to Cart Button */}
-                  <Button
-                    onClick={() => handleAddRelatedToCart(relatedProduct)}
-                    className="w-full bg-green-600 text-white hover:bg-green-700 text-xs py-1"
-                    size="sm"
-                  >
-                    <ShoppingCart className="mr-1 h-3 w-3" />
-                    Thêm vào giỏ
-                  </Button>
-
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -343,4 +377,6 @@ export function ProductModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

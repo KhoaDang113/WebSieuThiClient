@@ -1,10 +1,12 @@
-import { CategoryNav } from "@/components/CategoryNav";
+import { CategoryNav } from "@/components/category/CategoryNav";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import type { CategoryNav as Category, Product, Banner } from "@/types";
+import type { CategoryNav as Category } from "@/types/category.type";
+import type { Product } from "@/types/product.type";
+import type { Banner } from "@/types/banner.type";
 import Banners from "@/components/productPage/banner/Banners";
 import Article from "@/components/productPage/article/Article";
-import ProductGridWithBanners from "@/components/productPage/ProductGridWithBanners";
+import ProductGridWithBanners from "@/components/products/ProductGridWithBanners";
 import type { Article as ArticleType } from "@/types/article.type";
 import FilterBar from "@/components/productPage/filter/FilterBar";
 import Promotion from "@/components/productPage/promotion/Promotion";
@@ -496,7 +498,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-blue-50">
       <CategoryNav
         categories={categories}
         variant="product-page"

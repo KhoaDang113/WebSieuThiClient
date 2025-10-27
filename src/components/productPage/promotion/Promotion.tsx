@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/types/product.type";
 import { ProductCard } from "@/components/products/ProductCard";
-import { HoriztionPromotion } from "./PromotionCard";
+import { HoriztionPromotion } from "@/components/productPage/promotion/PromotionCard";
 
 interface PromotionProps {
   products: Product[];
@@ -54,7 +54,7 @@ export default function Promotion({ products, onAddToCart }: PromotionProps) {
   }
 
   return (
-    <div className="bg-green-500 p-6 rounded-lg">
+    <div className="bg-gradient-to-r from-green-400 to-emerald-400 p-6 rounded-lg">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white drop-shadow-lg">
@@ -87,7 +87,7 @@ export default function Promotion({ products, onAddToCart }: PromotionProps) {
         )}
 
         {/* Products Grid */}
-        <div className="overflow-hidden">
+        <div className="overflow-hidden relative z-0">
           <div
             className="flex transition-transform duration-300 ease-in-out"
             style={{
@@ -109,7 +109,7 @@ export default function Promotion({ products, onAddToCart }: PromotionProps) {
                     (slideIndex + 1) * itemsPerSlide
                   )
                   .map((product, index) => (
-                    <div key={`${slideIndex}-${index}`} className="relative">
+                    <div key={`${slideIndex}-${index}`}>
                       {isMobile ? (
                         <ProductCard
                           product={product}

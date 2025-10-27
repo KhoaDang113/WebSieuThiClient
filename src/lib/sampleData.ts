@@ -1,4 +1,7 @@
-import type { Product, Banner, CategoryNav } from "@/types";
+import type { Product } from "@/types/product.type";
+import type { Banner } from "@/types/banner.type";
+import type { CategoryNav } from "@/types/category.type";
+import type { Order } from "@/types/order";
 
 // Dữ liệu mẫu cho các danh mục
 export const sampleCategories: CategoryNav[] = [
@@ -415,4 +418,214 @@ export const categoryBanners: Banner[] = [
       "https://cdnv2.tgdd.vn/bhx-static/bhx/7890/freecompress-trang-cate-pc-1_202508190846166252.jpg",
     link_url: "/",
   },
+];
+
+// Dữ liệu mẫu cho đơn hàng
+export const sampleOrders: Order[] = [
+  {
+    id: "ORD-001",
+    customer_name: "Nguyễn Văn A",
+    customer_phone: "0123456789",
+    customer_address: "123 Đường ABC, Quận 1, TP.HCM",
+    items: [
+      {
+        id: "item-1",
+        product_id: 1,
+        name: "Má đùi gà cắt sẵn",
+        price: 41582,
+        quantity: 2,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
+        unit: "500g"
+      },
+      {
+        id: "item-2",
+        product_id: 6,
+        name: "Quýt Úc",
+        price: 69000,
+        quantity: 1,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
+        unit: "800g"
+      }
+    ],
+    total_amount: 152164,
+    status: "pending",
+    created_at: "2024-01-15T10:30:00Z",
+    notes: "Giao hàng vào buổi chiều"
+  },
+  {
+    id: "ORD-002",
+    customer_name: "Trần Thị B",
+    customer_phone: "0987654321",
+    customer_address: "456 Đường XYZ, Quận 3, TP.HCM",
+    items: [
+      {
+        id: "item-3",
+        product_id: 11,
+        name: "Dầu ăn Neptune",
+        price: 75000,
+        quantity: 1,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
+        unit: "1 chai"
+      },
+      {
+        id: "item-4",
+        product_id: 16,
+        name: "Gấu Đỏ - Mì ăn liền",
+        price: 86000,
+        quantity: 1,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
+        unit: "1 thùng"
+      }
+    ],
+    total_amount: 161000,
+    status: "confirmed",
+    created_at: "2024-01-15T09:15:00Z"
+  },
+  {
+    id: "ORD-003",
+    customer_name: "Lê Văn C",
+    customer_phone: "0369258147",
+    customer_address: "789 Đường DEF, Quận 5, TP.HCM",
+    items: [
+      {
+        id: "item-5",
+        product_id: 3,
+        name: "Sườn cốt lết C.P",
+        price: 37530,
+        quantity: 3,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
+        unit: "300g"
+      }
+    ],
+    total_amount: 112590,
+    status: "pending",
+    created_at: "2024-01-15T11:45:00Z",
+    notes: "Khách yêu cầu giao nhanh"
+  },
+  {
+    id: "ORD-004",
+    customer_name: "Phạm Thị D",
+    customer_phone: "0741852963",
+    customer_address: "321 Đường GHI, Quận 7, TP.HCM",
+    items: [
+      {
+        id: "item-6",
+        product_id: 8,
+        name: "Dưa lưới tròn ruột cam",
+        price: 53300,
+        quantity: 2,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
+        unit: "1.3kg"
+      },
+      {
+        id: "item-7",
+        product_id: 14,
+        name: "Nước mắm Phú Quốc",
+        price: 40000,
+        quantity: 1,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
+        unit: "500ml"
+      }
+    ],
+    total_amount: 146600,
+    status: "cancelled",
+    created_at: "2024-01-15T08:20:00Z",
+    notes: "Khách hủy do thay đổi ý định"
+  },
+  {
+    id: "03CD2510639147854C4",
+    customer_name: "Anh Linh",
+    customer_phone: "0912345678",
+    customer_address: "Ký Túc Xá Khu B, Phường Đông Hòa, TP. Dĩ An",
+    items: [
+      {
+        id: "item-8",
+        product_id: 20,
+        name: "Bánh quy Hương Phèn",
+        price: 40000,
+        quantity: 1,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/3438/332313/bhx/banh-quy-huong-phen-cosy-100g-202407230903180968.jpg",
+        unit: "100g"
+      }
+    ],
+    total_amount: 40000,
+    status: "delivered",
+    created_at: "2024-10-01T10:00:00Z"
+  },
+  {
+    id: "03CD2510639082038B4",
+    customer_name: "Anh Linh",
+    customer_phone: "0912345678",
+    customer_address: "Ký Túc Xá Khu B, Phường Đông Hòa, TP. Dĩ An",
+    items: [
+      {
+        id: "item-9",
+        product_id: 1,
+        name: "Má đùi gà cắt sẵn",
+        price: 41582,
+        quantity: 3,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8785/306132/bhx/ma-dui-ga-khay-500g-3-5-mieng-202411141059213688.jpg",
+        unit: "500g"
+      },
+      {
+        id: "item-10",
+        product_id: 3,
+        name: "Sườn cốt lết C.P",
+        price: 37530,
+        quantity: 2,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8781/306155/bhx/suon-cot-let-cp-khay-300g-202409161023285467.jpg",
+        unit: "300g"
+      },
+      {
+        id: "item-11",
+        product_id: 2,
+        name: "Thịt heo xay C.P",
+        price: 35600,
+        quantity: 2,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8781/306066/bhx/thit-heo-xay-cp-khay-300g-202409161009478669.jpg",
+        unit: "300g"
+      },
+      {
+        id: "item-12",
+        product_id: 4,
+        name: "Ba chỉ bò Úc",
+        price: 89000,
+        quantity: 2,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8782/306143/bhx/ba-chi-bo-uc-khay-300g-202410161101541773.jpg",
+        unit: "300g"
+      }
+    ],
+    total_amount: 232090,
+    status: "delivered",
+    created_at: "2024-10-01T10:00:00Z"
+  },
+  {
+    id: "ORD-006",
+    customer_name: "Hoàng Văn E",
+    customer_phone: "0968741258",
+    customer_address: "654 Đường JKL, Quận 10, TP.HCM",
+    items: [
+      {
+        id: "item-13",
+        product_id: 6,
+        name: "Quýt Úc",
+        price: 69000,
+        quantity: 2,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8788/329280/bhx/quyt-uc-tui-800g-6-8-trai-202410020919403536.jpg",
+        unit: "800g"
+      },
+      {
+        id: "item-14",
+        product_id: 7,
+        name: "Chuối sứ",
+        price: 18800,
+        quantity: 3,
+        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8788/272137/bhx/chuoi-su-tui-1kg-202410020916374743.jpg",
+        unit: "1kg"
+      }
+    ],
+    total_amount: 194400,
+    status: "delivered",
+    created_at: "2024-01-14T16:30:00Z"
+  }
 ];

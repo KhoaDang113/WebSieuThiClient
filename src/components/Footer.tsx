@@ -1,17 +1,11 @@
 import { Link } from "react-router-dom";
-import {
-  socials,
-  collaborates,
-  suportLinks,
-  contacts,
-  aboutLinks,
-} from "@/lib/constants";
+import { socials, collaborates, suportLinks, contacts, aboutLinks } from "@/lib/constants";
 export function Footer() {
   return (
     <footer className="bg-white text-gray-800 ">
-      <div className="bg-[#007E42] w-full h-12 text-center flex items-center justify-center">
-        <span className="text-amber-300 font-bold">
-          Cảm ơn bạn đã lựa chọn chúng tôi
+      <div className="bg-[#007E42] w-full min-h-12 text-center flex items-center justify-center px-4 py-2">
+        <span className="text-white font-bold text-xs sm:text-sm md:text-base">
+          Bán hàng: 6:00 đến 22:00 - Khiếu nại 8:00 đến 20:00 - Cam kết: Giao hàng trong thời gian 2h - Hotline: 0386740043
         </span>
       </div>
       <div className="container mx-auto px-4 pb-5 pt-3">

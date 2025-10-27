@@ -1,59 +1,32 @@
 "use client"
 
-import { useState } from "react"
 import EmptyCart from "@/components/cart/EmptyCart"
 import CartWithItems from "@/components/cart/CartWithItems"
-
-
-export interface CartItem {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  image: string
-  unit: string
-}
+import { useCart } from "@/components/cart/CartContext"
+import { useNavigate } from "react-router-dom"
 
 export default function ShoppingCart() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const { cartItems, updateQuantity, removeItem, clearCart } = useCart()
+  const navigate = useNavigate()
 
-  // Xử lý thêm sản phẩm mẫu
-  const addSampleItem = () => {
-    const sampleItem: CartItem = {
-      id: "1",
-      name: "MAMA HY Rong Biển Lá Kim đậu Ô Liu 3x4g",
-      price: 29900,
-      quantity: 1,
-      image: "/products/mama-hy.jpg",
-      unit: "Gói 3",
-    }
-    setCartItems((prev) => [...prev, sampleItem])
-  }
-
-  // Cập nhật số lượng sản phẩm
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return
-    setCartItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item))
-    )
-  }
-
-  // Xóa một sản phẩm
-  const removeItem = (id: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id))
-  }
-
-  // Xóa toàn bộ giỏ hàng
-  const clearCart = () => {
-    setCartItems([])
-  }
+  // Xử lý thêm sản phẩm mẫu để test
+  // const addSampleItem = () => {
+  //   const sampleItem = {
+  //     id: "sample-1",
+  //     name: "Mặt nạ dưỡng da trắng hồng Senka Perfect Aqua Extra White Mask 25ml",
+  //     price: 37400,
+  //     image: "https://cdn.tgdd.vn/Products/Images/2417/92676/bhx/mat-na-duong-da-trang-hong-senka-perfect-aqua-extra-white-mask-25ml-202207151550066960.jpg",
+  //     unit: "Gói",
+  //     quantity: 1,
+  //   }
+  //   addToCart(sampleItem)
+  // }
 
   // Render theo trạng thái giỏ hàng
   return (
-    <div>
-      
+    <div className="min-h-screen bg-blue-50">
       {cartItems.length === 0 ? (
-        <EmptyCart onContinueShopping={addSampleItem} />
+        <EmptyCart onContinueShopping={() => navigate("/")} />
       ) : (
         <CartWithItems
           items={cartItems}

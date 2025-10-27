@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ScrollButtonProps } from "@/types";
+import type { ScrollButtonProps } from "@/types/component.type";
 
 const ScrollButton: React.FC<ScrollButtonProps> = ({
   direction,

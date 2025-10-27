@@ -2,13 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SORT_OPTIONS, BRAND_OPTIONS } from "@/lib/constants";
-import type { Brand } from "@/types/filter.type";
+import type { Brand, FilterBarFilters } from "@/types/filter.type";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-
-export interface FilterBarFilters {
-  sort: string;
-  brand: string;
-}
 
 interface FilterBarProps {
   onFilterChange?: (filters: FilterBarFilters) => void;

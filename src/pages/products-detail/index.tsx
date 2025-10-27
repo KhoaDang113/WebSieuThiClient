@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import type { Product } from "@/types";
+import { ChevronLeft, Star, ThumbsUp } from "lucide-react";
+import type { Product } from "@/types/product.type";
 import { ProductModal } from "@/components/products/ProductModal";
 import Banners from "@/components/productPage/banner/Banners";
 import type { Banner } from "@/types/banner.type";
+import type { Review, RatingSummary } from "@/types/review.type";
 import ScrollButton from "@/components/ScrollButton";
 import { Link } from "react-router-dom";
 
@@ -63,19 +64,77 @@ const productBanners: Banner[] = [
   },
 ];
 
+// Sample rating summary
+const ratingSummary: RatingSummary = {
+  average_rating: 4.5,
+  total_reviews: 17,
+  rating_distribution: {
+    5: 82,
+    4: 6,
+    3: 0,
+    2: 0,
+    1: 12,
+  },
+};
+
+// Sample reviews
+const reviews: Review[] = [
+  {
+    id: 1,
+    user_name: "Hoàng Thị Quý",
+    rating: 5,
+    comment: "ngon và thơm",
+    created_at: "2024-10-20",
+    helpful_count: 0,
+  },
+  {
+    id: 2,
+    user_name: "Duyên",
+    rating: 5,
+    comment: "Xúc xích thơm ngon ăn 1cây lại muốn ăn nữa",
+    created_at: "2024-10-18",
+    helpful_count: 0,
+  },
+  {
+    id: 3,
+    user_name: "Phùng Thị Ngân",
+    rating: 5,
+    comment: "Trên cả tuyệt vời mn nên mua nhé",
+    created_at: "2024-10-15",
+    helpful_count: 0,
+  },
+];
+
 export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const thumbsRef = useRef<HTMLDivElement | null>(null);
+  const [isMouseOver, setIsMouseOver] = useState(false);
+  const [showLeftButton, setShowLeftButton] = useState(false);
+  const [showRightButton, setShowRightButton] = useState(true);
+  const [helpfulReviews, setHelpfulReviews] = useState<Set<number>>(new Set());
 
-  // Auto-rotate main image every 3s
-  useEffect(() => {
-    if (!productData.images || productData.images.length === 0) return;
-    const intervalId = setInterval(() => {
-      setSelectedImage((prev) => (prev + 1) % productData.images.length);
-    }, 3000);
-    return () => clearInterval(intervalId);
-  }, []);
+  // Check scroll position for navigation buttons
+  const checkScroll = () => {
+    const container = thumbsRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setShowLeftButton(scrollLeft > 1);
+      const isAtEnd = scrollLeft >= scrollWidth - clientWidth - 1;
+      setShowRightButton(!isAtEnd);
+    }
+  };
+
+  // Scroll function for navigation buttons
+  const scroll = (direction: "left" | "right") => {
+    if (thumbsRef.current) {
+      const scrollAmount = direction === "left" ? -400 : 400;
+      thumbsRef.current.scrollBy({
+        left: scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // Keep active thumbnail in view (only scroll horizontally to avoid page jump)
   useEffect(() => {
@@ -91,6 +150,31 @@ export default function ProductDetail() {
       (container.clientWidth - activeThumb.clientWidth) / 2;
     container.scrollTo({ left: Math.max(0, targetLeft), behavior: "smooth" });
   }, [selectedImage]);
+
+  // Setup scroll event listeners and wheel handling
+  useEffect(() => {
+    const container = thumbsRef.current;
+    if (!container) return;
+
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    container.addEventListener("scroll", checkScroll);
+
+    const handleWheel = (e: WheelEvent) => {
+      if (isMouseOver) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY;
+      }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener("resize", checkScroll);
+      container.removeEventListener("scroll", checkScroll);
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, [isMouseOver]);
 
   const goPrevImage = () => {
     if (!productData.images.length) return;
@@ -142,8 +226,38 @@ export default function ProductDetail() {
     console.log("Add to cart:", { product, quantity });
   };
 
+  const handleHelpfulClick = (reviewId: number) => {
+    setHelpfulReviews((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(reviewId)) {
+        newSet.delete(reviewId);
+      } else {
+        newSet.add(reviewId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderStars = (rating: number, size: "sm" | "lg" = "sm") => {
+    const sizeClass = size === "lg" ? "w-6 h-6" : "w-4 h-4";
+    return (
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`${sizeClass} ${
+              star <= rating
+                ? "fill-yellow-400 text-yellow-400"
+                : "fill-gray-200 text-gray-200"
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-blue-50">
       {/* Back button - match CartWithItems */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
@@ -154,7 +268,7 @@ export default function ProductDetail() {
             <ChevronLeft className="w-6 h-6" />
           </Link>
           <h1 className="text-xl font-semibold text-gray-800">
-            Quay Về Trang Chủ
+            Quay Về
           </h1>
         </div>
       </div>
@@ -176,33 +290,52 @@ export default function ProductDetail() {
             </div>
 
             {/* Thumbnail Images */}
-            <div className="relative">
+            <div 
+              className="relative group/container"
+              onMouseEnter={() => setIsMouseOver(true)}
+              onMouseLeave={() => setIsMouseOver(false)}
+            >
+              {/* Scroll buttons - hiển thị khi hover */}
+              <div className="opacity-0 group-hover/container:opacity-100 transition-opacity">
+                {showLeftButton && (
+                  <ScrollButton direction="left" onClick={() => scroll("left")} />
+                )}
+                {showRightButton && (
+                  <ScrollButton direction="right" onClick={() => scroll("right")} />
+                )}
+              </div>
+
               <div
                 ref={thumbsRef}
-                className="flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar"
+                className="flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
                 {productData.images.map((image, index) => (
                   <button
                     key={index}
                     data-thumb-index={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-40 h-40 rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`flex-shrink-0 w-40 h-40 rounded-lg overflow-hidden transition-all border-2 select-none ${
                       selectedImage === index
                         ? "border-green-500"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-transparent hover:border-gray-300"
                     }`}
+                    style={{ userSelect: 'none' }}
+                    onDragStart={(e) => e.preventDefault()}
                   >
                     <img
                       src={image || "/placeholder.svg"}
                       alt={`${productData.name} - ${index + 1}`}
-                      className="w-full h-full object-contain p-3"
+                      className={`w-full h-full object-cover transition-all select-none ${
+                        selectedImage === index
+                          ? "opacity-100"
+                          : "opacity-50 hover:opacity-70"
+                      }`}
+                      style={{ userSelect: 'none', pointerEvents: 'none' }}
+                      draggable={false}
                     />
                   </button>
                 ))}
               </div>
-              {/* Navigation Buttons for thumbnails */}
-              <ScrollButton direction="left" onClick={goPrevImage} />
-              <ScrollButton direction="right" onClick={goNextImage} />
             </div>
           </div>
 
@@ -301,6 +434,89 @@ export default function ProductDetail() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Product Reviews */}
+        <div className="mt-8 bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Đánh giá sản phẩm
+          </h2>
+
+          {/* Rating Summary */}
+          <div className="flex flex-col md:flex-row gap-8 mb-8 pb-8 border-b">
+            {/* Average Rating */}
+            <div className="flex flex-col items-center justify-center md:w-1/3 bg-gray-50 rounded-lg p-6">
+              <div className="text-5xl font-bold text-gray-900 mb-2">
+                {ratingSummary.average_rating.toFixed(1)}
+              </div>
+              {renderStars(Math.round(ratingSummary.average_rating), "lg")}
+              <div className="text-sm text-gray-600 mt-2">
+                <span className="text-blue-600 font-medium">
+                  {ratingSummary.total_reviews} đánh giá
+                </span>
+              </div>
+            </div>
+
+            {/* Rating Distribution */}
+            <div className="flex-1 space-y-2">
+              {[5, 4, 3, 2, 1].map((stars) => {
+                const percentage = ratingSummary.rating_distribution[
+                  stars as keyof typeof ratingSummary.rating_distribution
+                ];
+                return (
+                  <div key={stars} className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 w-16">
+                      <span className="text-sm font-medium text-gray-700">
+                        {stars}
+                      </span>
+                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-yellow-400 rounded-full transition-all"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-600 w-12 text-right">
+                      {percentage}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="space-y-6">
+            {reviews.map((review) => (
+              <div key={review.id} className="border-b pb-6 last:border-b-0">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {review.user_name}
+                    </h3>
+                    {renderStars(review.rating)}
+                  </div>
+                </div>
+                <p className="text-gray-700 mb-3">{review.comment}</p>
+                <button
+                  onClick={() => handleHelpfulClick(review.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    helpfulReviews.has(review.id)
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  <ThumbsUp
+                    className={`w-4 h-4 ${
+                      helpfulReviews.has(review.id) ? "fill-blue-700" : ""
+                    }`}
+                  />
+                  Hữu ích
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -15,3 +15,8 @@ export interface Brand {
   name: string;
   logo?: string;
 }
+
+export interface FilterBarFilters {
+  sort: string;
+  brand: string;
+}

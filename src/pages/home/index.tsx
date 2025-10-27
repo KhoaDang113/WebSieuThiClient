@@ -1,34 +1,50 @@
-import { CategoryNav } from "@/components/CategoryNav";
+import { CategoryNav } from "@/components/category/CategoryNav";
 import MainBanner from "@/components/home/MainBanner";
 import CategorySection from "@/components/home/CategorySection";
-import Banners from "@/components/productPage/banner/Banners";
-import {
-  mainBanners,
-  sampleProductsByCategory,
-  categoryBanners,
-} from "@/lib/sampleData";
-import type { Product } from "@/types";
+import { mainBanners, sampleProductsByCategory, categoryBanners } from "@/lib/sampleData";
+import type { Product } from "@/types/product.type";
+import { useCart } from "@/components/cart/CartContext";
 
 export default function HomePage() {
-  const handleAddToCart = (product: Product) => {
-    console.log("Thêm vào giỏ hàng:", product.name);
-    // TODO: Implement add to cart logic
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (product: Product & { selectedQuantity?: number }) => {
+    // Chuyển đổi Product sang CartItem
+    addToCart({
+      id: product.id.toString(),
+      name: product.name,
+      price: product.final_price,
+      image: product.image_url,
+      unit: product.quantity || "1 sản phẩm",
+      quantity: product.selectedQuantity || 1,
+    });
+    
+    // Hiển thị thông báo đã thêm vào giỏ hàng
+    console.log("Đã thêm vào giỏ hàng:", product.name, "x", product.selectedQuantity || 1);
   };
 
   // const handleCategorySelect = (category: { id: string; name: string }) => {
   //   console.log("Đã chọn loại:", category.name);
   // };
 
-  return (
-    <div className="min-h-screen">
-      <CategoryNav />
 
-      <div className="container mx-auto py-4 sm:py-6">
+
+  return (
+    <div className="min-h-screen bg-blue-50">
+      <div className="container mx-auto px-4">
+        <div className="w-full bg-white rounded-lg overflow-hidden mb-1">
+          <CategoryNav />
+        </div>
+      </div>
+
+      <div className="container mx-auto py-1">
+
+
         {/* Main Banner */}
         <MainBanner banners={mainBanners} />
 
         {/* Category Sections */}
-        <div className="space-y-6 sm:space-y-8">
+        <div className="space-y-1 sm:space-y-2">
           {/* THỊT, CÁ, TRỨNG, HẢI SẢN */}
           <CategorySection
             categoryName="THỊT, CÁ, TRỨNG, HẢI SẢN"
@@ -36,11 +52,6 @@ export default function HomePage() {
             banners={categoryBanners}
             onAddToCart={handleAddToCart}
           />
-
-          {/* Banner giữa các danh mục */}
-          <div className="my-6 sm:my-8">
-            <Banners banners={categoryBanners} />
-          </div>
 
           {/* RAU, CỦ, NẤM, TRÁI CÂY */}
           <CategorySection

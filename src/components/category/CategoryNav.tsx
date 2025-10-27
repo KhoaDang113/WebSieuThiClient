@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import ScrollButton from "@/components/ScrollButton";
 import { useNavigate } from "react-router-dom";
-import type { CategoryNav as Category, CategoryNavProps } from "@/types";
+import type { CategoryNav as Category, CategoryNavProps } from "@/types/category.type";
 
 const defaultCategories: Category[] = [
   {
@@ -263,7 +263,7 @@ export function CategoryNav({
         ref={scrollContainerRef}
         className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className={`flex p-4 ${getGapStyles()}`}>
+        <div className={`flex p-1 ${getGapStyles()}`}>
           {categories.map((category) => (
             <button
               key={category.id}
