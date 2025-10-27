@@ -26,3 +26,19 @@ export interface CategoryNavProps {
   variant?: "home" | "product-page";
   showScrollButtons?: boolean;
 }
+
+// API Category type
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  parentId?: string;
+  level: number;
+  order?: number;
+  isActive: boolean;
+  subcategories?: Category[];
+  createdAt?: string;
+  updatedAt?: string;
+}
