@@ -8,11 +8,6 @@ import type { CategorySideBar as Category } from "@/types/category.type";
 
 const categories: Category[] = [
   {
-    name: "KHUYẾN MÃI SỐC",
-    href: "/khuyen-mai",
-    mobileImage: "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8788/trai-cay_202509081009396955.png",
-  },
-  {
     name: "THỊT, CÁ, TRỨNG, HẢI SẢN",
     href: "/thit-ca-trung",
     mobileImage: "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8788/trai-cay_202509081009396955.png",
@@ -370,6 +365,13 @@ export function CategorySidebar({
     }
   };
 
+  const handlePromotionClick = () => {
+    navigate("/khuyen-mai");
+    if (isMobile) {
+      onClose?.();
+    }
+  };
+
   const handleSubCategoryClick = (subCategory: { name: string; href: string; mobileImage?: string }) => {
     navigate(`/products?category=${subCategory.href}`);
     if (isMobile) {
@@ -400,14 +402,20 @@ export function CategorySidebar({
         <div className="flex-1 flex overflow-hidden">
           {/* Left Column - Categories List (1/3) */}
           <div className="w-1/3 bg-gray-50 overflow-y-auto border-r border-gray-200">
+            {/* Nút KHUYẾN MÃI SỐC riêng */}
+            <button
+              onClick={handlePromotionClick}
+              className="w-full p-3 text-left text-xs font-medium text-red-600 hover:bg-gray-100 transition-colors border-b border-gray-100"
+            >
+              KHUYẾN MÃI SỐC
+            </button>
             {categories.map((category) => (
               <button
                 key={category.name}
                 onClick={() => handleCategoryClick(category)}
                 className={cn(
                   "w-full p-3 text-left text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors border-b border-gray-100",
-                  expandedCategories.includes(category.name) && "bg-white text-primary font-semibold",
-                  category.name === "KHUYẾN MÃI SỐC" && "text-red-600"
+                  expandedCategories.includes(category.name) && "bg-white text-primary font-semibold"
                 )}
               >
                 {category.name}
@@ -468,15 +476,24 @@ export function CategorySidebar({
 
       {/* Categories */}
       <nav className="py-2 overflow-y-auto flex-1 no-scrollbar">
+        {/* Nút KHUYẾN MÃI SỐC riêng */}
+        <div className="border-b border-gray-100">
+          <button
+            onClick={handlePromotionClick}
+            className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold hover:bg-gray-50 transition-colors text-red-600"
+          >
+            <div className="flex items-center gap-2">
+              <span>KHUYẾN MÃI SỐC</span>
+            </div>
+          </button>
+        </div>
+
         {categories.map((category) => (
           <div key={category.name} className="border-b border-gray-100">
             {/* Parent Category */}
             <button
               onClick={() => handleCategoryClick(category)}
-              className={cn(
-                "w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold hover:bg-gray-50 transition-colors",
-                category.name === "KHUYẾN MÃI SỐC" && "text-red-600"
-              )}
+              className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span>{category.name}</span>

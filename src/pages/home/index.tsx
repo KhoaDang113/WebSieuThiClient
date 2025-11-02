@@ -41,14 +41,14 @@ export default function HomePage() {
   // };
 
   return (
-    <div className="min-h-screen bg-blue-50">
-      <div className="container mx-auto px-4">
-        <div className="w-full bg-white rounded-lg overflow-hidden mb-1">
+    <div className="min-h-screen bg-blue-50 w-full">
+      <div className="w-full">
+        <div className="w-full bg-white overflow-hidden mb-1">
           <CategoryNav />
         </div>
       </div>
 
-      <div className="container mx-auto py-1">
+      <div className="w-full">
         {/* Main Banner */}
         <MainBanner banners={mainBanners} />
 

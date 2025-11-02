@@ -9,6 +9,7 @@ import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign_up";
 import OrdersPage from "@/pages/order-management";
 import CustomerOrdersPage from "@/pages/customer-orders";
+import KhuyenMaiPage from "@/pages/sale";
 
 const router: RouteObject[] = [
   // User
@@ -43,6 +44,10 @@ const router: RouteObject[] = [
       {
         path: "/my-orders",
         element: <CustomerOrdersPage />,
+      },
+      {
+        path: "/khuyen-mai",
+        element: <KhuyenMaiPage />,
       },
     ],
   },

@@ -21,49 +21,49 @@ export const sampleCategories: CategoryNav[] = [
     id: "dau-an-nuoc-cham-gia-vi",
     name: "DẦU ĂN, NƯỚC CHẤM, GIA VỊ",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7148/1990379_202410101528079106.png",
   },
   {
     id: "gao-bot-do-kho",
     name: "GẠO, BỘT, ĐỒ KHÔ",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7149/gao-nep_202510022130564969.gif",
   },
   {
     id: "mi-mien-chao-pho",
     name: "MÌ, MIẾN, CHÁO, PHỞ",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7147/image-523_202410101609435656.png",
   },
   {
     id: "sua-cac-loai",
     name: "SỮA CÁC LOẠI",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7091/7091_202410101515241537.png",
   },
   {
     id: "kem-sua-chua",
     name: "KEM, SỮA CHUA",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/13578/1873233362_202503141313074938.png",
   },
   {
     id: "thuc-pham-dong-mat",
     name: "THỰC PHẨM ĐÔNG MÁT",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/10798/274201_202503141313392000.png",
   },
   {
     id: "bia-nuoc-giai-khat",
     name: "BIA, NƯỚC GIẢI KHÁT",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/2282/frame-3476163_202503181613016838.png",
   },
   {
     id: "banh-keo-cac-loai",
     name: "BÁNH KẸO CÁC LOẠI",
     image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7143/7143_202410110835348807.png",
   },
   {
     id: "cham-soc-ca-nhan",

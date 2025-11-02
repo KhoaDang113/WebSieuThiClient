@@ -7,13 +7,6 @@ import type { CategoryNav as Category, CategoryNavProps } from "@/types/category
 
 const defaultCategories: Category[] = [
   {
-    id: "khuyen-mai",
-    name: "KHUYẾN MÃI SỐC",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/flash-sale_202509181309465062.gif",
-    badgeColor: "bg-red-500",
-  },
-  {
     id: "giat-xa",
     name: "Giặt xả",
     image:
@@ -179,10 +172,14 @@ export function CategoryNav({
     navigate(`/products?category=${category.id}`);
   };
 
+  const handlePromotionClick = () => {
+    navigate("/khuyen-mai");
+  };
+
   const getContainerStyles = () => {
     switch (variant) {
       case "product-page":
-        return "w-full bg-background rounded-lg";
+        return "w-full bg-background";
       case "home":
       default:
         return "w-full bg-background";
@@ -195,7 +192,7 @@ export function CategoryNav({
     switch (variant) {
       case "product-page":
         return `
-          flex flex-col items-center gap-3 min-w-[80px] group
+          flex flex-col items-center gap-2 min-w-[80px] group
           ${isSelected ? "ring-1 ring-green-500 ring-offset-1 rounded-lg" : ""}
         `;
       case "home":
@@ -234,9 +231,7 @@ export function CategoryNav({
         }`;
       case "home":
       default:
-        return `text-xs text-center leading-tight max-w-[80px] truncate ${
-          category.name === "KHUYẾN MÃI SỐC" ? "text-red-600" : "text-foreground"
-        }`;
+        return "text-xs text-center leading-tight max-w-[80px] truncate text-foreground";
     }
   };
 
@@ -246,7 +241,7 @@ export function CategoryNav({
         return "gap-4";
       case "home":
       default:
-        return "gap-0";
+        return "gap-4";
     }
   };
 
@@ -273,47 +268,57 @@ export function CategoryNav({
         className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         <div className={`flex p-1 ${getGapStyles()}`}>
-          {categories.map((category, index) => {
-            // Tìm index của category "KHUYẾN MÃI SỐC"
-            const promotionCategoryIndex = categories.findIndex(
-              (cat) => cat.name === "KHUYẾN MÃI SỐC"
-            );
-            const isAfterPromotion = promotionCategoryIndex !== -1 && index === promotionCategoryIndex + 1;
-            
-            return (
-              <div key={category.id} className="flex items-center">
-                {/* Thêm dấu | sau "KHUYẾN MÃI SỐC" */}
-                {isAfterPromotion && (
-                  <div className="text-gray-300 mx-1 text-2xl font-light">|</div>
-                )}
-                <button
-                  onClick={() => handleCategoryClick(category)}
-                  className={getItemStyles(category)}
-                >
-                  <div className={getImageStyles()}>
-                    <div className={getImageContainerStyles()}>
-                      <img
-                        src={category.image || "/placeholder.svg"}
-                        alt={category.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+          {/* Nút KHUYẾN MÃI SỐC riêng */}
+          <div className="flex items-center">
+            <button
+              onClick={handlePromotionClick}
+              className="flex flex-col items-center gap-2 min-w-[80px] group"
+            >
+              <div className="relative">
+                <div className="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
+                  <img
+                    src="https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/flash-sale_202509181309465062.gif"
+                    alt="KHUYẾN MÃI SỐC"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <span className="text-xs text-center leading-tight max-w-[80px] truncate text-red-600">
+                KHUYẾN MÃI SỐC
+              </span>
+            </button>
+          </div>
 
-                    {/* Badge - chỉ hiển thị ở variant home */}
-                    {variant === "home" && category.badge && (
-                      <div
-                        className={`absolute -top-1 -right-1 ${category.badgeColor} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap`}
-                      >
-                        {category.badge}
-                      </div>
-                    )}
+          {/* Các category khác */}
+          {categories.map((category) => (
+            <div key={category.id} className="flex items-center">
+              <button
+                onClick={() => handleCategoryClick(category)}
+                className={getItemStyles(category)}
+              >
+                <div className={getImageStyles()}>
+                  <div className={getImageContainerStyles()}>
+                    <img
+                      src={category.image || "/placeholder.svg"}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                  <span className={getTextStyles(category)}>{category.name}</span>
-                </button>
-              </div>
-            );
-          })}
+                  {/* Badge - chỉ hiển thị ở variant home */}
+                  {variant === "home" && category.badge && (
+                    <div
+                      className={`absolute -top-1 -right-1 ${category.badgeColor} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap`}
+                    >
+                      {category.badge}
+                    </div>
+                  )}
+                </div>
+
+                <span className={getTextStyles(category)}>{category.name}</span>
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

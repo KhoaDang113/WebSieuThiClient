@@ -498,13 +498,15 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50">
-      <CategoryNav
-        categories={categories}
-        variant="product-page"
-        selectedCategoryId={selectedCategoryId}
-        onCategorySelect={handleCategorySelect}
-      />
+    <div className="min-h-screen bg-blue-50 w-full">
+      <div className="w-full bg-white overflow-hidden">
+        <CategoryNav
+          categories={categories}
+          variant="product-page"
+          selectedCategoryId={selectedCategoryId}
+          onCategorySelect={handleCategorySelect}
+        />
+      </div>
       <div className="mt-5">
         <FilterBar
           onBrandSelect={handleBrandSelect}
