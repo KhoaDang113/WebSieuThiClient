@@ -377,6 +377,110 @@ export const sampleProductsByCategory: Record<string, Product[]> = {
   ],
 };
 
+// Dữ liệu mẫu cho gia vị (sử dụng trong modal nguyên liệu món ăn)
+export const spicesData = [
+  {
+    id: 101,
+    name: "Nước mắm Nam Ngư",
+    quantity: "Chai 500ml",
+    unit: "chai",
+    price: 39500,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 102,
+    name: "Hạt nêm Knorr",
+    quantity: "Gói 170g",
+    unit: "gói",
+    price: 18500,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 103,
+    name: "Đường kính trắng",
+    quantity: "Gói 1kg",
+    unit: "gói",
+    price: 30500,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 104,
+    name: "Muối i-ốt",
+    quantity: "Gói 500g",
+    unit: "gói",
+    price: 8900,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 105,
+    name: "Dầu ăn Neptune",
+    quantity: "Chai 1 lít",
+    unit: "chai",
+    price: 52000,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 106,
+    name: "Tương ớt Chin-su",
+    quantity: "Chai 250g",
+    unit: "chai",
+    price: 22000,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 107,
+    name: "Hạt tiêu đen",
+    quantity: "Gói 50g",
+    unit: "gói",
+    price: 28500,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 108,
+    name: "Ớt bột Hàn Quốc",
+    quantity: "Gói 100g",
+    unit: "gói",
+    price: 35000,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 109,
+    name: "Nước tương Maggi",
+    quantity: "Chai 300ml",
+    unit: "chai",
+    price: 15800,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+  {
+    id: 110,
+    name: "Bột ngọt Ajinomoto",
+    quantity: "Gói 200g",
+    unit: "gói",
+    price: 19500,
+    image_url:
+      "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8271/96424/bhx/xot-gia-vi-suon-xao-chua-ngot-barona-goi-80g-20_202507071357019093.jpg",
+    available: true,
+  },
+];
+
 // Dữ liệu mẫu cho banner chính
 export const mainBanners: Banner[] = [
   {
@@ -434,8 +538,9 @@ export const sampleOrders: Order[] = [
         name: "Má đùi gà cắt sẵn",
         price: 41582,
         quantity: 2,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
-        unit: "500g"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
+        unit: "500g",
       },
       {
         id: "item-2",
@@ -443,14 +548,15 @@ export const sampleOrders: Order[] = [
         name: "Quýt Úc",
         price: 69000,
         quantity: 1,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
-        unit: "800g"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
+        unit: "800g",
+      },
     ],
     total_amount: 152164,
     status: "pending",
     created_at: "2024-01-15T10:30:00Z",
-    notes: "Giao hàng vào buổi chiều"
+    notes: "Giao hàng vào buổi chiều",
   },
   {
     id: "ORD-002",
@@ -464,8 +570,9 @@ export const sampleOrders: Order[] = [
         name: "Dầu ăn Neptune",
         price: 75000,
         quantity: 1,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
-        unit: "1 chai"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
+        unit: "1 chai",
       },
       {
         id: "item-4",
@@ -473,13 +580,14 @@ export const sampleOrders: Order[] = [
         name: "Gấu Đỏ - Mì ăn liền",
         price: 86000,
         quantity: 1,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-        unit: "1 thùng"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
+        unit: "1 thùng",
+      },
     ],
     total_amount: 161000,
     status: "confirmed",
-    created_at: "2024-01-15T09:15:00Z"
+    created_at: "2024-01-15T09:15:00Z",
   },
   {
     id: "ORD-003",
@@ -493,14 +601,15 @@ export const sampleOrders: Order[] = [
         name: "Sườn cốt lết C.P",
         price: 37530,
         quantity: 3,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
-        unit: "300g"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
+        unit: "300g",
+      },
     ],
     total_amount: 112590,
     status: "pending",
     created_at: "2024-01-15T11:45:00Z",
-    notes: "Khách yêu cầu giao nhanh"
+    notes: "Khách yêu cầu giao nhanh",
   },
   {
     id: "ORD-004",
@@ -514,8 +623,9 @@ export const sampleOrders: Order[] = [
         name: "Dưa lưới tròn ruột cam",
         price: 53300,
         quantity: 2,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
-        unit: "1.3kg"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
+        unit: "1.3kg",
       },
       {
         id: "item-7",
@@ -523,14 +633,15 @@ export const sampleOrders: Order[] = [
         name: "Nước mắm Phú Quốc",
         price: 40000,
         quantity: 1,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
-        unit: "500ml"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
+        unit: "500ml",
+      },
     ],
     total_amount: 146600,
     status: "cancelled",
     created_at: "2024-01-15T08:20:00Z",
-    notes: "Khách hủy do thay đổi ý định"
+    notes: "Khách hủy do thay đổi ý định",
   },
   {
     id: "03CD2510639147854C4",
@@ -544,13 +655,14 @@ export const sampleOrders: Order[] = [
         name: "Bánh quy Hương Phèn",
         price: 40000,
         quantity: 1,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/3438/332313/bhx/banh-quy-huong-phen-cosy-100g-202407230903180968.jpg",
-        unit: "100g"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/3438/332313/bhx/banh-quy-huong-phen-cosy-100g-202407230903180968.jpg",
+        unit: "100g",
+      },
     ],
     total_amount: 40000,
     status: "delivered",
-    created_at: "2024-10-01T10:00:00Z"
+    created_at: "2024-10-01T10:00:00Z",
   },
   {
     id: "03CD2510639082038B4",
@@ -564,8 +676,9 @@ export const sampleOrders: Order[] = [
         name: "Má đùi gà cắt sẵn",
         price: 41582,
         quantity: 3,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8785/306132/bhx/ma-dui-ga-khay-500g-3-5-mieng-202411141059213688.jpg",
-        unit: "500g"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8785/306132/bhx/ma-dui-ga-khay-500g-3-5-mieng-202411141059213688.jpg",
+        unit: "500g",
       },
       {
         id: "item-10",
@@ -573,8 +686,9 @@ export const sampleOrders: Order[] = [
         name: "Sườn cốt lết C.P",
         price: 37530,
         quantity: 2,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8781/306155/bhx/suon-cot-let-cp-khay-300g-202409161023285467.jpg",
-        unit: "300g"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8781/306155/bhx/suon-cot-let-cp-khay-300g-202409161023285467.jpg",
+        unit: "300g",
       },
       {
         id: "item-11",
@@ -582,8 +696,9 @@ export const sampleOrders: Order[] = [
         name: "Thịt heo xay C.P",
         price: 35600,
         quantity: 2,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8781/306066/bhx/thit-heo-xay-cp-khay-300g-202409161009478669.jpg",
-        unit: "300g"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8781/306066/bhx/thit-heo-xay-cp-khay-300g-202409161009478669.jpg",
+        unit: "300g",
       },
       {
         id: "item-12",
@@ -591,13 +706,14 @@ export const sampleOrders: Order[] = [
         name: "Ba chỉ bò Úc",
         price: 89000,
         quantity: 2,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8782/306143/bhx/ba-chi-bo-uc-khay-300g-202410161101541773.jpg",
-        unit: "300g"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8782/306143/bhx/ba-chi-bo-uc-khay-300g-202410161101541773.jpg",
+        unit: "300g",
+      },
     ],
     total_amount: 232090,
     status: "delivered",
-    created_at: "2024-10-01T10:00:00Z"
+    created_at: "2024-10-01T10:00:00Z",
   },
   {
     id: "ORD-006",
@@ -611,8 +727,9 @@ export const sampleOrders: Order[] = [
         name: "Quýt Úc",
         price: 69000,
         quantity: 2,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8788/329280/bhx/quyt-uc-tui-800g-6-8-trai-202410020919403536.jpg",
-        unit: "800g"
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8788/329280/bhx/quyt-uc-tui-800g-6-8-trai-202410020919403536.jpg",
+        unit: "800g",
       },
       {
         id: "item-14",
@@ -620,12 +737,13 @@ export const sampleOrders: Order[] = [
         name: "Chuối sứ",
         price: 18800,
         quantity: 3,
-        image: "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8788/272137/bhx/chuoi-su-tui-1kg-202410020916374743.jpg",
-        unit: "1kg"
-      }
+        image:
+          "https://cdnv2.tgdd.vn/bhx-static/bhx/Products/Images/8788/272137/bhx/chuoi-su-tui-1kg-202410020916374743.jpg",
+        unit: "1kg",
+      },
     ],
     total_amount: 194400,
     status: "delivered",
-    created_at: "2024-01-14T16:30:00Z"
-  }
+    created_at: "2024-01-14T16:30:00Z",
+  },
 ];

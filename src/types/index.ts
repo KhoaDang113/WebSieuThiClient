@@ -9,3 +9,4 @@ export * from "./filter.type";
 export * from "./cart.type";
 export * from "./order";
 export * from "./review.type";
+export * from "./chat.type";

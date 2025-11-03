@@ -2,6 +2,8 @@ import { CategorySidebar } from "@/components/category/CategorySideBar";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar/Navbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { ChatWidget } from "@/components/chat/ChatWidget";
+
 import { Outlet } from "react-router-dom";
 
 export default function MainLayout() {
@@ -16,6 +18,8 @@ export default function MainLayout() {
           <Footer />
         </main>
       </div>
+      {/* Chat Widget - Fixed position at bottom right */}
+      <ChatWidget />
     </div>
   );
 }
