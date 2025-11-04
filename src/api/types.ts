@@ -29,15 +29,20 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
+  success: boolean;
+  accessToken?: string;
+  token?: string; // Backend trả về "token" thay vì "accessToken" trong register
+  user?: {
     id: string;
-    phoneNumber: string;
     name?: string;
     email?: string;
-    role: string;
+    phone?: string;
+    phoneNumber?: string; // Để backward compatible
+    role?: string;
+    isPhoneVerified?: boolean;
   };
+  requiresEmailVerification?: boolean;
+  message?: string;
 }
 
 export interface RegisterRequest {
@@ -72,13 +77,20 @@ export interface VerifyOtpRequest {
 // User Types
 export interface User {
   id: string;
-  phoneNumber: string;
+  _id?: string; // Backend MongoDB ID
   name?: string;
   email?: string;
-  role: string;
-  avatarUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  phone?: string;
+  phoneNumber?: string; // Để backward compatible
+  gender?: "male" | "female";
+  role?: string;
+  avatar?: string; // Backend field name
+  avatarUrl?: string; // Alias for backward compatibility
+  isVerified?: boolean;
+  isPhoneVerified?: boolean;
+  emailVerifiedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Product Types (mở rộng từ types hiện tại)

@@ -15,10 +15,13 @@ import ShoppingCart from "@/pages/cart";
 import ProductDetail from "@/pages/products-detail";
 import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign_up";
+import VerifyEmailPage from "@/pages/verify-email";
+import ForgotPasswordPage from "@/pages/forgot-password";
 import OrdersPage from "@/pages/order-management";
 import CustomerOrdersPage from "@/pages/customer-orders";
 import KhuyenMaiPage from "@/pages/sale";
 import AccountPage from "@/pages/account";
+import { ProtectedRoute, PublicRoute, AdminRoute, StaffRoute } from "@/components/auth/ProtectedRoute";
 
 const router: RouteObject[] = [
   // User
@@ -36,7 +39,11 @@ const router: RouteObject[] = [
       },
       {
         path: "/cart",
-        element: <ShoppingCart />,
+        element: (
+          <ProtectedRoute>
+            <ShoppingCart />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/products-detail/:id",
@@ -44,15 +51,39 @@ const router: RouteObject[] = [
       },
       {
         path: "/login",
-        element: <LoginPage />,
+        element: (
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        ),
       },
       {
         path: "/sign_up",
-        element: <SignUpPage />,
+        element: (
+          <PublicRoute>
+            <SignUpPage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: "/verify-email",
+        element: <VerifyEmailPage />,
+      },
+      {
+        path: "/forgot-password",
+        element: (
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        ),
       },
       {
         path: "/my-orders",
-        element: <CustomerOrdersPage />,
+        element: (
+          <ProtectedRoute>
+            <CustomerOrdersPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/khuyen-mai",
@@ -60,7 +91,11 @@ const router: RouteObject[] = [
       },
       {
         path: "/account",
-        element: <AccountPage />,
+        element: (
+          <ProtectedRoute>
+            <AccountPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
@@ -68,7 +103,11 @@ const router: RouteObject[] = [
   // Admin
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <AdminRoute>
+        <AdminLayout />
+      </AdminRoute>
+    ),
     children: [
       {
         index: true,
@@ -104,7 +143,11 @@ const router: RouteObject[] = [
   // Staff
   {
     path: "/staff",
-    element: <StaffLayout />,
+    element: (
+      <StaffRoute>
+        <StaffLayout />
+      </StaffRoute>
+    ),
     children: [
       {
         path: "/staff/orders",

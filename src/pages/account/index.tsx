@@ -2,12 +2,10 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Camera, User as UserIcon } from "lucide-react";
-// import authService from "@/api/services/authService"; // Tạm thời comment khi chưa có BE
-import { useAuth } from "@/api/hooks/useAuth";
+import userService from "@/api/services/userService";
 import type { ErrorResponse } from "@/api/types";
 
 export default function AccountPage() {
-  const { getCurrentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -27,59 +25,40 @@ export default function AccountPage() {
     const loadUserData = async () => {
       try {
         setLoading(true);
-        const user = getCurrentUser();
         
-        if (user) {
-          // Type assertion an toàn hơn cho gender
-          const userWithGender = user as typeof user & { gender?: "male" | "female" };
-          setFormData({
-            name: user.name || "",
-            phoneNumber: user.phoneNumber || "",
-            email: user.email || "",
-            gender: userWithGender.gender || "male",
-          });
-          
-          if (user.avatarUrl) {
-            setAvatarPreview(user.avatarUrl);
-          }
+        // Lấy profile từ API
+        const user = await userService.getProfile();
+        
+        // Debug: Log toàn bộ user object để xem backend trả về gì
+        console.log("📌 User data from API:", user);
+        console.log("📌 Avatar URL:", user.avatarUrl);
+        
+        setFormData({
+          name: user.name || "",
+          phoneNumber: user.phone || user.phoneNumber || "",
+          email: user.email || "",
+          gender: user.gender || "male",
+        });
+        
+        // Set avatar nếu có (backend dùng field "avatar", không phải "avatarUrl")
+        const avatarUrl = user.avatar || user.avatarUrl;
+        if (avatarUrl) {
+          console.log("✅ Setting avatar preview:", avatarUrl);
+          setAvatarPreview(avatarUrl);
         } else {
-          // Dữ liệu mẫu để xem giao diện (chưa kết nối BE)
-          const mockUserData = {
-            name: "Lê Ngọc Linh",
-            phoneNumber: "0825759123",
-            email: "ngoclinhh1202@gmail.com",
-            gender: "male" as "male" | "female",
-            avatarUrl: null as string | null,
-          };
-          
-          setFormData({
-            name: mockUserData.name,
-            phoneNumber: mockUserData.phoneNumber,
-            email: mockUserData.email,
-            gender: mockUserData.gender,
-          });
-          
-          if (mockUserData.avatarUrl) {
-            setAvatarPreview(mockUserData.avatarUrl);
-          }
+          console.log("⚠️ No avatar in user data");
         }
       } catch (err) {
-        console.error("Error loading user data:", err);
-        // Vẫn hiển thị dữ liệu mẫu nếu có lỗi
-        setFormData({
-          name: "Lê Ngọc Linh",
-          phoneNumber: "0825759123",
-          email: "ngoclinhh1202@gmail.com",
-          gender: "male",
-        });
+        console.error("❌ Error loading user data:", err);
+        const errorObj = err as ErrorResponse;
+        setError(errorObj.response?.data?.message || "Không thể tải thông tin user");
       } finally {
         setLoading(false);
       }
     };
     
     loadUserData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Chỉ chạy một lần khi mount
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -143,50 +122,25 @@ export default function AccountPage() {
     try {
       setSaving(true);
       
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Update profile với userService
+      const updatedUser = await userService.updateProfile(
+        {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phoneNumber.trim(),
+          gender: formData.gender,
+        },
+        avatarFile || undefined
+      );
       
-      // TẠM THỜI: Chỉ hiển thị success message, không gọi API thực sự
-      // TODO: Bật lại khi có kết nối BE
-      /*
-      // Upload avatar first if changed
-      let avatarUrl = avatarPreview;
-      if (avatarFile) {
-        const uploadResult = await authService.uploadAvatar(avatarFile);
-        avatarUrl = uploadResult.avatarUrl;
+      // Cập nhật UI (backend trả về field "avatar")
+      const newAvatar = updatedUser.avatar || updatedUser.avatarUrl;
+      if (newAvatar) {
+        setAvatarPreview(newAvatar);
       }
       
-      // Update profile
-      const updatedUser = await authService.updateProfile({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        gender: formData.gender,
-        ...(avatarUrl && { avatarUrl }),
-      });
-      
-      // Update localStorage
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      */
-      
-      // Cập nhật localStorage với dữ liệu mock
-      if (avatarFile) {
-        // Giữ preview local, không upload thực sự
-      }
-      
-      const mockUpdatedUser = {
-        id: "1",
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        gender: formData.gender,
-        avatarUrl: avatarPreview,
-        role: "user",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      localStorage.setItem("user", JSON.stringify(mockUpdatedUser));
+      // Trigger storage event để navbar cập nhật
+      window.dispatchEvent(new Event('storage'));
       
       setSuccess("Lưu thông tin thành công!");
       setAvatarFile(null);
@@ -195,9 +149,9 @@ export default function AccountPage() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Error updating profile:", err);
-      const error = err as ErrorResponse;
+      const errorObj = err as ErrorResponse;
       const errorMessage =
-        error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại";
+        errorObj.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại";
       setError(errorMessage);
     } finally {
       setSaving(false);

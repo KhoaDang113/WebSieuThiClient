@@ -1,6 +1,6 @@
-import { ChevronDown, MapPin, Search, ShoppingCart, User, Menu, X, Clock, Package } from "lucide-react";
+import { ChevronDown, MapPin, Search, ShoppingCart, User, Menu, X, Clock, Package, LogOut } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { CategorySidebar } from "@/components/category/CategorySideBar";
@@ -8,12 +8,39 @@ import { useCart } from "@/components/cart/CartContext";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useAddress } from "@/contexts/AddressContext";
 import { AddressModal } from "@/components/address/AddressModal";
+import authService from "@/api/services/authService";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
+  const navigate = useNavigate();
   const { totalItems } = useCart();
   const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory();
   const { address, setAddress, getAddressString } = useAddress();
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  
+  // Check authentication
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const isAuth = authService.isAuthenticated();
+      const user = authService.getCurrentUser();
+      setIsAuthenticated(isAuth);
+      setCurrentUser(user);
+    };
+
+    checkAuth();
+    // Re-check on storage change (when user logs in/out in another tab)
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
   
   const hints = useMemo(
     () => [
@@ -214,20 +241,72 @@ export function Navbar() {
                 <ChevronDown className="ml-2 shrink-0 h-4 w-4" />
               </div>
 
-              <Link
-                to="/my-orders"
-                className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors"
-              >
-                <Package className="w-5 h-5 text-white" />
-                <span className="whitespace-nowrap text-white">Đơn hàng</span>
-              </Link>
-              <Link
-                to="/login"
-                className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
-              >
-                <User className="w-5 h-5 text-white" />
-                <span className="whitespace-nowrap text-white">Đăng nhập</span>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/my-orders"
+                    className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors"
+                  >
+                    <Package className="w-5 h-5 text-white" />
+                    <span className="whitespace-nowrap text-white">Đơn hàng</span>
+                  </Link>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors">
+                        {(currentUser?.avatar || currentUser?.avatarUrl) ? (
+                          <img 
+                            src={currentUser.avatar || currentUser.avatarUrl} 
+                            alt="Avatar" 
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-5 h-5 text-white" />
+                        )}
+                        <span className="whitespace-nowrap text-white">
+                          {currentUser?.name || "Tài khoản"}
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-white" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem asChild>
+                        <Link to="/account" className="cursor-pointer">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Thông tin cá nhân</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/my-orders" className="cursor-pointer">
+                          <Package className="mr-2 h-4 w-4" />
+                          <span>Đơn hàng của tôi</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={async () => {
+                          await authService.logout();
+                          setIsAuthenticated(false);
+                          setCurrentUser(null);
+                          navigate('/');
+                        }}
+                        className="cursor-pointer text-red-600"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Đăng xuất</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
+                >
+                  <User className="w-5 h-5 text-white" />
+                  <span className="whitespace-nowrap text-white">Đăng nhập</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>

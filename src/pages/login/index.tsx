@@ -1,29 +1,35 @@
 import type React from "react";
 import { useState } from "react";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import authService from "@/api/services/authService";
 
 export default function Login() {
-  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(
+    location.state?.message || ""
+  );
 
-  const validateEmailOrPhone = (value: string) => {
+  const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[0-9]{10,11}$/;
-    return emailRegex.test(value) || phoneRegex.test(value);
+    return emailRegex.test(value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     // Validation
-    if (!validateEmailOrPhone(emailOrPhone)) {
-      setError("Vui lòng nhập email hoặc số điện thoại hợp lệ");
+    if (!validateEmail(email)) {
+      setError("Vui lòng nhập email hợp lệ");
       return;
     }
 
@@ -35,33 +41,41 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // TODO: Thay thế bằng API call thực tế
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ emailOrPhone, password, rememberMe })
-      // });
-      // const data = await response.json();
+      const response = await authService.loginEmail(email, password);
       
-      // Simulate API call - XÓA SAU KHI CÓ API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Trường hợp cần verify email
+      if (response.requiresEmailVerification) {
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
       
-      // TODO: Xử lý response từ API
-      // if (data.success) {
-      //   // Lưu token, redirect, etc.
-      // } else {
-      //   setError(data.message);
-      // }
-      
-      console.log("Login attempt:", { emailOrPhone, rememberMe });
-    } catch {
-      setError("Có lỗi xảy ra, vui lòng thử lại");
+      // Đăng nhập thành công
+      if (response.success && (response.accessToken || response.token)) {
+        // Token đã được lưu trong service
+        // Trigger storage event để navbar cập nhật
+        window.dispatchEvent(new Event('storage'));
+        
+        // Chuyển đến trang home hoặc trang trước đó
+        const from = (location.state as any)?.from?.pathname || "/";
+        navigate(from, { replace: true });
+      } else {
+        setError(response.message || "Đăng nhập thất bại");
+      }
+    } catch (err: any) {
+      console.error("Login error:", err);
+      const errorMessage = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const isFormValid = emailOrPhone && password.length >= 8;
+  const handleGoogleLogin = () => {
+    // Redirect đến Google OAuth
+    authService.loginWithGoogle();
+  };
+
+  const isFormValid = email && password.length >= 8;
 
   return (
     <div className="min-h-[600px] flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -87,23 +101,30 @@ export default function Login() {
 
           {/* Form */}
           <div className="p-8">
+            {successMessage && (
+              <div className="mb-4 bg-green-50 border-l-4 border-green-500 p-3 rounded-lg animate-in slide-in-from-top" role="alert">
+                <p className="text-sm text-green-700 font-medium">{successMessage}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label htmlFor="emailOrPhone" className="block text-sm font-medium text-gray-700">
-                  Email hoặc Số điện thoại
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                   </div>
                   <input
-                    id="emailOrPhone"
-                    type="text"
-                    placeholder="Nhập email hoặc số điện thoại"
-                    value={emailOrPhone}
-                    onChange={(e) => setEmailOrPhone(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="Nhập email của bạn"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="h-12 w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200"
                     aria-invalid={error ? "true" : "false"}
+                    required
                   />
                 </div>
               </div>
@@ -170,12 +191,12 @@ export default function Login() {
                     Ghi nhớ đăng nhập
                   </label>
                 </div>
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password"
                   className="text-sm text-green-600 hover:text-green-700 font-medium hover:underline transition-colors"
                 >
                   Quên mật khẩu?
-                </button>
+                </Link>
               </div>
 
               <button
@@ -212,13 +233,9 @@ export default function Login() {
               <div className="mt-6 flex justify-center">
                 <button
                   type="button"
+                  onClick={handleGoogleLogin}
                   className="group flex h-12 w-12 items-center justify-center rounded-full bg-white border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 p-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
                   aria-label="Đăng nhập với Google"
-                  // TODO: Implement Google OAuth
-                  onClick={() => {
-                    // TODO: Xử lý đăng nhập Google
-                    // window.location.href = '/api/auth/google';
-                  }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

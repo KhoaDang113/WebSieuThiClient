@@ -2,13 +2,17 @@ import api from "../axiosConfig";
 import type { LoginResponse, ApiResponse, User } from "../types";
 
 /**
- * Auth Service - Xử lý các API liên quan đến authentication (khớp với NestJS backend)
+ * Auth Service - Xử lý các API liên quan đến authentication
+ * Chỉ hỗ trợ đăng nhập/đăng ký bằng Email và Google
  */
 class AuthService {
   private readonly basePath = "/auth";
 
+  // ==================== ĐĂNG KÝ ====================
+
   /**
-   * Đăng ký bằng email
+   * Đăng ký bằng email và password
+   * POST /auth/register-email
    */
   async registerEmail(
     email: string,
@@ -17,13 +21,24 @@ class AuthService {
   ): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>(
       `${this.basePath}/register-email`,
-      { email, password, name }
+      { email, password, name },
+      { withCredentials: true } // Để nhận cookies
     );
+    
+    // Lưu token vào localStorage
+    if (response.data.accessToken) {
+      localStorage.setItem("accessToken", response.data.accessToken);
+    }
+    if (response.data.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   }
 
   /**
-   * Xác thực email OTP
+   * Xác thực email OTP (sau khi đăng ký)
+   * POST /auth/verify-email
    */
   async verifyEmail(email: string, code: string): Promise<ApiResponse> {
     const response = await api.post<ApiResponse>(
@@ -35,6 +50,7 @@ class AuthService {
 
   /**
    * Gửi lại email verification
+   * POST /auth/resend-email-verification
    */
   async resendEmailVerification(email: string): Promise<ApiResponse> {
     const response = await api.post<ApiResponse>(
@@ -44,127 +60,115 @@ class AuthService {
     return response.data;
   }
 
-  /**
-   * Đăng ký bằng số điện thoại
-   */
-  async registerPhone(
-    phone: string,
-    name?: string
-  ): Promise<{ success: boolean; message: string; userId: string }> {
-    const response = await api.post(`${this.basePath}/register-phone`, {
-      phone,
-      name,
-    });
-    return response.data;
-  }
+  // ==================== ĐĂNG NHẬP ====================
 
   /**
-   * Xác thực phone code (sau khi register)
-   */
-  async verifyPhoneCode(userId: string, code: string): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>(
-      `${this.basePath}/verify-code`,
-      { userId, code }
-    );
-    return response.data;
-  }
-
-  /**
-   * Đăng nhập bằng email
+   * Đăng nhập bằng email và password
+   * POST /auth/login-email
    */
   async loginEmail(email: string, password: string): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>(
       `${this.basePath}/login-email`,
-      { email, password }
+      { email, password },
+      { withCredentials: true } // Để nhận cookies
     );
+    
+    // Xử lý trường hợp cần verify email
+    if (response.data.requiresEmailVerification) {
+      return response.data;
+    }
+    
+    // Lưu token vào localStorage
+    if (response.data.accessToken) {
+      localStorage.setItem("accessToken", response.data.accessToken);
+    }
+    if (response.data.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   }
 
   /**
-   * Đăng nhập bằng số điện thoại
+   * Đăng nhập bằng Google (redirect)
+   * Chuyển hướng đến trang Google OAuth
    */
-  async loginPhone(phone: string): Promise<{
-    success: boolean;
-    message: string;
-    userId: string;
-  }> {
-    const response = await api.post(`${this.basePath}/login-phone`, { phone });
-    return response.data;
+  loginWithGoogle(): void {
+    const baseURL = api.defaults.baseURL || "http://localhost:3000/api";
+    window.location.href = `${baseURL}${this.basePath}/google`;
   }
 
-  /**
-   * Xác thực SMS khi login
-   */
-  async verifyLoginSms(userId: string, code: string): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>(
-      `${this.basePath}/verify-login-sms`,
-      { userId, code }
-    );
-    return response.data;
-  }
+  // ==================== TOKEN & SESSION ====================
 
   /**
-   * Refresh token
+   * Refresh access token
+   * POST /auth/refresh-token
+   * Note: Backend sử dụng cookie refreshToken
    */
   async refreshToken(): Promise<{ success: boolean; accessToken: string }> {
     const response = await api.post<{ success: boolean; accessToken: string }>(
-      `${this.basePath}/refresh-token`
+      `${this.basePath}/refresh-token`,
+      {},
+      { withCredentials: true } // Gửi cookies
     );
+    
+    // Lưu token mới
+    if (response.data.accessToken) {
+      localStorage.setItem("accessToken", response.data.accessToken);
+    }
+    
     return response.data;
   }
 
   /**
-   * Đăng xuất
+   * Đăng xuất khỏi thiết bị hiện tại
+   * POST /auth/logout
    */
   async logout(): Promise<void> {
-    await api.post(`${this.basePath}/logout`);
-
-    // Xóa token khỏi localStorage
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+    try {
+      await api.post(`${this.basePath}/logout`, {}, { withCredentials: true });
+    } finally {
+      // Luôn xóa token khỏi localStorage dù API có lỗi
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+    }
   }
 
   /**
    * Đăng xuất khỏi tất cả thiết bị
+   * POST /auth/logout-all
+   * Yêu cầu: JWT token và email verified
    */
   async logoutAll(): Promise<ApiResponse> {
-    const response = await api.post<ApiResponse>(`${this.basePath}/logout-all`);
-
-    // Xóa token khỏi localStorage
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-
-    return response.data;
+    try {
+      const response = await api.post<ApiResponse>(
+        `${this.basePath}/logout-all`,
+        {},
+        { withCredentials: true }
+      );
+      return response.data;
+    } finally {
+      // Xóa token khỏi localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+    }
   }
+
+  // ==================== USER INFO ====================
 
   /**
    * Lấy thông tin user hiện tại
+   * GET /auth/me
+   * Yêu cầu: JWT token và email verified
    */
   async getMe(): Promise<User> {
     const response = await api.get<{ success: boolean; user: User }>(
       `${this.basePath}/me`
     );
-    return response.data.user;
-  }
-
-  /**
-   * Cập nhật thông tin profile
-   */
-  async updateProfile(data: {
-    name?: string;
-    email?: string;
-    phoneNumber?: string;
-    gender?: "male" | "female";
-    avatarUrl?: string;
-  }): Promise<User> {
-    const response = await api.patch<{ success: boolean; user: User }>(
-      `${this.basePath}/profile`,
-      data
-    );
     
-    // Cập nhật user trong localStorage
+    // Cập nhật localStorage
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
@@ -172,30 +176,99 @@ class AuthService {
     return response.data.user;
   }
 
-  /**
-   * Upload avatar
-   */
-  async uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
-    const formData = new FormData();
-    formData.append("avatar", file);
+  // ==================== PASSWORD MANAGEMENT ====================
 
-    const response = await api.post<{ success: boolean; avatarUrl: string }>(
-      `${this.basePath}/upload-avatar`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+  /**
+   * Gửi OTP để reset password
+   * POST /auth/forgot-password
+   */
+  async forgotPassword(email: string): Promise<ApiResponse> {
+    const response = await api.post<ApiResponse>(
+      `${this.basePath}/forgot-password`,
+      { email }
     );
-    return { avatarUrl: response.data.avatarUrl };
+    return response.data;
   }
 
   /**
-   * Đăng nhập với Google (mở window)
+   * Xác thực OTP reset password
+   * POST /auth/verify-reset-password
    */
-  loginWithGoogle(): void {
-    window.location.href = `${api.defaults.baseURL}${this.basePath}/google`;
+  async verifyResetPasswordOTP(
+    email: string,
+    code: string
+  ): Promise<ApiResponse> {
+    const response = await api.post<ApiResponse>(
+      `${this.basePath}/verify-reset-password`,
+      { email, code },
+      { withCredentials: true } // Để nhận resetToken cookie
+    );
+    return response.data;
+  }
+
+  /**
+   * Reset password với token
+   * POST /auth/reset-password
+   */
+  async resetPassword(
+    email: string,
+    newPassword: string,
+    resetToken?: string
+  ): Promise<ApiResponse> {
+    const response = await api.post<ApiResponse>(
+      `${this.basePath}/reset-password`,
+      { email, newPassword, resetToken },
+      { withCredentials: true } // Gửi resetToken từ cookie
+    );
+    return response.data;
+  }
+
+  /**
+   * Đổi password (khi đã đăng nhập)
+   * PUT /auth/change-password
+   * Yêu cầu: JWT token
+   */
+  async changePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiResponse> {
+    const response = await api.put<ApiResponse>(
+      `${this.basePath}/change-password`,
+      { oldPassword, newPassword }
+    );
+    return response.data;
+  }
+
+  // ==================== HELPERS ====================
+
+  /**
+   * Kiểm tra user đã đăng nhập chưa
+   */
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem("accessToken");
+  }
+
+  /**
+   * Lấy user từ localStorage
+   */
+  getCurrentUser(): User | null {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return null;
+    
+    try {
+      return JSON.parse(userStr) as User;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Clear tất cả auth data
+   */
+  clearAuthData(): void {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
   }
 }
 

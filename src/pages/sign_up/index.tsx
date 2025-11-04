@@ -1,27 +1,29 @@
 import type React from "react";
 import { useState } from "react";
-import { Eye, EyeOff, CheckCircle2, User, Lock, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Eye, EyeOff, User, Lock, ShieldCheck } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import authService from "@/api/services/authService";
 
 export default function SignUp() {
-  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<{
-    emailOrPhone?: string;
+    name?: string;
+    email?: string;
     password?: string;
     confirmPassword?: string;
   }>({});
 
-  const validateEmailOrPhone = (value: string) => {
+  const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[0-9]{10,11}$/;
-    return emailRegex.test(value) || phoneRegex.test(value);
+    return emailRegex.test(value);
   };
 
   const validatePassword = (value: string) => {
@@ -36,8 +38,12 @@ export default function SignUp() {
     const newErrors: typeof errors = {};
 
     // Validation
-    if (!validateEmailOrPhone(emailOrPhone)) {
-      newErrors.emailOrPhone = "Email hoặc số điện thoại không hợp lệ";
+    if (!name.trim()) {
+      newErrors.name = "Vui lòng nhập họ và tên";
+    }
+
+    if (!validateEmail(email)) {
+      newErrors.email = "Email không hợp lệ";
     }
 
     if (!validatePassword(password)) {
@@ -54,106 +60,37 @@ export default function SignUp() {
       setIsLoading(true);
       
       try {
-        // TODO: Thay thế bằng API call thực tế
-        // const response = await fetch('/api/auth/register', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ emailOrPhone, password })
-        // });
-        // const data = await response.json();
+        const response = await authService.registerEmail(email, password, name);
         
-        // Simulate API call - XÓA SAU KHI CÓ API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // TODO: Xử lý response từ API
-        // if (data.success) {
-        //   setSuccess(true);
-        //   // Có thể redirect hoặc gửi email xác thực
-        // } else {
-        //   setErrors({ emailOrPhone: data.message });
-        // }
-        
-        setSuccess(true);
-        console.log("Sign up successful:", { emailOrPhone });
-      } catch {
-        setErrors({ emailOrPhone: "Có lỗi xảy ra, vui lòng thử lại" });
+        if (response.success) {
+          // Chuyển đến trang verify email
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        } else {
+          setErrors({ email: response.message || "Đăng ký thất bại" });
+        }
+      } catch (err: any) {
+        console.error("Register error:", err);
+        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại";
+        setErrors({ email: errorMessage });
       } finally {
         setIsLoading(false);
       }
     }
   };
 
+  const handleGoogleSignUp = () => {
+    // Redirect đến Google OAuth
+    authService.loginWithGoogle();
+  };
+
   const isFormValid =
-    emailOrPhone &&
+    name.trim() &&
+    email &&
     password.length >= 8 &&
     confirmPassword &&
     password === confirmPassword &&
     agreeToTerms;
 
-  if (success) {
-    return (
-      <div className="min-h-[600px] flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full">
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
-            {/* Header với gradient */}
-            <div className="bg-gradient-to-r from-[#007E42] to-[#00A854] p-5 text-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-white/30 rounded-2xl blur-lg"></div>
-                  <img
-                    src="https://media.istockphoto.com/id/2222830929/vi/anh/imge-c%E1%BB%A7a-nh%E1%BB%AFng-qu%E1%BA%A3-anh-%C4%91%C3%A0o-%C4%91%E1%BB%8F-t%C6%B0%C6%A1i-v%E1%BB%9Bi-th%C3%A2n-tr%C3%AAn-n%E1%BB%81n-%C4%91en-tr%C6%B0ng-b%C3%A0y-tr%C3%A1i-c%C3%A2y-m%C3%B9a-h%C3%A8-ngon-ng%E1%BB%8Dt.jpg?s=1024x1024&w=is&k=20&c=mDQ4JJkQ_20VVdKyoAYxLJWZJWjZcldWrpjCP2DpOXU="
-                    alt="Chào Mừng Đến Với Cửa Hàng"
-                    className="relative w-14 h-14 rounded-2xl object-cover shadow-lg border-3 border-white/50"
-                  />
-                </div>
-                <div className="text-center">
-                  <h1 className="text-xl font-bold text-white mb-0.5">Chào Mừng Bạn!</h1>
-                  <p className="text-white/80 text-xs">Tài khoản đã được tạo thành công</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Success Content */}
-            <div className="p-8">
-              <div className="flex flex-col items-center justify-center py-6 space-y-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-green-100 rounded-full blur-xl opacity-50"></div>
-                  <div className="relative bg-gradient-to-r from-green-400 to-emerald-500 p-4 rounded-full">
-                    <CheckCircle2 className="h-12 w-12 text-white" />
-                  </div>
-                </div>
-                
-                <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    Đăng ký thành công!
-                  </h2>
-                  <p className="text-gray-600 text-sm max-w-sm">
-                    Vui lòng kiểm tra email/SMS để xác thực tài khoản của bạn và bắt đầu mua sắm.
-                  </p>
-                </div>
-
-                <div className="w-full space-y-3 pt-4">
-                  <Link
-                    to="/login"
-                    className="block w-full text-center bg-gradient-to-r from-[#007E42] to-[#00A854] hover:from-[#006B38] hover:to-[#008F48] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:-translate-y-0.5 transform"
-                  >
-                    Đăng nhập ngay
-                  </Link>
-                  
-                  <Link
-                    to="/"
-                    className="block w-full text-center border-2 border-gray-200 hover:border-green-500 text-gray-700 hover:text-green-600 font-medium py-3 px-6 rounded-xl transition-all duration-200 hover:bg-green-50"
-                  >
-                    Về trang chủ
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-[600px] flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -181,29 +118,59 @@ export default function SignUp() {
           <div className="p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label htmlFor="emailOrPhone" className="block text-sm font-medium text-gray-700">
-                  Email hoặc Số điện thoại
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Họ và tên
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                   </div>
                   <input
-                    id="emailOrPhone"
+                    id="name"
                     type="text"
-                    placeholder="Nhập email hoặc số điện thoại"
-                    value={emailOrPhone}
+                    placeholder="Nhập họ và tên của bạn"
+                    value={name}
                     onChange={(e) => {
-                      setEmailOrPhone(e.target.value);
-                      setErrors({ ...errors, emailOrPhone: undefined });
+                      setName(e.target.value);
+                      setErrors({ ...errors, name: undefined });
                     }}
                     className="h-12 w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200"
-                    aria-invalid={errors.emailOrPhone ? "true" : "false"}
+                    aria-invalid={errors.name ? "true" : "false"}
+                    required
                   />
                 </div>
-                {errors.emailOrPhone && (
+                {errors.name && (
                   <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded-lg animate-in slide-in-from-top" role="alert">
-                    <p className="text-sm text-red-700 font-medium">{errors.emailOrPhone}</p>
+                    <p className="text-sm text-red-700 font-medium">{errors.name}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Nhập email của bạn"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors({ ...errors, email: undefined });
+                    }}
+                    className="h-12 w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200"
+                    aria-invalid={errors.email ? "true" : "false"}
+                    required
+                  />
+                </div>
+                {errors.email && (
+                  <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded-lg animate-in slide-in-from-top" role="alert">
+                    <p className="text-sm text-red-700 font-medium">{errors.email}</p>
                   </div>
                 )}
               </div>
@@ -362,13 +329,9 @@ export default function SignUp() {
               <div className="mt-6 flex justify-center">
                 <button
                   type="button"
+                  onClick={handleGoogleSignUp}
                   className="group flex h-12 w-12 items-center justify-center rounded-full bg-white border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 p-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
                   aria-label="Đăng ký với Google"
-                  // TODO: Implement Google OAuth
-                  onClick={() => {
-                    // TODO: Xử lý đăng ký Google
-                    // window.location.href = '/api/auth/google';
-                  }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

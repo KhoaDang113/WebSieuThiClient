@@ -11,6 +11,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Quan trọng: Để gửi và nhận cookies từ backend
 });
 
 // Request interceptor
