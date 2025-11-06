@@ -35,6 +35,13 @@ interface AddressModalProps {
   currentAddress?: AddressData | null;
 }
 
+// Helper function để tạo timeout cho fetch
+const createTimeoutSignal = (timeoutMs: number): AbortSignal => {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+};
+
 export function AddressModal({ isOpen, onClose, onSave, currentAddress }: AddressModalProps) {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
@@ -91,12 +98,65 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
   const fetchProvinces = async () => {
     try {
       setLoading(true);
-      const response = await fetch("https://provinces.open-api.vn/api/p/");
-      const data = await response.json();
-      setProvinces(data);
+      
+      let response: Response;
+      let data: any;
+      
+      // Thử API chính trước
+      try {
+        response = await fetch("https://provinces.open-api.vn/api/p/", {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: createTimeoutSignal(10000), // Timeout 10 giây
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          if (Array.isArray(data)) {
+            setProvinces(data);
+            return;
+          }
+        }
+      } catch (primaryError: any) {
+        // Nếu API chính lỗi (timeout, network error, etc.), thử API dự phòng
+        console.warn("API chính không phản hồi, đang thử API dự phòng...", primaryError);
+      }
+      
+      // Thử API dự phòng
+      try {
+        response = await fetch("https://vapi.vnappmob.com/api/province/", {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: createTimeoutSignal(10000),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        data = await response.json();
+        
+        // Xử lý format từ vnappmob API
+        if (data.results && Array.isArray(data.results)) {
+          setProvinces(data.results.map((p: any) => ({
+            code: p.province_id,
+            name: p.province_name
+          })));
+        } else if (Array.isArray(data)) {
+          setProvinces(data);
+        } else {
+          throw new Error("Invalid data format");
+        }
+      } catch (fallbackError) {
+        throw new Error("Cả hai API đều không phản hồi");
+      }
     } catch (error) {
       console.error("Error fetching provinces:", error);
-      alert("Không thể tải danh sách tỉnh/thành phố");
+      alert("Không thể tải danh sách tỉnh/thành phố. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
     } finally {
       setLoading(false);
     }
@@ -105,9 +165,65 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
   const fetchDistricts = async (provinceCode: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
-      const data = await response.json();
-      setDistricts(data.districts || []);
+      
+      let response: Response;
+      let data: any;
+      
+      // Thử API chính trước
+      try {
+        response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: createTimeoutSignal(10000),
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          if (data.districts && Array.isArray(data.districts)) {
+            setDistricts(data.districts);
+            return;
+          } else if (Array.isArray(data)) {
+            setDistricts(data);
+            return;
+          }
+        }
+      } catch (primaryError: any) {
+        console.warn("API chính không phản hồi, đang thử API dự phòng...", primaryError);
+      }
+      
+      // Thử API dự phòng
+      try {
+        response = await fetch(`https://vapi.vnappmob.com/api/province/district/${provinceCode}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: createTimeoutSignal(10000),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        data = await response.json();
+        
+        // Xử lý format từ vnappmob API
+        if (data.results && Array.isArray(data.results)) {
+          setDistricts(data.results.map((d: any) => ({
+            code: d.district_id,
+            name: d.district_name
+          })));
+        } else if (Array.isArray(data)) {
+          setDistricts(data);
+        } else {
+          setDistricts([]);
+        }
+      } catch (fallbackError) {
+        console.error("Cả hai API đều không phản hồi cho districts");
+        setDistricts([]);
+      }
     } catch (error) {
       console.error("Error fetching districts:", error);
       setDistricts([]);
@@ -119,9 +235,65 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
   const fetchWards = async (districtCode: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
-      const data = await response.json();
-      setWards(data.wards || []);
+      
+      let response: Response;
+      let data: any;
+      
+      // Thử API chính trước
+      try {
+        response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: createTimeoutSignal(10000),
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          if (data.wards && Array.isArray(data.wards)) {
+            setWards(data.wards);
+            return;
+          } else if (Array.isArray(data)) {
+            setWards(data);
+            return;
+          }
+        }
+      } catch (primaryError: any) {
+        console.warn("API chính không phản hồi, đang thử API dự phòng...", primaryError);
+      }
+      
+      // Thử API dự phòng
+      try {
+        response = await fetch(`https://vapi.vnappmob.com/api/province/ward/${districtCode}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: createTimeoutSignal(10000),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        data = await response.json();
+        
+        // Xử lý format từ vnappmob API
+        if (data.results && Array.isArray(data.results)) {
+          setWards(data.results.map((w: any) => ({
+            code: w.ward_id,
+            name: w.ward_name
+          })));
+        } else if (Array.isArray(data)) {
+          setWards(data);
+        } else {
+          setWards([]);
+        }
+      } catch (fallbackError) {
+        console.error("Cả hai API đều không phản hồi cho wards");
+        setWards([]);
+      }
     } catch (error) {
       console.error("Error fetching wards:", error);
       setWards([]);

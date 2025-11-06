@@ -3,10 +3,12 @@ import { useState } from "react";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import authService from "@/api/services/authService";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const setUser = useAuthStore((state) => state.setUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -51,11 +53,23 @@ export default function Login() {
       
       // Đăng nhập thành công
       if (response.success && (response.accessToken || response.token)) {
-        // Token đã được lưu trong service
-        // Trigger storage event để navbar cập nhật
-        window.dispatchEvent(new Event('storage'));
+        // Token và user đã được lưu trong service
+        // Cập nhật Zustand store
+        if (response.user) {
+          setUser(response.user);
+          
+          // Redirect theo role
+          const userRole = response.user.role;
+          if (userRole === "staff") {
+            navigate("/staff/orders", { replace: true });
+            return;
+          } else if (userRole === "admin") {
+            navigate("/admin", { replace: true });
+            return;
+          }
+        }
         
-        // Chuyển đến trang home hoặc trang trước đó
+        // Chuyển đến trang home hoặc trang trước đó (cho user thường)
         const from = (location.state as any)?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {

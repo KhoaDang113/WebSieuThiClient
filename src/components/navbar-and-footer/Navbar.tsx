@@ -1,4 +1,4 @@
-import { ChevronDown, MapPin, Search, ShoppingCart, User, Menu, X, Clock, Package, LogOut } from "lucide-react";
+import { ChevronDown, MapPin, Search, ShoppingCart, User, Menu, X, Clock, Package, LogOut, Phone } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -6,16 +6,12 @@ import { Button } from "@/components/ui/button";
 import { CategorySidebar } from "@/components/category/CategorySideBar";
 import { useCart } from "@/components/cart/CartContext";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
-import { useAddress } from "@/contexts/AddressContext";
+import { useAddress } from "@/components/address/AddressContext";
 import { AddressModal } from "@/components/address/AddressModal";
 import authService from "@/api/services/authService";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/stores/authStore";
+import { DEFAULT_AVATAR_URL } from "@/lib/constants";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -24,23 +20,32 @@ export function Navbar() {
   const { address, setAddress, getAddressString } = useAddress();
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   
-  // Check authentication
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // Sử dụng Zustand store để quản lý auth state
+  const { user: currentUser, isAuthenticated, setUser, logout: clearAuth } = useAuthStore();
 
   useEffect(() => {
-    const checkAuth = () => {
+    // Kiểm tra và đồng bộ auth state khi component mount
+    const checkAuth = async () => {
       const isAuth = authService.isAuthenticated();
-      const user = authService.getCurrentUser();
-      setIsAuthenticated(isAuth);
-      setCurrentUser(user);
+      if (isAuth && !currentUser) {
+        // Nếu có token nhưng chưa có user trong store, lấy thông tin user
+        try {
+          const user = await authService.getMe();
+          setUser(user);
+        } catch (error) {
+          console.error('Failed to get user info:', error);
+          // Nếu lỗi, xóa auth data
+          clearAuth();
+          authService.clearAuthData();
+        }
+      } else if (!isAuth && currentUser) {
+        // Nếu không có token nhưng vẫn có user trong store, xóa user
+        clearAuth();
+      }
     };
 
     checkAuth();
-    // Re-check on storage change (when user logs in/out in another tab)
-    window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
-  }, []);
+  }, [currentUser, setUser, clearAuth]);
   
   const hints = useMemo(
     () => [
@@ -243,58 +248,104 @@ export function Navbar() {
 
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/my-orders"
-                    className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors"
-                  >
-                    <Package className="w-5 h-5 text-white" />
-                    <span className="whitespace-nowrap text-white">Đơn hàng</span>
-                  </Link>
+
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors">
-                        {(currentUser?.avatar || currentUser?.avatarUrl) ? (
-                          <img 
-                            src={currentUser.avatar || currentUser.avatarUrl} 
-                            alt="Avatar" 
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-5 h-5 text-white" />
-                        )}
+                        <img 
+                          src={currentUser?.avatar || currentUser?.avatarUrl || DEFAULT_AVATAR_URL} 
+                          alt="Avatar" 
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
                         <span className="whitespace-nowrap text-white">
                           {currentUser?.name || "Tài khoản"}
                         </span>
                         <ChevronDown className="w-4 h-4 text-white" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem asChild>
-                        <Link to="/account" className="cursor-pointer">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Thông tin cá nhân</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/my-orders" className="cursor-pointer">
-                          <Package className="mr-2 h-4 w-4" />
-                          <span>Đơn hàng của tôi</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          await authService.logout();
-                          setIsAuthenticated(false);
-                          setCurrentUser(null);
-                          navigate('/');
-                        }}
-                        className="cursor-pointer text-red-600"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Đăng xuất</span>
-                      </DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="w-72 p-0">
+                      {/* Header */}
+                      <div className="px-4 py-3 border-b bg-gray-50">
+                        <div className="font-semibold text-sm text-gray-900">
+                          {currentUser?.gender === 'female' ? 'Chị' : 'Anh'} {currentUser?.name || 'Khách hàng'}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          CHƯA CÓ HẠNG 0 điểm
+                        </div>
+                      </div>
+
+                      {/* Thông tin cá nhân */}
+                      <div className="px-2 py-2 border-b">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2 px-2">
+                          Thông tin cá nhân
+                        </div>
+                        <DropdownMenuItem asChild className="px-4">
+                          <Link to="/account" className="cursor-pointer w-full">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Thông tin cá nhân</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setIsAddressModalOpen(true)}
+                          className="cursor-pointer px-4"
+                        >
+                          <MapPin className="mr-2 h-4 w-4" />
+                          <span>Địa chỉ nhận hàng {address ? '(1)' : '(0)'}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="px-4">
+                          <Link to="/my-orders" className="cursor-pointer w-full">
+                            <Package className="mr-2 h-4 w-4" />
+                            <span>Đơn hàng từng mua</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </div>
+
+                      {/* Hỗ trợ khách hàng */}
+                      <div className="px-2 py-2 border-b">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2 px-2">
+                          Hỗ trợ khách hàng
+                        </div>
+                        <DropdownMenuItem 
+                          asChild
+                          className="cursor-pointer px-4"
+                        >
+                          <a href="tel:19001908" className="flex items-center w-full">
+                            <Phone className="mr-2 h-4 w-4 shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="text-sm">Tư vấn: 0386.740.043</span>
+                              <span className="text-xs text-gray-500">(08:00 - 22:00) Miễn phí</span>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          asChild
+                          className="cursor-pointer px-4"
+                        >
+                          <a href="tel:18001067" className="flex items-center w-full">
+                            <Phone className="mr-2 h-4 w-4 shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="text-sm">Khiếu nại: 0386.740.043</span>
+                              <span className="text-xs text-gray-500">(08:00 - 22:00) Miễn phí</span>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                      </div>
+
+                      {/* Đăng xuất */}
+                      <div className="px-2 py-1">
+                        <DropdownMenuItem 
+                          onClick={async () => {
+                            await authService.logout();
+                            clearAuth();
+                            navigate('/');
+                          }}
+                          className="cursor-pointer text-red-600 px-4"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Đăng xuất</span>
+                        </DropdownMenuItem>
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>

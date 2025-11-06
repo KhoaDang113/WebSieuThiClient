@@ -17,6 +17,7 @@ import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign_up";
 import VerifyEmailPage from "@/pages/verify-email";
 import ForgotPasswordPage from "@/pages/forgot-password";
+import AuthCallbackPage from "@/pages/auth-callback";
 import OrdersPage from "@/pages/order-management";
 import CustomerOrdersPage from "@/pages/customer-orders";
 import KhuyenMaiPage from "@/pages/sale";
@@ -69,14 +70,18 @@ const router: RouteObject[] = [
         path: "/verify-email",
         element: <VerifyEmailPage />,
       },
-      {
-        path: "/forgot-password",
-        element: (
-          <PublicRoute>
-            <ForgotPasswordPage />
-          </PublicRoute>
-        ),
-      },
+        {
+          path: "/forgot-password",
+          element: (
+            <PublicRoute>
+              <ForgotPasswordPage />
+            </PublicRoute>
+          ),
+        },
+        {
+          path: "/auth-callback",
+          element: <AuthCallbackPage />,
+        },
       {
         path: "/my-orders",
         element: (

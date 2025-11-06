@@ -14,11 +14,35 @@ const api = axios.create({
   withCredentials: true, // Quan trọng: Để gửi và nhận cookies từ backend
 });
 
+// Helper function để lấy token từ localStorage hoặc cookies
+const getAccessToken = (): string | null => {
+  // Ưu tiên localStorage trước
+  let token = localStorage.getItem("accessToken");
+  
+  if (!token) {
+    // Nếu không có trong localStorage, thử lấy từ cookies
+    const cookies = document.cookie.split(';');
+    const accessTokenCookie = cookies.find(cookie => 
+      cookie.trim().startsWith('accessToken=')
+    );
+    
+    if (accessTokenCookie) {
+      token = accessTokenCookie.split('=')[1];
+      // Lưu vào localStorage để sử dụng lần sau
+      if (token) {
+        localStorage.setItem("accessToken", token);
+      }
+    }
+  }
+  
+  return token;
+};
+
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Lấy token từ localStorage
-    const token = localStorage.getItem("accessToken");
+    // Lấy token từ localStorage hoặc cookies
+    const token = getAccessToken();
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -72,30 +96,18 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Lấy refresh token
-        const refreshToken = localStorage.getItem("refreshToken");
 
-        if (!refreshToken) {
-          // Không có refresh token, chuyển về trang login
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          window.location.href = "/login";
-          return Promise.reject(error);
-        }
-
-        // Gọi API refresh token
+        // Gọi API refresh token (sử dụng cookies)
         const response = await axios.post(
-          `${api.defaults.baseURL}/auth/refresh`,
-          { refreshToken }
+          `${api.defaults.baseURL}/auth/refresh-token`,
+          {},
+          { withCredentials: true }
         );
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        const { accessToken } = response.data;
 
         // Lưu token mới
         localStorage.setItem("accessToken", accessToken);
-        if (newRefreshToken) {
-          localStorage.setItem("refreshToken", newRefreshToken);
-        }
 
         // Retry request với token mới
         if (originalRequest.headers) {

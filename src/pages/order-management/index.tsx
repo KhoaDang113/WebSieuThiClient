@@ -7,6 +7,7 @@ import { useOrders } from "@/hooks/useOrders"
 import { Search, Check, Trash2, Eye, Phone, MapPin, Calendar, User, Truck, Plus } from "lucide-react"
 import type { Order } from "@/types/order"
 import { OrderDetailView } from "./OrderDetailView"
+import { useNotification } from "@/components/notification/NotificationContext"
 
 // Component OrderStatusBadge
 function OrderStatusBadge({ status }: { status: Order["status"] }) {
@@ -204,6 +205,7 @@ function OrderList({ orders, onConfirm, onCancel, onDeliver, onViewDetail }: {
 
 export default function OrdersPage() {
   const { orders, confirmOrder, cancelOrder, deliverOrder, createOrder } = useOrders()
+  const { showNotification } = useNotification()
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "delivered" | "rejected" | "cancelled">("all")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -229,11 +231,20 @@ export default function OrdersPage() {
       }
     ]
 
-    createOrder(testItems, {
+    const orderId = createOrder(testItems, {
       name: "Nguyễn Văn Test",
       phone: "0123456789",
       address: "123 Đường Test, Quận Test, TP.HCM",
       notes: "Đơn hàng test"
+    })
+
+    // Hiển thị thông báo
+    const totalAmount = testItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    showNotification({
+      type: "info",
+      title: "Đơn hàng mới đã được tạo",
+      message: `Đơn hàng ${orderId} từ Nguyễn Văn Test - ${totalAmount.toLocaleString("vi-VN")}đ`,
+      duration: 6000,
     })
   }
 

@@ -4,8 +4,13 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, Camera, User as UserIcon } from "lucide-react";
 import userService from "@/api/services/userService";
 import type { ErrorResponse } from "@/api/types";
+import { DEFAULT_AVATAR_URL } from "@/lib/constants";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function AccountPage() {
+  const setUser = useAuthStore((state) => state.setUser);
+  const currentUser = useAuthStore((state) => state.user);
+  
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -41,13 +46,9 @@ export default function AccountPage() {
         });
         
         // Set avatar nếu có (backend dùng field "avatar", không phải "avatarUrl")
-        const avatarUrl = user.avatar || user.avatarUrl;
-        if (avatarUrl) {
-          console.log("✅ Setting avatar preview:", avatarUrl);
-          setAvatarPreview(avatarUrl);
-        } else {
-          console.log("⚠️ No avatar in user data");
-        }
+        const avatarUrl = user.avatar || user.avatarUrl || DEFAULT_AVATAR_URL;
+        console.log("✅ Setting avatar preview:", avatarUrl);
+        setAvatarPreview(avatarUrl);
       } catch (err) {
         console.error("❌ Error loading user data:", err);
         const errorObj = err as ErrorResponse;
@@ -139,8 +140,12 @@ export default function AccountPage() {
         setAvatarPreview(newAvatar);
       }
       
-      // Trigger storage event để navbar cập nhật
-      window.dispatchEvent(new Event('storage'));
+      // Cập nhật Zustand store để navbar cũng cập nhật
+      setUser({
+        ...currentUser,
+        ...updatedUser,
+        id: updatedUser._id || updatedUser.id || currentUser?.id || '',
+      });
       
       setSuccess("Lưu thông tin thành công!");
       setAvatarFile(null);

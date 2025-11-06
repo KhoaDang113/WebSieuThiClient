@@ -5,17 +5,16 @@ export function Footer() {
     <footer className="bg-white text-gray-800 ">
       <div className="bg-[#007E42] w-full min-h-12 text-center flex items-center justify-center px-4 py-2">
         <span className="text-white font-bold text-xs sm:text-sm md:text-base">
-          Bán hàng: 6:00 đến 22:00 - Khiếu nại 8:00 đến 20:00 - Cam kết: Giao hàng trong thời gian 2h - Hotline: 0386740043
+          BÁN HÀNG: 6:00 đến 22:00 - KHIẾU NẠI: 8:00 đến 22:00 - CAM KẾT: Giao hàng trong thời gian 2h - HOTLINE: 0386.740.043
         </span>
       </div>
       <div className="container mx-auto px-4 pb-5 pt-3">
         <div className="grid md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4">Bách Hóa Xanh</h3>
+            <h3 className="text-xl font-bold mb-4">Bách Hóa Không Xanh</h3>
             <p className="text-sm opacity-90 mb-4">
-              Chuỗi cửa hàng thực phẩm hàng đầu Việt Nam, mang đến sản phẩm tươi
-              ngon mỗi ngày.
+              Chuỗi cửa hàng thực phẩm hàng đầu Việt Nam, mang đến cho quý khách hàng những sản phẩm tươi ngon mỗi ngày.
             </p>
             <div className="flex gap-3">
               {socials.map(({ label, to, Icon }) => (

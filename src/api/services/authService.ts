@@ -242,10 +242,36 @@ class AuthService {
   // ==================== HELPERS ====================
 
   /**
+   * Lấy token từ localStorage hoặc cookies
+   */
+  private getAccessToken(): string | null {
+    // Ưu tiên localStorage trước
+    let token = localStorage.getItem("accessToken");
+    
+    if (!token) {
+      // Nếu không có trong localStorage, thử lấy từ cookies
+      const cookies = document.cookie.split(';');
+      const accessTokenCookie = cookies.find(cookie => 
+        cookie.trim().startsWith('accessToken=')
+      );
+      
+      if (accessTokenCookie) {
+        token = accessTokenCookie.split('=')[1];
+        // Lưu vào localStorage để sử dụng lần sau
+        if (token) {
+          localStorage.setItem("accessToken", token);
+        }
+      }
+    }
+    
+    return token;
+  }
+
+  /**
    * Kiểm tra user đã đăng nhập chưa
    */
   isAuthenticated(): boolean {
-    return !!localStorage.getItem("accessToken");
+    return !!this.getAccessToken();
   }
 
   /**
