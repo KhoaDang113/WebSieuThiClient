@@ -4,115 +4,11 @@ import { useRef, useState, useEffect } from "react";
 import ScrollButton from "@/components/scroll/ScrollButton";
 import { useNavigate } from "react-router-dom";
 import type { CategoryNav as Category, CategoryNavProps } from "@/types/category.type";
-
-const defaultCategories: Category[] = [
-  {
-    id: "giat-xa",
-    name: "Giặt xả",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/frame-1984079259_202510011356076995.gif",
-    badgeColor: "bg-red-500",
-  },
-  {
-    id: "dau-an",
-    name: "Dầu ăn",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/dau-an-final_202510031117342125.gif",
-    badgeColor: "bg-green-600",
-  },
-  {
-    id: "gao-nep",
-    name: "Gạo, nếp",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gao-nep_202509272332404857.gif",
-    badgeColor: "bg-purple-600",
-  },
-  {
-    id: "mi-an-lien",
-    name: "Mì ăn liền",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-  },
-  {
-    id: "nuoc-suoi",
-    name: "Nước suối",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/nuoc-suoi1_202510010943414955.gif",
-    badgeColor: "bg-red-500",
-  },
-  {
-    id: "sua-chua",
-    name: "Sữa chu...",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/nuoc-suoi1_202510010943414955.gif",
-    badgeColor: "bg-green-600",
-  },
-  {
-    id: "rau-la",
-    name: "Rau lá",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/rau-la_202509272336201019.gif",
-    badgeColor: "bg-red-500",
-  },
-  {
-    id: "nuoc-tra",
-    name: "Nước trà",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/tra_202510081101058749.gif",
-    badgeColor: "bg-red-500",
-  },
-  {
-    id: "banh",
-    name: "Bánh snack",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "ca-vien",
-    name: "Cà viên, bò viên",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7170/1990403_202504021436547470.png",
-  },
-  {
-    id: "cu-qua",
-    name: "Củ, quả",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8785/rau-cu_202509251624277482.png",
-  },
-  {
-    id: "thit-heo",
-    name: "Thịt heo",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8781/thit-heo_202509110924556310.png",
-  },
-  {
-    id: "xuc-xich",
-    name: "Xúc xích, lạp xưởng tươi",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/7618/120x120-5_202410101421040963.png",
-  },
-  {
-    id: "keo-cung",
-    name: "Kẹo cứng",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/2687/keo-cung_202508291640443457.png",
-  },
-  {
-    id: "nam",
-    name: "Nấm các loại",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8779/8779-id_202504021437339917.png",
-  },
-  {
-    id: "trai-cay",
-    name: "Trái cây",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/8788/trai-cay_202509081009396955.png",
-  },
-];
+import { categoryService } from "@/api";
+import { toCategoryNav, getCategoryImage } from "@/lib/constants";
 
 export function CategoryNav({
-  categories = defaultCategories,
+  categories: propCategories,
   selectedCategoryId,
   onCategorySelect,
   variant = "home",
@@ -122,7 +18,37 @@ export function CategoryNav({
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
   const [isMouseOver, setIsMouseOver] = useState(false);
+  const [categories, setCategories] = useState<Category[]>(propCategories || []);
+  const [loading, setLoading] = useState(!propCategories);
   const navigate = useNavigate();
+
+  // Fetch categories từ API nếu không được truyền qua props
+  useEffect(() => {
+    if (propCategories) {
+      setCategories(propCategories);
+      return;
+    }
+
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        // Lấy root categories (cấp 1) từ API
+        const data = await categoryService.getRootCategories();
+        
+        // Convert sang CategoryNav format
+        const navCategories = data.map(toCategoryNav);
+        setCategories(navCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        // Không có fallback data - hiển thị empty state
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [propCategories]);
   const checkScroll = () => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -169,7 +95,8 @@ export function CategoryNav({
 
   const handleCategoryClick = (category: Category) => {
     onCategorySelect?.(category);
-    navigate(`/products?category=${category.id}`);
+    // Dùng slug thay vì id để SEO friendly
+    navigate(`/products?category=${category.slug || category.id}`);
   };
 
   const handlePromotionClick = () => {
@@ -245,6 +172,24 @@ export function CategoryNav({
     }
   };
 
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className={`${getContainerStyles()} relative`}>
+        <div className="w-full overflow-x-hidden">
+          <div className="flex p-1 gap-4">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 min-w-[80px]">
+                <div className="w-16 h-16 rounded-lg bg-gray-200 animate-pulse" />
+                <div className="w-16 h-3 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`${getContainerStyles()} relative group/container`}
@@ -299,7 +244,7 @@ export function CategoryNav({
                 <div className={getImageStyles()}>
                   <div className={getImageContainerStyles()}>
                     <img
-                      src={category.image || "/placeholder.svg"}
+                      src={getCategoryImage(category)}
                       alt={category.name}
                       className="w-full h-full object-cover"
                     />

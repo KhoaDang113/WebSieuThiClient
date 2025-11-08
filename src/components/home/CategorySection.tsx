@@ -34,7 +34,7 @@ export default function CategorySection({
         {/* Products Grid - Inside the frame */}
         <div className="p-4 sm:p-6">
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {products.slice(0, 5).map((product) => (
+            {products.slice(0, 10).map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -45,7 +45,7 @@ export default function CategorySection({
         </div>
 
         {/* View More Link - Inside frame at bottom */}
-        {products.length > 5 && (
+        {products.length > 10 && (
           <div className="px-4 sm:px-6 pb-4 sm:pb-5 pt-0 bg-gray-50 border-t border-gray-100">
             <a
               href={`/products?category=${categoryName

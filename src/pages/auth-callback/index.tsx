@@ -41,6 +41,12 @@ export default function AuthCallback() {
         // Cập nhật Zustand store
         setUser(user);
 
+        // Đợi một chút để đảm bảo store được persist vào localStorage
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Dispatch custom event để notify Navbar và các components khác
+        window.dispatchEvent(new Event('auth-changed'));
+
         // Redirect theo role
         const userRole = user.role;
         if (userRole === "staff") {

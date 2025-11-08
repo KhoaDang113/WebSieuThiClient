@@ -7,13 +7,25 @@ import { ShoppingCart, Flame } from "lucide-react";
 import { ProductModal } from "@/components/products/ProductModal";
 import type { ProductCardProps, Product } from "@/types/product.type";
 import { useNavigate } from "react-router-dom";
+import {
+  getProductImage,
+  getProductId,
+  isProductOutOfStock,
+  PRODUCT_PLACEHOLDER_IMAGE,
+} from "@/lib/constants";
 
 export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const hasDiscount = product.discount_percent > 0;
-  const isOutOfStock = product.stock_quantity === 0;
+  const isOutOfStock = isProductOutOfStock(product);
   const navigate = useNavigate();
-  const productId = product.id;
+  const productId = getProductId(product);
+  
+  // Lấy image URL, nếu bị lỗi thì dùng placeholder
+  const imageUrl = imageError 
+    ? PRODUCT_PLACEHOLDER_IMAGE 
+    : getProductImage(product);
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -32,23 +44,23 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
       <div className="group relative flex h-full flex-col overflow-hidden rounded-lg bg-white transition-all hover:shadow-lg">
         {/* White Content Area */}
         <div className="flex h-full flex-row rounded-lg bg-white">
-          {/* Product Image */}
+          {/* Product Image - Fixed Size */}
           <div
-            className="relative aspect-[4/3] overflow-hidden rounded-t-lg cursor-pointer"
+            className="relative w-32 h-32 flex-shrink-0 overflow-hidden cursor-pointer bg-gray-100"
             onClick={() => {
-              // Add your click handler here - could be navigation to product detail page
-              console.log("Product image clicked:", product.name);
+              if (productId) {
+                navigate(`/products-detail/${productId}`);
+              }
             }}
           >
             <img
-              onClick={() => {
-                if (productId) {
-                  navigate(`/products-detail/${productId}`);
-                }
-              }}
-              src={product.image_url || "/placeholder.svg"}
+              src={imageUrl}
               alt={product.name}
-              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={() => {
+                // Khi ảnh load lỗi, fallback về placeholder
+                setImageError(true);
+              }}
             />
             {isOutOfStock && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -59,66 +71,70 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
             )}
           </div>
 
-          <div className="flex flex-col p-4 relative">
+          <div className="flex flex-col p-4 relative flex-1">
             {/* Badges Container */}
-            <div className="absolute right-0 top-0 z-10 flex flex-col gap-1">
-              {product.is_hot && (
-                <Badge className="bg-red-500 text-white shadow-md">
-                  <Flame className="mr-1 h-3 w-3" />
+            <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+              {hasDiscount && product.discount_percent >= 15 && (
+                <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg border-0 px-2.5 py-1 animate-pulse">
+                  <Flame className="mr-1 h-3 w-3 animate-bounce" />
                   Hot
                 </Badge>
               )}
             </div>
 
             {/* Product Info */}
-            <div className="flex flex-col ">
-              {/* Product Name */}
-              <h3 className="mb-1 text-base font-bold leading-tight text-gray-700 sm:text-lg line-clamp-2 min-h-[2.5rem]">
+            <div className="flex flex-col h-full">
+              {/* Product Name - Fixed Height */}
+              <h3 className="mb-1 text-sm font-semibold leading-tight text-gray-800 line-clamp-2 h-10 cursor-pointer hover:text-green-600 transition-colors"
+                onClick={() => {
+                  if (productId) {
+                    navigate(`/products-detail/${productId}`);
+                  }
+                }}
+              >
                 {product.name}
               </h3>
 
-              {/* Price Section */}
-              <div className="mb-2 flex flex-col gap-1">
+              {/* Price Section - Fixed Height */}
+              <div className="mb-2 flex flex-col gap-1 min-h-[3rem]">
                 {/* Current Price with Unit */}
-                <span className="text-lg font-bold text-red-600 sm:text-xl">
-                  {formatPrice(product.final_price)}
-                  {product.quantity && (
-                    <span className="text-sm font-normal text-red-600">
-                      /{product.quantity}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-red-600 sm:text-xl">
+                    {formatPrice(product.final_price || product.unit_price)}
+                  </span>
+                  {product.unit && (
+                    <span className="text-xs font-medium text-gray-500">
+                      /{product.unit}
                     </span>
                   )}
-                </span>
+                </div>
 
                 {/* Original Price and Discount */}
                 {hasDiscount && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">
-                      <span className="line-through">
-                        {formatPrice(product.unit_price)}
-                      </span>
-                      {product.quantity && (
-                        <span className="text-xs text-gray-400">
-                          /{product.quantity}
-                        </span>
+                    <span className="text-xs text-gray-400 line-through">
+                      {formatPrice(product.unit_price)}
+                      {product.unit && (
+                        <span className="text-xs">/{product.unit}</span>
                       )}
                     </span>
-                    <div className="rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                    <div className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
                       -{product.discount_percent}%
                     </div>
                   </div>
                 )}
+
+                {/* Stock Status */}
+                {!isOutOfStock && product.quantity && product.quantity < 10 && (
+                  <p className="text-xs text-orange-600 font-medium">
+                    Chỉ còn {product.quantity} sản phẩm
+                  </p>
+                )}
               </div>
 
-              {/* Stock Status */}
-              {!isOutOfStock && product.stock_quantity < 10 && (
-                <p className="mb-2 text-xs text-destructive sm:text-sm">
-                  Chỉ còn {product.stock_quantity} sản phẩm
-                </p>
-              )}
-
-              {/* Add to Cart Button */}
+              {/* Add to Cart Button - Always at bottom */}
               <Button
-                className="w-full bg-green-600 text-white hover:bg-green-700"
+                className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600 shadow-md hover:shadow-lg transition-all duration-300 font-semibold rounded-full mt-auto"
                 size="sm"
                 disabled={isOutOfStock}
                 onClick={() => setIsModalOpen(true)}

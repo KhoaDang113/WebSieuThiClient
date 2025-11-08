@@ -58,6 +58,12 @@ export default function Login() {
         if (response.user) {
           setUser(response.user);
           
+          // Đợi một chút để đảm bảo store được persist
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Dispatch custom event để notify Navbar và các components khác
+          window.dispatchEvent(new Event('auth-changed'));
+          
           // Redirect theo role
           const userRole = response.user.role;
           if (userRole === "staff") {

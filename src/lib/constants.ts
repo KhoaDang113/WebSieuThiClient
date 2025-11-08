@@ -147,3 +147,175 @@ export const BRAND_OPTIONS = [
     logo: "https://cdn.tgdd.vn/Brand/11/vietcoco-05042021165111.jpg",
   },
 ] as const;
+
+/**
+ * Placeholder image cho sản phẩm chưa có ảnh
+ */
+export const PRODUCT_PLACEHOLDER_IMAGE =
+  "https://media.istockphoto.com/id/1396814518/vector/image-coming-soon-no-photo-no-thumbnail-image-available-vector-illustration.jpg?s=612x612&w=0&k=20&c=hnh2OZgQGhf0b46-J2z7aHbIWwq8HNlSDaNp2wn_iko=";
+
+/**
+ * Helper function để lấy ảnh sản phẩm
+ * Ưu tiên: image_primary > images[0] > placeholder
+ * Kiểm tra cả null, undefined, string rỗng, và kiểu dữ liệu
+ */
+export const getProductImage = (product: {
+  image_primary?: string | null | unknown;
+  images?: string[] | null;
+}): string => {
+  // Kiểm tra image_primary: chỉ chấp nhận string hợp lệ
+  if (product.image_primary && typeof product.image_primary === 'string') {
+    const trimmed = product.image_primary.trim();
+    if (trimmed !== '') {
+      return product.image_primary;
+    }
+  }
+  
+  // Kiểm tra images array: chỉ chấp nhận string hợp lệ
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    const firstImage = product.images[0];
+    if (firstImage && typeof firstImage === 'string') {
+      const trimmed = firstImage.trim();
+      if (trimmed !== '') {
+        return firstImage;
+      }
+    }
+  }
+  
+  // Fallback về placeholder image (giống category)
+  return PRODUCT_PLACEHOLDER_IMAGE;
+};
+
+/**
+ * Helper function để lấy ID sản phẩm
+ * Hỗ trợ cả _id (MongoDB) và id
+ */
+export const getProductId = (product: {
+  _id?: string;
+  id?: string | number;
+}): string => {
+  if (product._id) return product._id;
+  if (product.id) return product.id.toString();
+  return "";
+};
+
+/**
+ * Helper function kiểm tra sản phẩm hết hàng
+ */
+export const isProductOutOfStock = (product: {
+  stock_status?: string;
+  quantity?: number;
+}): boolean => {
+  return product.stock_status === 'out_of_stock' || (product.quantity !== undefined && product.quantity === 0);
+};
+
+/**
+ * Placeholder image cho category chưa có ảnh
+ */
+export const CATEGORY_PLACEHOLDER_IMAGE =
+  "https://media.istockphoto.com/id/1396814518/vector/image-coming-soon-no-photo-no-thumbnail-image-available-vector-illustration.jpg?s=612x612&w=0&k=20&c=hnh2OZgQGhf0b46-J2z7aHbIWwq8HNlSDaNp2wn_iko=";
+
+/**
+ * Helper function để lấy ảnh category
+ * Fallback sang placeholder nếu không có
+ */
+export const getCategoryImage = (category: {
+  image?: string;
+}): string => {
+  return category.image || CATEGORY_PLACEHOLDER_IMAGE;
+};
+
+/**
+ * Helper function để lấy ID category
+ * Hỗ trợ cả _id (MongoDB) và id
+ */
+export const getCategoryId = (category: {
+  _id?: string;
+  id?: string;
+}): string => {
+  if (category._id) return category._id;
+  if (category.id) return category.id;
+  return "";
+};
+
+/**
+ * Helper function chuyển đổi Category sang CategoryNav format
+ * Dùng cho horizontal navigation bar
+ */
+export const toCategoryNav = (category: {
+  _id?: string;
+  id?: string;
+  name: string;
+  slug: string;
+  image?: string;
+}) => {
+  return {
+    id: getCategoryId(category),
+    name: category.name,
+    slug: category.slug,
+    image: getCategoryImage(category),
+  };
+};
+
+/**
+ * Helper function kiểm tra category là root (cấp 1)
+ */
+export const isRootCategory = (category: {
+  parent_id?: string | null;
+}): boolean => {
+  return !category.parent_id || category.parent_id === null;
+};
+
+/**
+ * Helper function build category hierarchy tree
+ * Chuyển flat list thành tree structure (parent-children)
+ * 
+ * @param categories - Flat list of categories
+ * @returns Categories with children nested
+ */
+export const buildCategoryTree = <T extends { _id?: string; id?: string; parent_id?: string | null }>(
+  categories: T[]
+): (T & { children: T[] })[] => {
+  const categoryMap = new Map<string, T & { children: T[] }>();
+  const rootCategories: (T & { children: T[] })[] = [];
+
+  // Tạo map và thêm children array
+  categories.forEach((cat) => {
+    const id = getCategoryId(cat);
+    categoryMap.set(id, { ...cat, children: [] });
+  });
+
+  // Build tree
+  categories.forEach((cat) => {
+    const id = getCategoryId(cat);
+    const item = categoryMap.get(id);
+    
+    if (!item) return;
+
+    if (isRootCategory(cat)) {
+      // Category cấp 1 (root)
+      rootCategories.push(item);
+    } else if (cat.parent_id) {
+      // Category cấp 2+ (children)
+      const parent = categoryMap.get(cat.parent_id);
+      if (parent) {
+        parent.children.push(item);
+      }
+    }
+  });
+
+  return rootCategories;
+};
+
+/**
+ * Helper function chuyển đổi subCategories từ BE sang children format
+ * Backend trả về field "subCategories", Frontend dùng "children"
+ */
+export const normalizeCategories = (categories: any[]): any[] => {
+  return categories.map(cat => ({
+    ...cat,
+    children: cat.subCategories || cat.children || [],
+    // Xóa subCategories để tránh duplicate
+    subCategories: undefined
+  }));
+};
