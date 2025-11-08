@@ -157,17 +157,32 @@ export const PRODUCT_PLACEHOLDER_IMAGE =
 /**
  * Helper function để lấy ảnh sản phẩm
  * Ưu tiên: image_primary > images[0] > placeholder
+ * Kiểm tra cả null, undefined, string rỗng, và kiểu dữ liệu
  */
 export const getProductImage = (product: {
-  image_primary?: string;
-  images?: string[];
+  image_primary?: string | null | unknown;
+  images?: string[] | null;
 }): string => {
-  if (product.image_primary) {
-    return product.image_primary;
+  // Kiểm tra image_primary: chỉ chấp nhận string hợp lệ
+  if (product.image_primary && typeof product.image_primary === 'string') {
+    const trimmed = product.image_primary.trim();
+    if (trimmed !== '') {
+      return product.image_primary;
+    }
   }
-  if (product.images && product.images.length > 0) {
-    return product.images[0];
+  
+  // Kiểm tra images array: chỉ chấp nhận string hợp lệ
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    const firstImage = product.images[0];
+    if (firstImage && typeof firstImage === 'string') {
+      const trimmed = firstImage.trim();
+      if (trimmed !== '') {
+        return firstImage;
+      }
+    }
   }
+  
+  // Fallback về placeholder image (giống category)
   return PRODUCT_PLACEHOLDER_IMAGE;
 };
 

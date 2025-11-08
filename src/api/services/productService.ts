@@ -9,11 +9,17 @@ class ProductService {
 
   /**
    * Lấy danh sách sản phẩm (có thể filter theo category)
-   * GET /products?category=slug
+   * GET /products?category=slug&page=1&limit=10
    */
-  async getProducts(categorySlug?: string): Promise<Product[]> {
+  async getProducts(
+    categorySlug?: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<Product[]> {
     const response = await api.get<Product[]>(this.basePath, {
-      params: categorySlug ? { category: categorySlug } : undefined,
+      params: {
+        ...(categorySlug && { category: categorySlug }),
+        ...params,
+      },
     });
     return response.data;
   }
@@ -22,9 +28,15 @@ class ProductService {
    * Lấy sản phẩm khuyến mãi (có thể filter theo category)
    * GET /products/promotions?category=slug
    */
-  async getProductPromotions(categorySlug?: string): Promise<Product[]> {
+  async getProductPromotions(
+    categorySlug?: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<Product[]> {
     const response = await api.get<Product[]>(`${this.basePath}/promotions`, {
-      params: categorySlug ? { category: categorySlug } : undefined,
+      params: {
+        ...(categorySlug && { category: categorySlug }),
+        ...params,
+      },
     });
     return response.data;
   }

@@ -11,14 +11,21 @@ import {
   getProductImage,
   getProductId,
   isProductOutOfStock,
+  PRODUCT_PLACEHOLDER_IMAGE,
 } from "@/lib/constants";
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const hasDiscount = product.discount_percent > 0;
   const isOutOfStock = isProductOutOfStock(product);
   const navigate = useNavigate();
   const productId = getProductId(product);
+  
+  // Lấy image URL, nếu bị lỗi thì dùng placeholder
+  const imageUrl = imageError 
+    ? PRODUCT_PLACEHOLDER_IMAGE 
+    : getProductImage(product);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -34,7 +41,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
   return (
     <>
-      <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:border-green-300 hover:shadow-2xl">
+      <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:border-green-300 hover:shadow-2xl h-full">
         {/* Badges Container */}
         <div className="absolute left-2 top-2 z-10 flex flex-col gap-1.5">
           {hasDiscount && product.discount_percent >= 15 && (
@@ -45,9 +52,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           )}
         </div>
 
-        {/* Product Image */}
+        {/* Product Image - Fixed Height */}
         <div
-          className="relative overflow-hidden cursor-pointer"
+          className="relative overflow-hidden cursor-pointer w-full h-44 flex-shrink-0 bg-gray-100"
           onClick={() => {
             if (productId) {
               navigate(`/products-detail/${productId}`);
@@ -55,9 +62,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           }}
         >
           <img
-            src={getProductImage(product)}
+            src={imageUrl}
             alt={product.name}
-            className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={() => {
+              // Khi ảnh load lỗi, fallback về placeholder
+              setImageError(true);
+            }}
           />
           {isOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -69,10 +80,10 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </div>
 
         {/* Product Info - Fixed Height Bottom Section */}
-        <div className="flex flex-col p-2.5 sm:p-3">
-          {/* Product Name - Fixed Height */}
+        <div className="flex flex-col p-2.5 sm:p-3 flex-1">
+          {/* Product Name - Fixed Height (2 lines) */}
           <h3
-            className="mb-2 text-sm font-semibold leading-snug text-gray-800 line-clamp-2 min-h-[2.5rem] cursor-pointer hover:text-green-600 transition-colors"
+            className="mb-2 text-sm font-semibold leading-snug text-gray-800 line-clamp-2 h-10 cursor-pointer hover:text-green-600 transition-colors"
             onClick={() => {
               if (productId) {
                 navigate(`/products-detail/${productId}`);
@@ -82,8 +93,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             {product.name}
           </h3>
 
-          {/* Price Section - Always above button */}
-          <div className="mb-2 flex flex-col gap-1">
+          {/* Price Section - Fixed Height */}
+          <div className="mb-2 flex flex-col gap-1 min-h-[3.5rem]">
             {/* Current Price with Unit */}
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-bold text-red-600 sm:text-xl">
@@ -112,7 +123,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             )}
 
             {/* Stock Warning */}
-            {!isOutOfStock && product.quantity < 10 && (
+            {!isOutOfStock && product.quantity && product.quantity < 10 && (
               <p className="text-xs text-orange-600 font-medium">
                 Chỉ còn {product.quantity} sản phẩm
               </p>
@@ -121,7 +132,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
           {/* Add to Cart Button - Always at bottom */}
           <Button
-            className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600 shadow-md hover:shadow-lg transition-all duration-300 font-semibold rounded-full"
+            className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600 shadow-md hover:shadow-lg transition-all duration-300 font-semibold rounded-full mt-auto"
             size="sm"
             disabled={isOutOfStock}
             onClick={() => setIsModalOpen(true)}

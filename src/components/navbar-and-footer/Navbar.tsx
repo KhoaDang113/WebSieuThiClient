@@ -45,6 +45,25 @@ export function Navbar() {
     };
 
     checkAuth();
+    
+    // Thêm listener để check auth khi window focus (user quay lại tab)
+    const handleFocus = () => {
+      checkAuth();
+    };
+    
+    // Thêm listener cho custom event 'auth-changed' để force update
+    const handleAuthChanged = () => {
+      console.log('Auth changed event received, rechecking auth state...');
+      checkAuth();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('auth-changed', handleAuthChanged);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('auth-changed', handleAuthChanged);
+    };
   }, [currentUser, setUser, clearAuth]);
   
   const hints = useMemo(
@@ -338,6 +357,8 @@ export function Navbar() {
                           onClick={async () => {
                             await authService.logout();
                             clearAuth();
+                            // Dispatch event để notify các components khác
+                            window.dispatchEvent(new Event('auth-changed'));
                             navigate('/');
                           }}
                           className="cursor-pointer text-red-600 px-4"

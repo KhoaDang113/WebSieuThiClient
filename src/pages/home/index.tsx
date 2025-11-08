@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { CategoryNav } from "@/components/category/CategoryNav";
 import MainBanner from "@/components/home/MainBanner";
-import CategorySection from "@/components/home/CategorySection";
+import CategoryProductsSection from "@/components/category/CategoryProductsSection";
 import { useCart } from "@/components/cart/CartContext";
 import DailyMarket from "@/components/home/DailyMarket";
-import { productService, categoryService } from "@/api";
-import { mainBanners, categoryBanners } from "@/lib/sampleData";
+import { categoryService } from "@/api";
+import { mainBanners } from "@/lib/sampleData";
 import { getProductId, getProductImage } from "@/lib/constants";
 import type { Product } from "@/types";
 
@@ -15,7 +15,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch categories và products
+  // Fetch categories (products được fetch trong CategoryProductsSection)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -24,20 +24,6 @@ export default function HomePage() {
         // Lấy danh sách categories
         const categoriesData = await categoryService.getRootCategories();
         setCategories(categoriesData);
-
-        // Lấy products cho từng category
-        const productsData: Record<string, Product[]> = {};
-        for (const category of categoriesData.slice(0, 4)) { // Chỉ lấy 4 category đầu tiên
-          try {
-            const products = await productService.getProducts(category.slug);
-            productsData[category.slug] = products;
-          } catch (error) {
-            console.error(`Error fetching products for ${category.name}:`, error);
-            productsData[category.slug] = [];
-          }
-        }
-        
-        setProductsByCategory(productsData);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -100,16 +86,15 @@ export default function HomePage() {
         {/* Daily Market Section - Đi chợ mỗi ngày */}
         <DailyMarket />
 
-        {/* Category Sections - Hiển thị dynamic từ API */}
+        {/* Category Sections - Hiển thị TẤT CẢ danh mục cấp 1 từ API */}
         <div className="space-y-1 sm:space-y-2">
-          {categories.slice(0, 4).map((category) => (
-            <CategorySection
+          {categories.map((category) => (
+            <CategoryProductsSection
               key={category._id || category.id}
-              categoryName={category.name}
-              products={productsByCategory[category.slug] || []}
-              banners={categoryBanners}
-              onAddToCart={handleAddToCart}
-            />
+              title={category.name}
+              categorySlug={category.slug}
+            onAddToCart={handleAddToCart}
+          />
           ))}
           
           {/* Hiển thị message nếu chưa có categories */}
