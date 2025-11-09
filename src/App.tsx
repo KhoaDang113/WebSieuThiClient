@@ -9,12 +9,12 @@ import { NotificationPopup } from "@/components/notification/NotificationPopup";
 function App() {
   return (
     <AddressProvider>
-      <CartProvider>
-        <NotificationProvider>
+      <NotificationProvider>
+        <CartProvider>
           <RouterProvider router={routes} />
           <NotificationPopup />
-        </NotificationProvider>
-      </CartProvider>
+        </CartProvider>
+      </NotificationProvider>
     </AddressProvider>
   );
 }

@@ -13,6 +13,8 @@ export { default as userService } from "./services/userService";
 export { default as categoryService } from "./services/catalogService";
 export { default as productService } from "./services/productService";
 export { default as cartService } from "./services/cartService";
+export { default as commentService } from "./services/commentService";
+export { default as addressService } from "./services/addressService";
 
 // Export types
 export type * from "./types";

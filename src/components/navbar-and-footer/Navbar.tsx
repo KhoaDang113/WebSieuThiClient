@@ -7,7 +7,7 @@ import { CategorySidebar } from "@/components/category/CategorySideBar";
 import { useCart } from "@/components/cart/CartContext";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useAddress } from "@/components/address/AddressContext";
-import { AddressModal } from "@/components/address/AddressModal";
+import { AddressListModal } from "@/components/address/AddressListModal";
 import authService from "@/api/services/authService";
 import { useAuthStore } from "@/stores/authStore";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
@@ -53,7 +53,6 @@ export function Navbar() {
     
     // Thêm listener cho custom event 'auth-changed' để force update
     const handleAuthChanged = () => {
-      console.log('Auth changed event received, rechecking auth state...');
       checkAuth();
     };
     
@@ -105,7 +104,6 @@ export function Navbar() {
     e?.preventDefault();
     if (value.trim()) {
       addToHistory(value.trim());
-      console.log("Tìm kiếm:", value);
       setShowHistory(false);
     }
   };
@@ -114,7 +112,6 @@ export function Navbar() {
     setValue(searchTerm);
     addToHistory(searchTerm);
     setShowHistory(false);
-    console.log("Tìm kiếm từ lịch sử:", searchTerm);
   };
 
   const handleRemoveHistoryItem = (e: React.MouseEvent, searchTerm: string) => {
@@ -404,12 +401,25 @@ export function Navbar() {
         </button>
       </div>
 
-      {/* Address Modal */}
-      <AddressModal
+      {/* Address List Modal - Quản lý địa chỉ và lưu vào database */}
+      <AddressListModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
-        onSave={setAddress}
-        currentAddress={address}
+        onSelectAddress={(selectedAddress) => {
+          // Cập nhật AddressContext khi chọn địa chỉ
+          if (selectedAddress) {
+            setAddress({
+              province: selectedAddress.city || "",
+              district: selectedAddress.district || "",
+              ward: selectedAddress.ward || "",
+              street: selectedAddress.address || "",
+              recipient: selectedAddress.full_name || "",
+              phone: selectedAddress.phone || "",
+              callAnotherPerson: false,
+            });
+          }
+        }}
+        showSelection={false}
       />
     </>
   );

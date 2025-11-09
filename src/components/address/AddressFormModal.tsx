@@ -1,0 +1,420 @@
+import { useState, useEffect } from "react";
+import { X, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CustomSelect } from "./CustomSelect";
+import { addressService } from "@/api";
+import type { Address, CreateAddressDto, UpdateAddressDto } from "@/api/types";
+import { useAuthStore } from "@/stores/authStore";
+
+interface Province {
+  code: string;
+  name: string;
+}
+
+interface Ward {
+  code: string;
+  name: string;
+}
+
+interface AddressFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  editingAddress?: Address | null;
+}
+
+// Helper function để tạo timeout cho fetch
+const createTimeoutSignal = (timeoutMs: number): AbortSignal => {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+};
+
+export function AddressFormModal({
+  isOpen,
+  onClose,
+  onSave,
+  editingAddress,
+}: AddressFormModalProps) {
+  const { user: currentUser } = useAuthStore();
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [selectedWard, setSelectedWard] = useState<string>("");
+  const [street, setStreet] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [isDefault, setIsDefault] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Load provinces khi mở modal
+  useEffect(() => {
+    if (isOpen) {
+      fetchProvinces();
+    }
+  }, [isOpen]);
+
+  // Load dữ liệu khi edit hoặc khi mở form mới
+  useEffect(() => {
+    if (isOpen && editingAddress) {
+      // Edit mode: Load dữ liệu từ editingAddress
+      setFullName(editingAddress.full_name);
+      setPhone(editingAddress.phone);
+      setStreet(editingAddress.address);
+      setIsDefault(editingAddress.is_default);
+
+      // Tìm province code từ tên (vì editingAddress lưu tên)
+      const provinceObj = provinces.find(p => p.name === editingAddress.city);
+      if (provinceObj) {
+        setSelectedProvince(provinceObj.code);
+      } else {
+        setSelectedProvince("");
+      }
+      
+      setSelectedWard(editingAddress.ward);
+    } else if (isOpen) {
+      // Create mode: Reset form và tự động điền tên và số điện thoại từ tài khoản đăng nhập
+      setSelectedProvince("");
+      setSelectedWard("");
+      setStreet("");
+      setIsDefault(false);
+      
+      // Tự động điền tên và số điện thoại từ user hiện tại
+      if (currentUser) {
+        setFullName(currentUser.name || "");
+        setPhone(currentUser.phone || currentUser.phoneNumber || "");
+      } else {
+        setFullName("");
+        setPhone("");
+      }
+    }
+  }, [isOpen, editingAddress, provinces, currentUser]);
+
+  // Load wards khi province thay đổi (2 cấp: Tỉnh → Xã)
+  useEffect(() => {
+    if (selectedProvince && !editingAddress) {
+      fetchWards(selectedProvince);
+      setSelectedWard("");
+    }
+  }, [selectedProvince]);
+
+  const fetchProvinces = async () => {
+    try {
+      setLoading(true);
+      // API v2 - Danh sách tỉnh thành sau sát nhập
+      const response = await fetch("https://provinces.open-api.vn/api/v2/", {
+        signal: createTimeoutSignal(10000),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          // Map data từ v2 format sang format cũ
+          const mappedProvinces = data.map((p: any) => ({
+            code: p.code.toString(), // Convert code to string
+            name: p.name,
+          }));
+          setProvinces(mappedProvinces);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching provinces:", error);
+      alert("Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWards = async (provinceCode: string) => {
+    try {
+      setLoading(true);
+      
+      // API v2 - Lấy phường/xã trực tiếp từ tỉnh (2 cấp)
+      // depth=2 để lấy districts với wards
+      const response = await fetch(
+        `https://provinces.open-api.vn/api/v2/p/${provinceCode}?depth=2`,
+        {
+          signal: createTimeoutSignal(10000),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // API v2 depth=2 trả về wards trực tiếp, không có districts
+        const allWards: Ward[] = [];
+        
+        if (data.wards && Array.isArray(data.wards)) {
+          data.wards.forEach((ward: any) => {
+            allWards.push({
+              code: ward.code.toString(),
+              name: ward.name,
+            });
+          });
+        } else if (data.districts && Array.isArray(data.districts)) {
+          // Fallback: nếu có districts (API khác)
+          data.districts.forEach((district: any) => {
+            if (district.wards && Array.isArray(district.wards)) {
+              district.wards.forEach((ward: any) => {
+                allWards.push({
+                  code: ward.code.toString(),
+                  name: ward.name,
+                });
+              });
+            }
+          });
+        }
+        
+        setWards(allWards);
+      }
+    } catch (error) {
+      // Silent error - không hiện thông báo
+      setWards([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!fullName.trim()) {
+      alert("Vui lòng nhập họ tên người nhận");
+      return;
+    }
+
+    if (!phone.trim()) {
+      alert("Vui lòng nhập số điện thoại");
+      return;
+    }
+
+    if (!addressService.validatePhone(phone)) {
+      alert("Số điện thoại không hợp lệ");
+      return;
+    }
+
+    if (!selectedProvince || !selectedWard) {
+      alert("Vui lòng chọn đầy đủ Tỉnh/Thành phố và Phường/Xã");
+      return;
+    }
+
+    if (!street.trim()) {
+      alert("Vui lòng nhập số nhà, tên đường");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Get names from codes
+      const provinceName =
+        provinces.find((p) => p.code === selectedProvince)?.name || selectedProvince;
+      const wardName =
+        wards.find((w) => w.code === selectedWard)?.name || selectedWard;
+
+      const addressData: CreateAddressDto = {
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        address: street.trim(),
+        ward: wardName,
+        // Không gửi district - mô hình 2 cấp: Chỉ có Tỉnh và Xã
+        city: provinceName,
+        is_default: isDefault,
+        is_active: true,
+      };
+
+      if (editingAddress) {
+        // Update existing address
+        await addressService.updateAddress(editingAddress._id, addressData);
+        alert("Cập nhật địa chỉ thành công!");
+      } else {
+        // Create new address
+        await addressService.createAddress(addressData);
+        alert("Thêm địa chỉ mới thành công!");
+      }
+
+      onSave();
+      onClose();
+    } catch (error: any) {
+      console.error("Error saving address:", error);
+      const errorMessage = error?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
+      alert(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedProvince("");
+    setSelectedWard("");
+    setStreet("");
+    setFullName("");
+    setPhone("");
+    setIsDefault(false);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0 bg-gradient-to-r from-green-50 to-green-100">
+          <h2 className="text-xl font-semibold text-gray-800">
+            {editingAddress ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+            disabled={submitting}
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="overflow-y-auto px-6 py-6 flex-1">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Info message */}
+            <p className="text-sm text-gray-600 mb-4">
+              Thông tin vị trí giúp Bách hoá XANH giao hàng đúng giờ và tính phí giao chính xác hơn.
+            </p>
+
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Họ tên người nhận <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Nhập họ tên người nhận"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                required
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Số điện thoại <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Nhập số điện thoại"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                required
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Province dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tỉnh/Thành phố <span className="text-red-500">*</span>
+              </label>
+              <CustomSelect
+                value={selectedProvince}
+                onChange={setSelectedProvince}
+                options={provinces.map((p) => ({ value: p.code, label: p.name }))}
+                placeholder="Chọn Tỉnh/Thành phố"
+                required
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Ward dropdown - Mô hình 2 cấp: Phường/Xã trực thuộc Tỉnh */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phường/Xã <span className="text-red-500">*</span>
+                {wards.length > 0 && (
+                  <span className="text-xs text-gray-500 ml-2">({wards.length} phường/xã)</span>
+                )}
+              </label>
+              <CustomSelect
+                value={selectedWard}
+                onChange={setSelectedWard}
+                options={wards.map((w) => ({ value: w.code, label: w.name }))}
+                placeholder={wards.length === 0 ? "Vui lòng chọn Tỉnh/Thành phố trước" : "Chọn Phường/Xã"}
+                disabled={!selectedProvince || loading || submitting}
+                required
+                openUp={true}
+              />
+              {wards.length === 0 && selectedProvince && !loading && (
+                <p className="text-xs text-red-500 mt-1">
+                  ⚠️ Không tải được danh sách. Vui lòng kiểm tra console (F12)
+                </p>
+              )}
+            </div>
+
+            {/* Street address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Số nhà, tên đường <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                placeholder="Nhập số nhà, tên đường"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                required
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Set as default checkbox */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_default"
+                checked={isDefault}
+                onChange={(e) => setIsDefault(e.target.checked)}
+                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                disabled={submitting}
+              />
+              <label
+                htmlFor="is_default"
+                className="text-sm text-gray-700 cursor-pointer"
+              >
+                Đặt làm địa chỉ mặc định
+              </label>
+            </div>
+
+            {/* Submit button */}
+            <Button
+              type="submit"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 mt-4 disabled:bg-gray-400"
+              disabled={submitting || loading}
+            >
+              {submitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Đang lưu...
+                </span>
+              ) : editingAddress ? (
+                "Cập nhật"
+              ) : (
+                "Thêm địa chỉ"
+              )}
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+

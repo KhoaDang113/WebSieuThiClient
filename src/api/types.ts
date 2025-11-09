@@ -150,3 +150,88 @@ export interface ErrorResponse {
     };
   };
 }
+
+// Comment Types
+export interface CommentUser {
+  _id: string;
+  name: string;
+  avatar?: string;
+  email?: string;
+  role?: string;
+}
+
+export interface Comment {
+  _id: string;
+  product_id: string;
+  user_id: CommentUser | string;
+  content: string;
+  parent_id?: string | null;
+  reply_count?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CommentResponse {
+  comments: Comment[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateCommentRequest {
+  product_id: string;
+  content: string;
+  parent_id?: string;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
+}
+
+// Address Types
+export interface Address {
+  _id: string;
+  user_id: string;
+  full_name: string;
+  phone: string;
+  address: string;          // Street address
+  ward: string;             // Phường/Xã
+  district?: string;        // Quận/Huyện (optional - mô hình 2 cấp: chỉ có Tỉnh và Xã)
+  city: string;             // Tỉnh/Thành phố
+  zip_code?: string;
+  is_default: boolean;
+  is_active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateAddressDto {
+  full_name: string;
+  phone: string;
+  address: string;
+  ward: string;
+  district?: string;       // Optional - mô hình 2 cấp: chỉ có Tỉnh và Xã
+  city: string;
+  zip_code?: string;
+  is_default?: boolean;
+  is_active?: boolean;
+}
+
+export interface UpdateAddressDto {
+  full_name?: string;
+  phone?: string;
+  address?: string;
+  ward?: string;
+  district?: string;
+  city?: string;
+  zip_code?: string;
+  is_default?: boolean;
+  is_active?: boolean;
+}
+
+export interface AddressResponse {
+  addresses: Address[];
+}

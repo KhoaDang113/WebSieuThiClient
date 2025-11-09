@@ -44,12 +44,7 @@ export default function KhuyenMaiPage() {
       quantity: product.selectedQuantity || 1,
     });
 
-    console.log(
-      "Đã thêm vào giỏ hàng:",
-      product.name,
-      "x",
-      product.selectedQuantity || 1
-    );
+    // TODO: Hiển thị thông báo đã thêm vào giỏ hàng
   };
 
   const handleCategoryClick = (categoryId: string) => {
@@ -109,10 +104,10 @@ export default function KhuyenMaiPage() {
       <div className="bg-white border-b mb-3 w-full">
         <div className="w-full px-3 sm:px-4 py-4 flex items-center">
           <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-3 h-3" />
           </Link>
           <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            Khuyến mãi sốc
+            Khuyến Mãi Sốc
           </h1>
         </div>
       </div>

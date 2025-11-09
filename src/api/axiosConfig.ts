@@ -48,15 +48,6 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Log request (chỉ trong development)
-    if (import.meta.env.DEV) {
-      console.log("🚀 Request:", {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        data: config.data,
-      });
-    }
-
     return config;
   },
   (error: AxiosError) => {
@@ -68,15 +59,6 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Log response (chỉ trong development)
-    if (import.meta.env.DEV) {
-      console.log("✅ Response:", {
-        status: response.status,
-        url: response.config.url,
-        data: response.data,
-      });
-    }
-
     return response;
   },
   async (error: AxiosError) => {

@@ -444,7 +444,6 @@ export default function ProductsPage() {
   const fetchProductsByCategory = async (categoryId: string) => {
     try {
       // TODO: Thay thế bằng API call thực tế
-      console.log(`Fetching products for category: ${categoryId}`);
 
       // Sử dụng dữ liệu mẫu
       const categoryProducts =
@@ -471,11 +470,10 @@ export default function ProductsPage() {
   };
 
   const handleCategorySelect = (category: { id: string; name: string }) => {
-    console.log("Đã chọn loại:", category.name);
+    // Category selected
   };
 
   const handleAddToCart = (product: Product) => {
-    console.log("Thêm vào giỏ hàng:", product.name);
     // TODO: Implement add to cart logic
   };
 

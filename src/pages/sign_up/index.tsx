@@ -3,9 +3,11 @@ import { useState } from "react";
 import { Eye, EyeOff, User, Lock, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import authService from "@/api/services/authService";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +65,18 @@ export default function SignUp() {
         const response = await authService.registerEmail(email, password, name);
         
         if (response.success) {
+          // Nếu có token và user trong response (tự động đăng nhập sau đăng ký)
+          if (response.accessToken && response.user) {
+            // Cập nhật Zustand store
+            setUser(response.user);
+            
+            // Đợi một chút để đảm bảo store được persist
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Dispatch custom event để notify Navbar và các components khác
+            window.dispatchEvent(new Event('auth-changed'));
+          }
+          
           // Chuyển đến trang verify email
           navigate(`/verify-email?email=${encodeURIComponent(email)}`);
         } else {

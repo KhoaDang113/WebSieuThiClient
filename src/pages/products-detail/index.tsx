@@ -7,7 +7,8 @@ import Banners from "@/components/productPage/banner/Banners";
 import type { Banner } from "@/types/banner.type";
 import type { Review, RatingSummary } from "@/types/review.type";
 import ScrollButton from "@/components/scroll/ScrollButton";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import ProductComments from "@/components/products/ProductComments";
 
 // Sample product data
 const productData = {
@@ -106,6 +107,7 @@ const reviews: Review[] = [
 ];
 
 export default function ProductDetail() {
+  const { id } = useParams<{ id: string }>();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const thumbsRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +115,9 @@ export default function ProductDetail() {
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
   const [helpfulReviews, setHelpfulReviews] = useState<Set<number>>(new Set());
+
+  // Get product ID from URL params or use sample data ID
+  const productId = id || productData.id.toString();
 
   // Check scroll position for navigation buttons
   const checkScroll = () => {
@@ -222,8 +227,7 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = (product: Product, quantity: number) => {
-    // TODO: Tích hợp giỏ hàng thật; tạm thời log để kiểm tra
-    console.log("Add to cart:", { product, quantity });
+    // TODO: Tích hợp giỏ hàng thật
   };
 
   const handleHelpfulClick = (reviewId: number) => {
@@ -259,24 +263,24 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-blue-50">
       {/* Back button - match CartWithItems */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
+      <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-1 py-2 flex items-center">
           <Link
             to="/"
-            className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors"
+            className="mr-2 hover:bg-gray-100 p-2 rounded-full transition-all duration-200 hover:scale-105"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-3 h-3 text-gray-700" />
           </Link>
-          <h1 className="text-xl font-semibold text-gray-800">
+          <h1 className="text-xl font-bold text-gray-800">
             Quay Về
           </h1>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-1 py-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Images */}
-          <div className="space-y-4 lg:col-span-2">
+          <div className="space-y-2 lg:col-span-2">
             {/* Main Image */}
             <div className="relative bg-white rounded-lg overflow-hidden border h-[60vh] max-h-screen">
               <img
@@ -340,8 +344,8 @@ export default function ProductDetail() {
           </div>
 
           {/* Right Column - Product Info (Sticky) */}
-          <div className="lg:sticky lg:top-4 lg:self-start">
-            <div className="bg-white rounded-lg p-6 space-y-6">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 p-5 space-y-4">
               {/* Product Name */}
               <h1 className="text-2xl font-semibold text-gray-900">
                 {productData.name}
@@ -363,18 +367,18 @@ export default function ProductDetail() {
               </Button>
 
               {/* Special Offers */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <h3 className="font-semibold text-gray-900 mb-1.5 text-sm">
                   🎁 ƯU ĐÃI ĐẶC BIỆT
                 </h3>
-                <ul className="space-y-1 text-sm text-gray-700">
+                <ul className="space-y-1 text-xs text-gray-700">
                   <li>• Mua 2 tặng 1 tiền</li>
                   <li>• Giảm 10% cho đơn hàng từ 500.000₫</li>
                 </ul>
               </div>
 
               {/* Shipping Info */}
-              <div className="border-t pt-4 space-y-3">
+              <div className="border-t pt-3 space-y-2">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-green-600 text-xl">🚚</span>
@@ -407,13 +411,13 @@ export default function ProductDetail() {
         </div>
 
         {/* Banners dưới hình ảnh, trước thông tin sản phẩm */}
-        <div className="mt-6">
+        <div className="mt-4">
           <Banners banners={productBanners} />
         </div>
 
         {/* Product Specifications */}
-        <div className="mt-8 bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="mt-4 bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 p-5">
+          <h2 className="text-lg font-bold text-gray-900 mb-3">
             Thông tin sản phẩm
           </h2>
           <div className="overflow-x-auto">
@@ -438,15 +442,15 @@ export default function ProductDetail() {
         </div>
 
         {/* Product Reviews */}
-        <div className="mt-8 bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <div className="mt-4 bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 p-5">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
             Đánh giá sản phẩm
           </h2>
 
           {/* Rating Summary */}
-          <div className="flex flex-col md:flex-row gap-8 mb-8 pb-8 border-b">
+          <div className="flex flex-col md:flex-row gap-4 mb-4 pb-4 border-b">
             {/* Average Rating */}
-            <div className="flex flex-col items-center justify-center md:w-1/3 bg-gray-50 rounded-lg p-6">
+            <div className="flex flex-col items-center justify-center md:w-1/3 bg-gray-50 rounded-lg p-4">
               <div className="text-5xl font-bold text-gray-900 mb-2">
                 {ratingSummary.average_rating.toFixed(1)}
               </div>
@@ -488,9 +492,9 @@ export default function ProductDetail() {
           </div>
 
           {/* Reviews List */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {reviews.map((review) => (
-              <div key={review.id} className="border-b pb-6 last:border-b-0">
+              <div key={review.id} className="border-b pb-4 last:border-b-0">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900">
@@ -518,6 +522,11 @@ export default function ProductDetail() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Product Comments */}
+        <div className="mt-4">
+          <ProductComments productId={productId} />
         </div>
       </div>
       {/* Modal */}

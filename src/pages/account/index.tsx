@@ -6,15 +6,16 @@ import userService from "@/api/services/userService";
 import type { ErrorResponse } from "@/api/types";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
 import { useAuthStore } from "@/stores/authStore";
+import { useNotification } from "@/components/notification/NotificationContext";
 
 export default function AccountPage() {
   const setUser = useAuthStore((state) => state.setUser);
   const currentUser = useAuthStore((state) => state.user);
+  const { showNotification } = useNotification();
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   
   const [formData, setFormData] = useState({
     name: "",
@@ -34,10 +35,6 @@ export default function AccountPage() {
         // Lấy profile từ API
         const user = await userService.getProfile();
         
-        // Debug: Log toàn bộ user object để xem backend trả về gì
-        console.log("📌 User data from API:", user);
-        console.log("📌 Avatar URL:", user.avatarUrl);
-        
         setFormData({
           name: user.name || "",
           phoneNumber: user.phone || user.phoneNumber || "",
@@ -47,7 +44,6 @@ export default function AccountPage() {
         
         // Set avatar nếu có (backend dùng field "avatar", không phải "avatarUrl")
         const avatarUrl = user.avatar || user.avatarUrl || DEFAULT_AVATAR_URL;
-        console.log("✅ Setting avatar preview:", avatarUrl);
         setAvatarPreview(avatarUrl);
       } catch (err) {
         console.error("❌ Error loading user data:", err);
@@ -101,7 +97,6 @@ export default function AccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     
     // Validation
     if (!formData.name?.trim()) {
@@ -147,17 +142,29 @@ export default function AccountPage() {
         id: updatedUser._id || updatedUser.id || currentUser?.id || '',
       });
       
-      setSuccess("Lưu thông tin thành công!");
       setAvatarFile(null);
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(""), 3000);
+      // Hiển thị thông báo popup thành công
+      showNotification({
+        type: "success",
+        title: "Thành công",
+        message: "Lưu thông tin thành công!",
+        duration: 3000,
+      });
     } catch (err) {
       console.error("Error updating profile:", err);
       const errorObj = err as ErrorResponse;
       const errorMessage =
         errorObj.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại";
       setError(errorMessage);
+      
+      // Hiển thị thông báo popup lỗi
+      showNotification({
+        type: "error",
+        title: "Lỗi",
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setSaving(false);
     }
@@ -184,7 +191,7 @@ export default function AccountPage() {
             className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors relative z-10"
             style={{ pointerEvents: 'auto' }}
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-3 h-3" />
           </Link>
           <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             Sửa thông tin cá nhân
@@ -318,13 +325,6 @@ export default function AccountPage() {
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg" role="alert">
                 <p className="text-sm text-red-700 font-medium">{error}</p>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {success && (
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg" role="alert">
-                <p className="text-sm text-green-700 font-medium">{success}</p>
               </div>
             )}
 

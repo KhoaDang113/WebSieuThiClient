@@ -8,11 +8,6 @@ interface Province {
   name: string;
 }
 
-interface District {
-  code: string;
-  name: string;
-}
-
 interface Ward {
   code: string;
   name: string;
@@ -20,7 +15,7 @@ interface Ward {
 
 interface AddressData {
   province: string;
-  district: string;
+  district: string; // Giữ lại để tương thích, nhưng sẽ = ""
   ward: string;
   street: string;
   recipient: string;
@@ -44,11 +39,9 @@ const createTimeoutSignal = (timeoutMs: number): AbortSignal => {
 
 export function AddressModal({ isOpen, onClose, onSave, currentAddress }: AddressModalProps) {
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
 
   const [selectedProvince, setSelectedProvince] = useState<string>("");
-  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedWard, setSelectedWard] = useState<string>("");
   const [street, setStreet] = useState<string>("");
   const [recipient, setRecipient] = useState<string>("");
@@ -66,8 +59,14 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
   // Reset form when opening
   useEffect(() => {
     if (isOpen && currentAddress) {
-      setSelectedProvince(currentAddress.province);
-      setSelectedDistrict(currentAddress.district);
+      // Tìm province code từ tên (vì currentAddress lưu tên)
+      const provinceObj = provinces.find(p => p.name === currentAddress.province);
+      if (provinceObj) {
+        setSelectedProvince(provinceObj.code);
+      } else {
+        setSelectedProvince("");
+      }
+      
       setSelectedWard(currentAddress.ward);
       setStreet(currentAddress.street);
       setRecipient(currentAddress.recipient);
@@ -76,24 +75,15 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
     } else if (isOpen) {
       resetForm();
     }
-  }, [isOpen, currentAddress]);
+  }, [isOpen, currentAddress, provinces]);
 
-  // Load districts when province changes
+  // Load wards when province changes (2 cấp: Tỉnh → Xã)
   useEffect(() => {
     if (selectedProvince) {
-      fetchDistricts(selectedProvince);
-      setSelectedDistrict("");
+      fetchWards(selectedProvince);
       setSelectedWard("");
     }
   }, [selectedProvince]);
-
-  // Load wards when district changes
-  useEffect(() => {
-    if (selectedDistrict) {
-      fetchWards(selectedDistrict);
-      setSelectedWard("");
-    }
-  }, [selectedDistrict]);
 
   const fetchProvinces = async () => {
     try {
@@ -102,9 +92,9 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
       let response: Response;
       let data: any;
       
-      // Thử API chính trước
+      // Thử API v2 - Danh sách tỉnh thành sau sát nhập
       try {
-        response = await fetch("https://provinces.open-api.vn/api/p/", {
+        response = await fetch("https://provinces.open-api.vn/api/v2/", {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -115,13 +105,16 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
         if (response.ok) {
           data = await response.json();
           if (Array.isArray(data)) {
-            setProvinces(data);
+            // Map data từ v2 format
+            setProvinces(data.map((p: any) => ({
+              code: p.code.toString(),
+              name: p.name,
+            })));
             return;
           }
         }
       } catch (primaryError: any) {
         // Nếu API chính lỗi (timeout, network error, etc.), thử API dự phòng
-        console.warn("API chính không phản hồi, đang thử API dự phòng...", primaryError);
       }
       
       // Thử API dự phòng
@@ -151,27 +144,27 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
         } else {
           throw new Error("Invalid data format");
         }
-      } catch (fallbackError) {
-        throw new Error("Cả hai API đều không phản hồi");
+      } catch {
+        // Silent error - không hiện thông báo
       }
     } catch (error) {
+      // Silent error - không hiện thông báo
       console.error("Error fetching provinces:", error);
-      alert("Không thể tải danh sách tỉnh/thành phố. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchDistricts = async (provinceCode: string) => {
+  const fetchWards = async (provinceCode: string) => {
     try {
       setLoading(true);
       
       let response: Response;
       let data: any;
       
-      // Thử API chính trước
+      // Thử API v2 - Lấy wards trực tiếp từ tỉnh (2 cấp)
       try {
-        response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`, {
+        response = await fetch(`https://provinces.open-api.vn/api/v2/p/${provinceCode}?depth=2`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -181,20 +174,43 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
         
         if (response.ok) {
           data = await response.json();
-          if (data.districts && Array.isArray(data.districts)) {
-            setDistricts(data.districts);
-            return;
-          } else if (Array.isArray(data)) {
-            setDistricts(data);
+          
+          // API v2 depth=2 trả về wards trực tiếp, không có districts
+          const allWards: Ward[] = [];
+          
+          if (data.wards && Array.isArray(data.wards)) {
+            data.wards.forEach((ward: any) => {
+              allWards.push({
+                code: ward.code.toString(),
+                name: ward.name,
+              });
+            });
+          } else if (data.districts && Array.isArray(data.districts)) {
+            // Fallback: nếu có districts (API khác)
+            data.districts.forEach((district: any) => {
+              if (district.wards && Array.isArray(district.wards)) {
+                district.wards.forEach((ward: any) => {
+                  allWards.push({
+                    code: ward.code.toString(),
+                    name: ward.name,
+                  });
+                });
+              }
+            });
+          }
+          
+          if (allWards.length > 0) {
+            setWards(allWards);
             return;
           }
         }
       } catch (primaryError: any) {
-        console.warn("API chính không phản hồi, đang thử API dự phòng...", primaryError);
+        // API chính không phản hồi, đang thử API dự phòng
       }
       
-      // Thử API dự phòng
+      // Thử API dự phòng - lấy districts rồi flatten wards
       try {
+        // Lấy danh sách districts trước
         response = await fetch(`https://vapi.vnappmob.com/api/province/district/${provinceCode}`, {
           method: 'GET',
           headers: {
@@ -208,94 +224,45 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
         }
         
         data = await response.json();
+        const allWards: Ward[] = [];
         
-        // Xử lý format từ vnappmob API
         if (data.results && Array.isArray(data.results)) {
-          setDistricts(data.results.map((d: any) => ({
-            code: d.district_id,
-            name: d.district_name
-          })));
-        } else if (Array.isArray(data)) {
-          setDistricts(data);
-        } else {
-          setDistricts([]);
-        }
-      } catch (fallbackError) {
-        console.error("Cả hai API đều không phản hồi cho districts");
-        setDistricts([]);
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-      setDistricts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchWards = async (districtCode: string) => {
-    try {
-      setLoading(true);
-      
-      let response: Response;
-      let data: any;
-      
-      // Thử API chính trước
-      try {
-        response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-          signal: createTimeoutSignal(10000),
-        });
-        
-        if (response.ok) {
-          data = await response.json();
-          if (data.wards && Array.isArray(data.wards)) {
-            setWards(data.wards);
-            return;
-          } else if (Array.isArray(data)) {
-            setWards(data);
-            return;
+          // Lấy wards từ tất cả districts
+          for (const district of data.results) {
+            try {
+              const wardResponse = await fetch(
+                `https://vapi.vnappmob.com/api/province/ward/${district.district_id}`,
+                {
+                  method: 'GET',
+                  headers: { 'Accept': 'application/json' },
+                  signal: createTimeoutSignal(5000),
+                }
+              );
+              
+              if (wardResponse.ok) {
+                const wardData = await wardResponse.json();
+                if (wardData.results && Array.isArray(wardData.results)) {
+                  wardData.results.forEach((w: any) => {
+                    allWards.push({
+                      code: w.ward_id,
+                      name: w.ward_name,
+                    });
+                  });
+                }
+              }
+            } catch {
+              // Silent error - không hiện thông báo
+            }
           }
         }
-      } catch (primaryError: any) {
-        console.warn("API chính không phản hồi, đang thử API dự phòng...", primaryError);
-      }
-      
-      // Thử API dự phòng
-      try {
-        response = await fetch(`https://vapi.vnappmob.com/api/province/ward/${districtCode}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-          signal: createTimeoutSignal(10000),
-        });
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        data = await response.json();
-        
-        // Xử lý format từ vnappmob API
-        if (data.results && Array.isArray(data.results)) {
-          setWards(data.results.map((w: any) => ({
-            code: w.ward_id,
-            name: w.ward_name
-          })));
-        } else if (Array.isArray(data)) {
-          setWards(data);
-        } else {
-          setWards([]);
-        }
-      } catch (fallbackError) {
-        console.error("Cả hai API đều không phản hồi cho wards");
+        setWards(allWards);
+      } catch {
+        // Silent error - không hiện thông báo
         setWards([]);
       }
-    } catch (error) {
-      console.error("Error fetching wards:", error);
+    } catch {
+      // Silent error - không hiện thông báo
       setWards([]);
     } finally {
       setLoading(false);
@@ -322,14 +289,14 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedProvince || !selectedDistrict || !selectedWard) {
-      alert("Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã");
+    if (!selectedProvince || !selectedWard) {
+      alert("Vui lòng chọn đầy đủ Tỉnh/Thành phố và Phường/Xã");
       return;
     }
 
     const addressData: AddressData = {
       province: provinces.find(p => p.code === selectedProvince)?.name || "",
-      district: districts.find(d => d.code === selectedDistrict)?.name || "",
+      district: "", // Mô hình 2 cấp: Không còn cấp huyện
       ward: wards.find(w => w.code === selectedWard)?.name || "",
       street,
       recipient,
@@ -343,7 +310,6 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
 
   const resetForm = () => {
     setSelectedProvince("");
-    setSelectedDistrict("");
     setSelectedWard("");
     setStreet("");
     setRecipient("");
@@ -399,35 +365,28 @@ export function AddressModal({ isOpen, onClose, onSave, currentAddress }: Addres
             />
           </div>
 
-          {/* District dropdown */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quận/Huyện <span className="text-red-500">*</span>
-            </label>
-            <CustomSelect
-              value={selectedDistrict}
-              onChange={setSelectedDistrict}
-              options={districts.map((d) => ({ value: d.code, label: d.name }))}
-              placeholder="Chọn Quận/Huyện"
-              disabled={!selectedProvince || loading}
-              required
-            />
-          </div>
-
-          {/* Ward dropdown */}
+          {/* Ward dropdown - Mô hình 2 cấp: Phường/Xã trực thuộc Tỉnh */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Phường/Xã <span className="text-red-500">*</span>
+              {wards.length > 0 && (
+                <span className="text-xs text-gray-500 ml-2">({wards.length} phường/xã)</span>
+              )}
             </label>
             <CustomSelect
               value={selectedWard}
               onChange={setSelectedWard}
               options={wards.map((w) => ({ value: w.code, label: w.name }))}
-              placeholder="Chọn Phường/Xã"
-              disabled={!selectedDistrict || loading}
+              placeholder={wards.length === 0 ? "Vui lòng chọn Tỉnh/Thành phố trước" : "Chọn Phường/Xã"}
+              disabled={!selectedProvince || loading}
               required
               openUp={true}
             />
+            {wards.length === 0 && selectedProvince && !loading && (
+              <p className="text-xs text-red-500 mt-1">
+                ⚠️ Không tải được danh sách. Vui lòng kiểm tra console (F12)
+              </p>
+            )}
           </div>
 
           {/* Street address */}

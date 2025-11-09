@@ -47,13 +47,7 @@ export default function HomePage() {
       quantity: product.selectedQuantity || 1,
     });
 
-    // Hiển thị thông báo đã thêm vào giỏ hàng
-    console.log(
-      "Đã thêm vào giỏ hàng:",
-      product.name,
-      "x",
-      product.selectedQuantity || 1
-    );
+    // TODO: Hiển thị thông báo đã thêm vào giỏ hàng
   };
 
   if (loading) {

@@ -74,7 +74,7 @@ export function OrderDetailView({ order, onBack }: OrderDetailViewProps) {
           size="sm"
           className="flex items-center gap-2"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-2 h-2" />
           Quay lại
         </Button>
       </div>

@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
 import authService from "@/api/services/authService";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
   const email = searchParams.get("email") || "";
   
   const [code, setCode] = useState("");
@@ -31,9 +33,45 @@ export default function VerifyEmail() {
 
     setIsLoading(true);
     try {
-      await authService.verifyEmail(email, code);
+      const response = await authService.verifyEmail(email, code);
       
-      // Verify thành công, chuyển đến login
+      // Verify thành công
+      // Kiểm tra xem có token trong localStorage không (từ lúc đăng ký)
+      if (authService.isAuthenticated()) {
+        try {
+          // Lấy thông tin user từ API
+          const user = await authService.getMe();
+          
+          // Cập nhật Zustand store
+          setUser(user);
+          
+          // Đợi một chút để đảm bảo store được persist
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Dispatch custom event để notify Navbar và các components khác
+          window.dispatchEvent(new Event('auth-changed'));
+          
+          // Nếu có token và user, tự động đăng nhập thành công
+          // Redirect theo role
+          const userRole = user.role;
+          if (userRole === "staff") {
+            navigate("/staff/orders", { replace: true });
+            return;
+          } else if (userRole === "admin") {
+            navigate("/admin", { replace: true });
+            return;
+          }
+          
+          // Chuyển đến trang home cho user thường
+          navigate("/", { replace: true });
+          return;
+        } catch (err) {
+          console.error("Failed to get user info after verify:", err);
+          // Nếu không lấy được user, vẫn chuyển đến login
+        }
+      }
+      
+      // Nếu không có token, chuyển đến login
       navigate("/login", {
         state: { message: "Xác thực email thành công! Vui lòng đăng nhập." }
       });

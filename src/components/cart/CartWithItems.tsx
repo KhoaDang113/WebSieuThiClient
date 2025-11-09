@@ -33,10 +33,10 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-50">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-1 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="mr-2 hover:bg-gray-100 p-2 rounded-full transition-all duration-200 hover:scale-105">
-              <ChevronLeft className="w-6 h-6 text-gray-700" />
+              <ChevronLeft className="w-3 h-3 text-gray-700" />
             </Link>
             <div>
               <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -48,13 +48,13 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-1 py-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-2">
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
               {/* Clear Cart Button - Top Section */}
-              <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b border-gray-200 flex justify-between items-center">
+              <div className="bg-gradient-to-r from-gray-50 to-white p-4 border-b border-gray-200 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   Danh Sách Sản Phẩm
                   <span className="bg-[#007E42] text-white text-xs px-2.5 py-1 rounded-full">{items.length}</span>
@@ -73,11 +73,11 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                 {items.map((item, index) => (
                   <div 
                     key={item.id} 
-                    className="p-6 flex gap-6 hover:bg-gradient-to-r hover:from-green-50/30 hover:to-transparent transition-all duration-300 group"
+                    className="p-4 flex gap-4 hover:bg-gradient-to-r hover:from-green-50/30 hover:to-transparent transition-all duration-300 group"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {/* Product Image */}
-                    <div className="w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 shadow-md group-hover:shadow-xl transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-[#007E42]/20">
+                    <div className="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 shadow-md group-hover:shadow-xl transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-[#007E42]/20">
                       <img
                         src={item.image || "/placeholder.svg"}
                         alt={item.name}
@@ -88,46 +88,46 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                     {/* Product Info */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#007E42] transition-colors">{item.name}</h3>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{item.unit}</span>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-[#007E42] transition-colors">{item.name}</h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{item.unit}</span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className="text-xl font-bold bg-gradient-to-r from-[#007E42] to-[#00a855] bg-clip-text text-transparent">
+                        <p className="text-lg font-bold bg-gradient-to-r from-[#007E42] to-[#00a855] bg-clip-text text-transparent">
                           {formatPrice(item.price)}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500">
                           Tổng: <span className="font-semibold text-gray-700">{formatPrice(item.price * item.quantity)}</span>
                         </p>
                       </div>
                     </div>
 
                     {/* Quantity Controls */}
-                    <div className="flex flex-col items-end justify-between gap-3">
+                    <div className="flex flex-col items-end justify-between gap-2">
                       <button
                         onClick={() => onRemoveItem(item.id)}
-                        className="text-gray-400 hover:text-white hover:bg-red-500 p-2 rounded-lg transition-all duration-200 hover:scale-110 hover:rotate-90"
+                        className="text-gray-400 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition-all duration-200 hover:scale-110 hover:rotate-90"
                       >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4" />
                       </button>
 
-                      <div className="flex items-center bg-gradient-to-r from-[#007E42]/10 to-[#00a855]/10 border-2 border-[#007E42] rounded-xl overflow-hidden shadow-md">
+                      <div className="flex items-center bg-gradient-to-r from-[#007E42]/10 to-[#00a855]/10 border-2 border-[#007E42] rounded-lg overflow-hidden shadow-md">
                         <button
                           onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                          className="flex items-center justify-center px-4 py-2.5 min-h-[44px] hover:bg-[#007E42] hover:text-white transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          className="flex items-center justify-center px-3 py-1.5 min-h-[36px] hover:bg-[#007E42] hover:text-white transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           disabled={item.quantity <= 1}
                         >
-                          <Minus className="w-4 h-4 text-[#007E42] group-hover:text-white group-disabled:text-gray-400" />
+                          <Minus className="w-3.5 h-3.5 text-[#007E42] group-hover:text-white group-disabled:text-gray-400" />
                         </button>
-                        <span className="px-5 py-2.5 text-base font-bold text-gray-800 min-w-[50px] text-center bg-white min-h-[44px] flex items-center justify-center">
+                        <span className="px-4 py-1.5 text-sm font-bold text-gray-800 min-w-[40px] text-center bg-white min-h-[36px] flex items-center justify-center">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                          className="flex items-center justify-center px-4 py-2.5 min-h-[44px] hover:bg-[#007E42] hover:text-white transition-all duration-200 group"
+                          className="flex items-center justify-center px-3 py-1.5 min-h-[36px] hover:bg-[#007E42] hover:text-white transition-all duration-200 group"
                         >
-                          <Plus className="w-4 h-4 text-[#007E42] group-hover:text-white" />
+                          <Plus className="w-3.5 h-3.5 text-[#007E42] group-hover:text-white" />
                         </button>
                       </div>
                     </div>
@@ -139,22 +139,22 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-xl p-8 sticky top-24 self-start border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-xl p-5 sticky top-24 self-start border border-gray-100 overflow-hidden">
               {/* Decorative gradient background */}
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-[#007E42]/5 to-transparent"></div>
+              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-br from-[#007E42]/5 to-transparent"></div>
               
               <div className="relative">
-                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                  <Gift className="w-6 h-6 text-[#007E42]" />
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-[#007E42]" />
                   Tóm Tắt Đơn Hàng
                 </h3>
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <span className="text-sm text-gray-600">Tạm tính:</span>
                     <span className="font-semibold text-gray-800">{formatPrice(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <span className="text-sm text-gray-600 flex items-center gap-2">
                       <Truck className="w-4 h-4" />
                       Phí vận chuyển
@@ -163,7 +163,7 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                       {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <span className="text-sm text-gray-600 flex items-center gap-2">
                       <Gift className="w-4 h-4" />
                       Khuyến mại
@@ -171,33 +171,33 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                     <span className="font-semibold text-gray-800">{formatPrice(discount)}</span>
                   </div>
                   
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-4"></div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2"></div>
                   
-                  <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-[#007E42]/10 to-[#00a855]/10">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-r from-[#007E42]/10 to-[#00a855]/10">
                     <span className="text-base font-bold text-gray-800">Thành tiền:</span>
-                    <span className="text-2xl font-bold bg-gradient-to-r from-[#007E42] to-[#00a855] bg-clip-text text-transparent">
+                    <span className="text-xl font-bold bg-gradient-to-r from-[#007E42] to-[#00a855] bg-clip-text text-transparent">
                       {formatPrice(total)}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500 mb-6 text-center bg-gray-50 py-2 rounded-lg">
+                <p className="text-xs text-gray-500 mb-4 text-center bg-gray-50 py-1.5 rounded-lg">
                   (Giá đã bao gồm VAT)
                 </p>
 
                 {/* Checkout Button */}
                 <Button 
                   onClick={handleCheckout}
-                  className="w-full bg-gradient-to-r from-[#007E42] to-[#00a855] hover:from-[#005a2f] hover:to-[#007E42] text-white py-7 rounded-xl text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden group"
+                  className="w-full bg-gradient-to-r from-[#007E42] to-[#00a855] hover:from-[#005a2f] hover:to-[#007E42] text-white py-5 rounded-xl text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden group"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
-                  <span className="relative flex flex-col items-center gap-1">
-                    <span className="text-base tracking-wide">ĐẶT HÀNG NGAY</span>
-                    <span className="text-sm font-semibold opacity-90">{formatPrice(total)}</span>
+                  <span className="relative flex flex-col items-center gap-0.5">
+                    <span className="text-sm tracking-wide">ĐẶT HÀNG NGAY</span>
+                    <span className="text-xs font-semibold opacity-90">{formatPrice(total)}</span>
                   </span>
                 </Button>
 
-                <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-500">
+                <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span>Thanh toán an toàn & bảo mật</span>
                 </div>

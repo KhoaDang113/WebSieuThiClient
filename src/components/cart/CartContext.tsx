@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from "react"
 import type { CartItem } from "@/types/cart.type"
 
 interface CartContextType {
@@ -14,7 +14,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export function CartProvider({ children }: { children: ReactNode }) {
+function CartProviderInner({ children }: { children: ReactNode }) {
+  
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     // Load từ localStorage khi khởi tạo
     if (typeof window !== "undefined") {
@@ -37,35 +38,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cartItems])
 
-  const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+  const addToCart = useCallback((item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+    const addedQuantity = item.quantity || 1
+    const itemId = item.id
+    
     setCartItems((prev) => {
-      const existingItem = prev.find((i) => i.id === item.id)
+      const existingItem = prev.find((i) => i.id === itemId)
+      
       if (existingItem) {
         // Nếu đã có trong giỏ, tăng số lượng
+        const newQuantity = existingItem.quantity + addedQuantity
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + (item.quantity || 1) } : i
+          i.id === itemId ? { ...i, quantity: newQuantity } : i
         )
       } else {
         // Thêm mới vào giỏ
-        return [...prev, { ...item, quantity: item.quantity || 1 }]
+        return [...prev, { ...item, quantity: addedQuantity }]
       }
     })
-  }
+  }, [])
+  
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity < 1) return
     setCartItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, quantity } : item))
     )
-  }
+  }, [])
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id))
-  }
+  }, [])
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems([])
-  }
+  }, [])
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -85,6 +92,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   )
 }
 
+export function CartProvider({ children }: { children: ReactNode }) {
+  return <CartProviderInner>{children}</CartProviderInner>
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function useCart() {
   const context = useContext(CartContext)
@@ -93,4 +104,3 @@ export function useCart() {
   }
   return context
 }
-

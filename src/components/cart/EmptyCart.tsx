@@ -16,7 +16,7 @@ export default function EmptyCart({ onContinueShopping }: EmptyCartProps) {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
           <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-3 h-3" />
           </Link>
           <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             Giỏ Hàng Của Bạn
