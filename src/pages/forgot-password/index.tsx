@@ -1,23 +1,41 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Mail, Key, CheckCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import authService from "@/api/services/authService";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const emailFromUrl = searchParams.get("email") || "";
+  const codeFromUrl = searchParams.get("code") || "";
+
   // Form states
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [email, setEmail] = useState(emailFromUrl);
+  const [code, setCode] = useState(codeFromUrl);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // UI states
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(
+    emailFromUrl && codeFromUrl ? 2 : 1
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    // Tự động điền email và code từ URL nếu có
+    if (emailFromUrl) {
+      setEmail(emailFromUrl);
+    }
+    if (codeFromUrl && codeFromUrl.length === 6) {
+      setCode(codeFromUrl);
+      if (emailFromUrl) {
+        setStep(2);
+      }
+    }
+  }, [emailFromUrl, codeFromUrl]);
 
   // Step 1: Send OTP to email
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -36,7 +54,9 @@ export default function ForgotPassword() {
       setStep(2);
     } catch (err: any) {
       console.error("Forgot password error:", err);
-      setError(err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
+      setError(
+        err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +78,9 @@ export default function ForgotPassword() {
       setStep(3);
     } catch (err: any) {
       console.error("Verify OTP error:", err);
-      setError(err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn");
+      setError(
+        err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -88,11 +110,13 @@ export default function ForgotPassword() {
     try {
       await authService.resetPassword(email, newPassword);
       navigate("/login", {
-        state: { message: "Đặt lại mật khẩu thành công! Vui lòng đăng nhập." }
+        state: { message: "Đặt lại mật khẩu thành công! Vui lòng đăng nhập." },
       });
     } catch (err: any) {
       console.error("Reset password error:", err);
-      setError(err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
+      setError(
+        err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -117,18 +141,22 @@ export default function ForgotPassword() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            
+
             <div className="flex flex-col items-center gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/30 rounded-full blur-lg"></div>
                 <div className="relative bg-white/20 p-4 rounded-full">
                   {step === 1 && <Mail className="w-10 h-10 text-white" />}
                   {step === 2 && <Key className="w-10 h-10 text-white" />}
-                  {step === 3 && <CheckCircle className="w-10 h-10 text-white" />}
+                  {step === 3 && (
+                    <CheckCircle className="w-10 h-10 text-white" />
+                  )}
                 </div>
               </div>
               <div className="text-center">
-                <h1 className="text-xl font-bold text-white mb-1">Quên mật khẩu</h1>
+                <h1 className="text-xl font-bold text-white mb-1">
+                  Quên mật khẩu
+                </h1>
                 <p className="text-white/80 text-sm">
                   {step === 1 && "Nhập email để nhận mã xác thực"}
                   {step === 2 && "Xác thực mã OTP"}
@@ -170,9 +198,12 @@ export default function ForgotPassword() {
                 <p className="text-gray-600 text-center mb-4">
                   Nhập email của bạn để nhận mã OTP đặt lại mật khẩu.
                 </p>
-                
+
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Email
                   </label>
                   <input
@@ -210,12 +241,16 @@ export default function ForgotPassword() {
             {step === 2 && (
               <form onSubmit={handleVerifyOTP} className="space-y-6">
                 <p className="text-gray-600 text-center mb-4">
-                  Nhập mã OTP (6 số) đã được gửi đến:<br />
+                  Nhập mã OTP (6 số) đã được gửi đến:
+                  <br />
                   <strong className="text-gray-800">{email}</strong>
                 </p>
-                
+
                 <div>
-                  <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                  <label
+                    htmlFor="code"
+                    className="block text-sm font-medium text-gray-700 mb-2 text-center"
+                  >
                     Mã OTP
                   </label>
                   <input
@@ -262,9 +297,12 @@ export default function ForgotPassword() {
                 <p className="text-gray-600 text-center mb-4">
                   Đặt mật khẩu mới cho tài khoản của bạn.
                 </p>
-                
+
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="newPassword"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Mật khẩu mới
                   </label>
                   <div className="relative">
@@ -286,7 +324,11 @@ export default function ForgotPassword() {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600 transition-colors"
                     >
-                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showNewPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
@@ -295,7 +337,10 @@ export default function ForgotPassword() {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Xác nhận mật khẩu
                   </label>
                   <div className="relative">
@@ -313,10 +358,16 @@ export default function ForgotPassword() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600 transition-colors"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -342,4 +393,3 @@ export default function ForgotPassword() {
     </div>
   );
 }
-

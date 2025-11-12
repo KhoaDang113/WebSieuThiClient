@@ -24,7 +24,7 @@ class AuthService {
       { email, password, name },
       { withCredentials: true } // Để nhận cookies
     );
-    
+
     // Lưu token vào localStorage
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
@@ -32,7 +32,7 @@ class AuthService {
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
-    
+
     return response.data;
   }
 
@@ -72,12 +72,12 @@ class AuthService {
       { email, password },
       { withCredentials: true } // Để nhận cookies
     );
-    
+
     // Xử lý trường hợp cần verify email
     if (response.data.requiresEmailVerification) {
       return response.data;
     }
-    
+
     // Lưu token vào localStorage
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
@@ -85,7 +85,7 @@ class AuthService {
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
-    
+
     return response.data;
   }
 
@@ -111,12 +111,12 @@ class AuthService {
       {},
       { withCredentials: true } // Gửi cookies
     );
-    
+
     // Lưu token mới
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
     }
-    
+
     return response.data;
   }
 
@@ -167,12 +167,12 @@ class AuthService {
     const response = await api.get<{ success: boolean; user: User }>(
       `${this.basePath}/me`
     );
-    
+
     // Cập nhật localStorage
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
-    
+
     return response.data.user;
   }
 
@@ -247,23 +247,23 @@ class AuthService {
   private getAccessToken(): string | null {
     // Ưu tiên localStorage trước
     let token = localStorage.getItem("accessToken");
-    
+
     if (!token) {
       // Nếu không có trong localStorage, thử lấy từ cookies
-      const cookies = document.cookie.split(';');
-      const accessTokenCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('accessToken=')
+      const cookies = document.cookie.split(";");
+      const accessTokenCookie = cookies.find((cookie) =>
+        cookie.trim().startsWith("accessToken=")
       );
-      
+
       if (accessTokenCookie) {
-        token = accessTokenCookie.split('=')[1];
+        token = accessTokenCookie.split("=")[1];
         // Lưu vào localStorage để sử dụng lần sau
         if (token) {
           localStorage.setItem("accessToken", token);
         }
       }
     }
-    
+
     return token;
   }
 
@@ -280,7 +280,7 @@ class AuthService {
   getCurrentUser(): User | null {
     const userStr = localStorage.getItem("user");
     if (!userStr) return null;
-    
+
     try {
       return JSON.parse(userStr) as User;
     } catch {

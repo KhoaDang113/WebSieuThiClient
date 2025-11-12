@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
 import authService from "@/api/services/authService";
@@ -9,8 +9,11 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
   const email = searchParams.get("email") || "";
-  
-  const [code, setCode] = useState("");
+  const codeFromUrl = searchParams.get("code") || "";
+  const formRef = useRef<HTMLFormElement>(null);
+  const hasAutoSubmitted = useRef(false);
+
+  const [code, setCode] = useState(codeFromUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [resending, setResending] = useState(false);
@@ -21,6 +24,26 @@ export default function VerifyEmail() {
       navigate("/login");
     }
   }, [email, navigate]);
+
+  useEffect(() => {
+    // Tự động điền code từ URL nếu có
+    if (codeFromUrl && codeFromUrl.length === 6 && !hasAutoSubmitted.current) {
+      setCode(codeFromUrl);
+      // Tự động submit form sau khi điền code (đợi một chút để đảm bảo state đã cập nhật)
+      const timer = setTimeout(() => {
+        if (
+          formRef.current &&
+          codeFromUrl.length === 6 &&
+          email &&
+          !isLoading
+        ) {
+          hasAutoSubmitted.current = true;
+          formRef.current.requestSubmit();
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [codeFromUrl, email, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,24 +56,24 @@ export default function VerifyEmail() {
 
     setIsLoading(true);
     try {
-      const response = await authService.verifyEmail(email, code);
-      
+      await authService.verifyEmail(email, code);
+
       // Verify thành công
       // Kiểm tra xem có token trong localStorage không (từ lúc đăng ký)
       if (authService.isAuthenticated()) {
         try {
           // Lấy thông tin user từ API
           const user = await authService.getMe();
-          
+
           // Cập nhật Zustand store
           setUser(user);
-          
+
           // Đợi một chút để đảm bảo store được persist
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
           // Dispatch custom event để notify Navbar và các components khác
-          window.dispatchEvent(new Event('auth-changed'));
-          
+          window.dispatchEvent(new Event("auth-changed"));
+
           // Nếu có token và user, tự động đăng nhập thành công
           // Redirect theo role
           const userRole = user.role;
@@ -61,7 +84,7 @@ export default function VerifyEmail() {
             navigate("/admin", { replace: true });
             return;
           }
-          
+
           // Chuyển đến trang home cho user thường
           navigate("/", { replace: true });
           return;
@@ -70,14 +93,16 @@ export default function VerifyEmail() {
           // Nếu không lấy được user, vẫn chuyển đến login
         }
       }
-      
+
       // Nếu không có token, chuyển đến login
       navigate("/login", {
-        state: { message: "Xác thực email thành công! Vui lòng đăng nhập." }
+        state: { message: "Xác thực email thành công! Vui lòng đăng nhập." },
       });
     } catch (err: any) {
       console.error("Verify error:", err);
-      setError(err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn");
+      setError(
+        err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -87,14 +112,17 @@ export default function VerifyEmail() {
     setResending(true);
     setError("");
     setResendSuccess(false);
-    
+
     try {
       await authService.resendEmailVerification(email);
       setResendSuccess(true);
       setTimeout(() => setResendSuccess(false), 3000);
     } catch (err: any) {
       console.error("Resend error:", err);
-      setError(err.response?.data?.message || "Không thể gửi lại OTP. Vui lòng thử lại sau.");
+      setError(
+        err.response?.data?.message ||
+          "Không thể gửi lại OTP. Vui lòng thử lại sau."
+      );
     } finally {
       setResending(false);
     }
@@ -119,7 +147,7 @@ export default function VerifyEmail() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            
+
             <div className="flex flex-col items-center gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/30 rounded-full blur-lg"></div>
@@ -128,8 +156,12 @@ export default function VerifyEmail() {
                 </div>
               </div>
               <div className="text-center">
-                <h1 className="text-xl font-bold text-white mb-1">Xác thực Email</h1>
-                <p className="text-white/80 text-sm">Nhập mã OTP để xác nhận tài khoản</p>
+                <h1 className="text-xl font-bold text-white mb-1">
+                  Xác thực Email
+                </h1>
+                <p className="text-white/80 text-sm">
+                  Nhập mã OTP để xác nhận tài khoản
+                </p>
               </div>
             </div>
           </div>
@@ -137,13 +169,17 @@ export default function VerifyEmail() {
           {/* Content */}
           <div className="p-8">
             <p className="text-gray-600 mb-6 text-center">
-              Chúng tôi đã gửi mã OTP (6 số) đến email:<br />
+              Chúng tôi đã gửi mã OTP (6 số) đến email:
+              <br />
               <strong className="text-gray-800">{email}</strong>
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                <label
+                  htmlFor="code"
+                  className="block text-sm font-medium text-gray-700 mb-2 text-center"
+                >
                   Nhập mã OTP
                 </label>
                 <input
@@ -164,13 +200,19 @@ export default function VerifyEmail() {
               </div>
 
               {error && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg" role="alert">
+                <div
+                  className="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg"
+                  role="alert"
+                >
                   <p className="text-sm text-red-700 font-medium">{error}</p>
                 </div>
               )}
 
               {resendSuccess && (
-                <div className="bg-green-50 border-l-4 border-green-500 p-3 rounded-lg" role="alert">
+                <div
+                  className="bg-green-50 border-l-4 border-green-500 p-3 rounded-lg"
+                  role="alert"
+                >
                   <p className="text-sm text-green-700 font-medium">
                     Đã gửi lại mã OTP. Vui lòng kiểm tra email!
                   </p>
@@ -204,7 +246,7 @@ export default function VerifyEmail() {
                   </span>
                 </div>
               </div>
-              
+
               <button
                 type="button"
                 onClick={handleResend}
@@ -231,4 +273,3 @@ export default function VerifyEmail() {
     </div>
   );
 }
-
