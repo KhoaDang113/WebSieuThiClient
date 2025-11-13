@@ -4,18 +4,19 @@ import MainBanner from "@/components/home/MainBanner";
 import CategoryProductsSection from "@/components/category/CategoryProductsSection";
 import { useCart } from "@/components/cart/CartContext";
 import DailyMarket from "@/components/home/DailyMarket";
-import { categoryService } from "@/api";
-import { mainBanners } from "@/lib/sampleData";
+import { categoryService, bannerService } from "@/api";
 import { getProductId, getProductImage } from "@/lib/constants";
 import type { Product } from "@/types";
+import type { Banner } from "@/types/banner.type";
 
 export default function HomePage() {
   const { addToCart } = useCart();
   const [productsByCategory, setProductsByCategory] = useState<Record<string, Product[]>>({});
   const [categories, setCategories] = useState<any[]>([]);
+  const [mainBanners, setMainBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch categories (products được fetch trong CategoryProductsSection)
+  // Fetch categories và main banners
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -24,6 +25,15 @@ export default function HomePage() {
         // Lấy danh sách categories
         const categoriesData = await categoryService.getRootCategories();
         setCategories(categoriesData);
+        
+        // Lấy main banners (không có category - lấy tất cả banners active)
+        try {
+          const banners = await bannerService.getBanners(); // Không truyền categorySlug để lấy tất cả
+          setMainBanners(banners);
+        } catch (error) {
+          console.error("Error fetching main banners:", error);
+          setMainBanners([]);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -60,10 +70,6 @@ export default function HomePage() {
       </div>
     );
   }
-
-  // const handleCategorySelect = (category: { id: string; name: string }) => {
-  //   console.log("Đã chọn loại:", category.name);
-  // };
 
   return (
     <div className="min-h-screen bg-blue-50 w-full">

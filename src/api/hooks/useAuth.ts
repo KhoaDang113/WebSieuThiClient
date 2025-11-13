@@ -16,6 +16,21 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Xóa cart cũ trước khi login user mới (nếu có user cũ)
+      const oldUserStr = localStorage.getItem("user");
+      if (oldUserStr) {
+        try {
+          const oldUser = JSON.parse(oldUserStr) as { id?: string };
+          if (oldUser?.id) {
+            localStorage.removeItem(`cart_${oldUser.id}`);
+          }
+        } catch {
+          // Ignore parse error
+        }
+      }
+      localStorage.removeItem("cart_guest");
+      
       const response = await authService.loginEmail(email, password);
 
       // Lưu tokens và user info vào localStorage
@@ -65,6 +80,21 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Xóa cart cũ trước khi login user mới (nếu có user cũ)
+      const oldUserStr = localStorage.getItem("user");
+      if (oldUserStr) {
+        try {
+          const oldUser = JSON.parse(oldUserStr) as { id?: string };
+          if (oldUser?.id) {
+            localStorage.removeItem(`cart_${oldUser.id}`);
+          }
+        } catch {
+          // Ignore parse error
+        }
+      }
+      localStorage.removeItem("cart_guest");
+      
       const response = await authService.verifyLoginSms(userId, code);
 
       // Lưu tokens và user info
@@ -143,6 +173,21 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       setLoading(true);
+      
+      // Xóa cart của user hiện tại trước khi logout
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr) as { id?: string };
+          if (user?.id) {
+            localStorage.removeItem(`cart_${user.id}`);
+          }
+        } catch {
+          // Ignore parse error
+        }
+      }
+      localStorage.removeItem("cart_guest");
+      
       await authService.logout();
 
       // Chuyển về trang chủ
@@ -152,6 +197,19 @@ export const useAuth = () => {
       // Vẫn xóa dữ liệu local nếu có lỗi
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
+      // Clear cart
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr) as { id?: string };
+          if (user?.id) {
+            localStorage.removeItem(`cart_${user.id}`);
+          }
+        } catch {
+          // Ignore parse error
+        }
+      }
+      localStorage.removeItem("cart_guest");
     } finally {
       setLoading(false);
     }

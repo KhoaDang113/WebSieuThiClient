@@ -12,11 +12,10 @@ export interface Product {
   unit?: string; // Đơn vị: "pack", "bottle", "kg", etc.
   unit_price: number;
   discount_percent: number;
-  final_price: number; // Giá cuối cùng (required)
-  image_primary?: string; // Ảnh chính
-  image_url?: string; // Alias for image_primary (BE compatibility)
+  final_price?: number;
+  image_primary?: string; // Ảnh chính (single string, not array)
   images?: string[]; // Mảng ảnh phụ
-  quantity?: number; // Số lượng trong kho (số) - optional for backward compatibility
+  quantity: number; // Số lượng trong kho (số) - optional for backward compatibility
   stock_quantity?: number; // Alias for quantity (BE compatibility)
   stock_status: "in_stock" | "out_of_stock" | "preorder";
   is_active?: boolean;
@@ -27,6 +26,11 @@ export interface Product {
 
   // Các field tùy chỉnh cho FE
   selectedQuantity?: number; // Số lượng được chọn khi thêm vào giỏ
+  image_url?: string; // Alias cho image_primary
+
+  price?: number; // Alias cho unit_price
+
+  description?: string; // Custom FE field
 }
 
 export interface ProductCardProps {

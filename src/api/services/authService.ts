@@ -25,6 +25,20 @@ class AuthService {
       { withCredentials: true } // Để nhận cookies
     );
     
+    // Xóa cart cũ trước khi register user mới (nếu có user cũ)
+    const oldUserStr = localStorage.getItem("user");
+    if (oldUserStr) {
+      try {
+        const oldUser = JSON.parse(oldUserStr) as { id?: string };
+        if (oldUser?.id) {
+          localStorage.removeItem(`cart_${oldUser.id}`);
+        }
+      } catch {
+        // Ignore parse error
+      }
+    }
+    localStorage.removeItem("cart_guest");
+    
     // Lưu token vào localStorage
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
@@ -32,7 +46,7 @@ class AuthService {
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
-    
+
     return response.data;
   }
 
@@ -72,11 +86,25 @@ class AuthService {
       { email, password },
       { withCredentials: true } // Để nhận cookies
     );
-    
+
     // Xử lý trường hợp cần verify email
     if (response.data.requiresEmailVerification) {
       return response.data;
     }
+    
+    // Xóa cart cũ trước khi login user mới (nếu có user cũ)
+    const oldUserStr = localStorage.getItem("user");
+    if (oldUserStr) {
+      try {
+        const oldUser = JSON.parse(oldUserStr) as { id?: string };
+        if (oldUser?.id) {
+          localStorage.removeItem(`cart_${oldUser.id}`);
+        }
+      } catch {
+        // Ignore parse error
+      }
+    }
+    localStorage.removeItem("cart_guest");
     
     // Lưu token vào localStorage
     if (response.data.accessToken) {
@@ -85,7 +113,7 @@ class AuthService {
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
-    
+
     return response.data;
   }
 
@@ -111,12 +139,12 @@ class AuthService {
       {},
       { withCredentials: true } // Gửi cookies
     );
-    
+
     // Lưu token mới
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
     }
-    
+
     return response.data;
   }
 
@@ -128,10 +156,21 @@ class AuthService {
     try {
       await api.post(`${this.basePath}/logout`, {}, { withCredentials: true });
     } finally {
+      // Lấy userId trước khi xóa user
+      const userStr = localStorage.getItem("user");
+      const userId = userStr ? (JSON.parse(userStr) as { id?: string })?.id : null;
+      
       // Luôn xóa token khỏi localStorage dù API có lỗi
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
+      
+      // Xóa cart của user vừa logout
+      if (userId) {
+        localStorage.removeItem(`cart_${userId}`);
+      }
+      // Xóa cart guest nếu có
+      localStorage.removeItem("cart_guest");
     }
   }
 
@@ -149,10 +188,21 @@ class AuthService {
       );
       return response.data;
     } finally {
+      // Lấy userId trước khi xóa user
+      const userStr = localStorage.getItem("user");
+      const userId = userStr ? (JSON.parse(userStr) as { id?: string })?.id : null;
+      
       // Xóa token khỏi localStorage
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
+      
+      // Xóa cart của user vừa logout
+      if (userId) {
+        localStorage.removeItem(`cart_${userId}`);
+      }
+      // Xóa cart guest nếu có
+      localStorage.removeItem("cart_guest");
     }
   }
 
@@ -167,12 +217,12 @@ class AuthService {
     const response = await api.get<{ success: boolean; user: User }>(
       `${this.basePath}/me`
     );
-    
+
     // Cập nhật localStorage
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
-    
+
     return response.data.user;
   }
 
@@ -247,23 +297,23 @@ class AuthService {
   private getAccessToken(): string | null {
     // Ưu tiên localStorage trước
     let token = localStorage.getItem("accessToken");
-    
+
     if (!token) {
       // Nếu không có trong localStorage, thử lấy từ cookies
-      const cookies = document.cookie.split(';');
-      const accessTokenCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('accessToken=')
+      const cookies = document.cookie.split(";");
+      const accessTokenCookie = cookies.find((cookie) =>
+        cookie.trim().startsWith("accessToken=")
       );
-      
+
       if (accessTokenCookie) {
-        token = accessTokenCookie.split('=')[1];
+        token = accessTokenCookie.split("=")[1];
         // Lưu vào localStorage để sử dụng lần sau
         if (token) {
           localStorage.setItem("accessToken", token);
         }
       }
     }
-    
+
     return token;
   }
 
@@ -280,7 +330,7 @@ class AuthService {
   getCurrentUser(): User | null {
     const userStr = localStorage.getItem("user");
     if (!userStr) return null;
-    
+
     try {
       return JSON.parse(userStr) as User;
     } catch {
@@ -292,9 +342,20 @@ class AuthService {
    * Clear tất cả auth data
    */
   clearAuthData(): void {
+    // Lấy userId trước khi xóa user
+    const userStr = localStorage.getItem("user");
+    const userId = userStr ? (JSON.parse(userStr) as { id?: string })?.id : null;
+    
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    
+    // Xóa cart của user
+    if (userId) {
+      localStorage.removeItem(`cart_${userId}`);
+    }
+    // Xóa cart guest nếu có
+    localStorage.removeItem("cart_guest");
   }
 }
 

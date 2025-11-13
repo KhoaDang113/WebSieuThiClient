@@ -22,33 +22,40 @@ export function CategoryNav({
   const [loading, setLoading] = useState(!propCategories);
   const navigate = useNavigate();
 
-  // Fetch categories từ API nếu không được truyền qua props
+  // Update categories khi propCategories thay đổi
   useEffect(() => {
     if (propCategories) {
+      console.log("CategoryNav: propCategories changed", propCategories);
       setCategories(propCategories);
-      return;
+      setLoading(false);
+    } else {
+      // Chỉ fetch từ API nếu không có propCategories
+      const fetchCategories = async () => {
+        try {
+          setLoading(true);
+          // Lấy root categories (cấp 1) từ API
+          const data = await categoryService.getRootCategories();
+          
+          // Convert sang CategoryNav format
+          const navCategories = data.map(toCategoryNav);
+          setCategories(navCategories);
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+          // Không có fallback data - hiển thị empty state
+          setCategories([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchCategories();
     }
-
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        // Lấy root categories (cấp 1) từ API
-        const data = await categoryService.getRootCategories();
-        
-        // Convert sang CategoryNav format
-        const navCategories = data.map(toCategoryNav);
-        setCategories(navCategories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        // Không có fallback data - hiển thị empty state
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
   }, [propCategories]);
+  
+  // Log khi categories state thay đổi
+  useEffect(() => {
+    console.log("CategoryNav: categories state changed", categories);
+  }, [categories]);
   const checkScroll = () => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -114,7 +121,8 @@ export function CategoryNav({
   };
 
   const getItemStyles = (category: Category) => {
-    const isSelected = selectedCategoryId === category.id;
+    // So sánh với slug hoặc id để hỗ trợ cả 2 cách
+    const isSelected = selectedCategoryId === category.slug || selectedCategoryId === category.id;
 
     switch (variant) {
       case "product-page":
@@ -141,15 +149,16 @@ export function CategoryNav({
   const getImageContainerStyles = () => {
     switch (variant) {
       case "product-page":
-        return "w-16 h-16 rounded-lg overflow-hidden  flex items-center justify-center transition-transform group-hover:scale-105";
+        return "w-16 h-16 rounded-lg overflow-hidden transition-transform group-hover:scale-105";
       case "home":
       default:
-        return "w-16 h-16 rounded-lg overflow-hidden  flex items-center justify-center transition-transform group-hover:scale-105";
+        return "w-16 h-16 rounded-lg overflow-hidden transition-transform group-hover:scale-105";
     }
   };
 
   const getTextStyles = (category: Category) => {
-    const isSelected = selectedCategoryId === category.id;
+    // So sánh với slug hoặc id để hỗ trợ cả 2 cách
+    const isSelected = selectedCategoryId === category.slug || selectedCategoryId === category.id;
 
     switch (variant) {
       case "product-page":
@@ -220,7 +229,7 @@ export function CategoryNav({
               className="flex flex-col items-center gap-2 min-w-[80px] group"
             >
               <div className="relative">
-                <div className="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
+                <div className="w-16 h-16 rounded-lg overflow-hidden transition-transform group-hover:scale-105 bg-gray-100">
                   <img
                     src="https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/flash-sale_202509181309465062.gif"
                     alt="KHUYẾN MÃI SỐC"
@@ -242,7 +251,7 @@ export function CategoryNav({
                 className={getItemStyles(category)}
               >
                 <div className={getImageStyles()}>
-                  <div className={getImageContainerStyles()}>
+                  <div className={`${getImageContainerStyles()} bg-gray-100`}>
                     <img
                       src={getCategoryImage(category)}
                       alt={category.name}

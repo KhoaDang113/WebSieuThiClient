@@ -11,19 +11,37 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
-      setUser: (user) =>
+      setUser: (user) => {
+        // Clear cart của user cũ trước khi set user mới
+        const oldUser = get().user
+        if (oldUser?.id && typeof window !== "undefined") {
+          localStorage.removeItem(`cart_${oldUser.id}`)
+        }
+        
         set({
           user,
           isAuthenticated: !!user,
-        }),
-      logout: () =>
+        })
+      },
+      logout: () => {
+        // Clear cart của user hiện tại khi logout
+        const currentUser = get().user
+        if (currentUser?.id && typeof window !== "undefined") {
+          localStorage.removeItem(`cart_${currentUser.id}`)
+        }
+        // Clear guest cart
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("cart_guest")
+        }
+        
         set({
           user: null,
           isAuthenticated: false,
-        }),
+        })
+      },
     }),
     {
       name: 'auth-storage', // key trong localStorage

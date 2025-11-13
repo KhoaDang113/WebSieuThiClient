@@ -7,6 +7,7 @@ import { Link } from "react-router-dom"
 import type { CartItem } from "@/types/cart.type"
 import CheckoutModal from "./CheckoutModal"
 import { useOrders } from "@/hooks/useOrders"
+import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants"
 
 interface CartWithItemsProps {
   items: CartItem[]
@@ -79,7 +80,7 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                     {/* Product Image */}
                     <div className="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 shadow-md group-hover:shadow-xl transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-[#007E42]/20">
                       <img
-                        src={item.image || "/placeholder.svg"}
+                        src={item.image || PRODUCT_PLACEHOLDER_IMAGE}
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />

@@ -7,6 +7,8 @@ import type { Category } from "@/types";
 import categoryService from "@/api/services/catalogService";
 import { buildCategoryTree, flattenCategories } from "./CategoryTreeUtils";
 import { CategoryTableRow } from "./CategoryTableRow";
+// import type { CategoryNav as Category } from "@/types";
+// import { CATEGORY_PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 interface CategoryTableProps {
   searchTerm: string;
@@ -19,7 +21,8 @@ export function CategoryTable({
   categories,
   onRefresh,
 }: CategoryTableProps) {
-  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+  const [localCategories, setLocalCategories] =
+    useState<Category[]>(categories);
   const [editId, setEditId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());

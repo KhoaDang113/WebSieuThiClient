@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Edit2, Trash2, MapPin } from "lucide-react";
 import { addressService } from "@/api";
-import type { Address, CreateAddressDto } from "@/api/types";
+import type { Address } from "@/api/types";
 import { AddressFormModal } from "./AddressFormModal";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 interface AddressListModalProps {
   isOpen: boolean;
@@ -23,6 +24,10 @@ export function AddressListModal({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [error, setError] = useState<string>("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
@@ -42,7 +47,7 @@ export function AddressListModal({
       if (defaultAddr) {
         setSelectedAddress(defaultAddr);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error loading addresses:", err);
       setError("Không thể tải danh sách địa chỉ. Vui lòng thử lại.");
     } finally {
@@ -50,25 +55,45 @@ export function AddressListModal({
     }
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (address: Address, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) {
-      return;
-    }
+    setAddressToDelete(address);
+    setError(""); // Clear any previous errors
+    setSuccessMessage(""); // Clear any previous success messages
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!addressToDelete) return;
 
     try {
-      setLoading(true);
-      await addressService.deleteAddress(id);
+      setDeleting(true);
+      await addressService.deleteAddress(addressToDelete._id);
       await loadAddresses();
       
       // Show success message
-      alert("Đã xóa địa chỉ thành công!");
-    } catch (err: any) {
+      setSuccessMessage("Đã xóa địa chỉ thành công!");
+      setDeleteConfirmOpen(false);
+      setAddressToDelete(null);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+    } catch (err) {
       console.error("Error deleting address:", err);
-      alert("Không thể xóa địa chỉ. Vui lòng thử lại.");
+      setError("Không thể xóa địa chỉ. Vui lòng thử lại.");
+      setDeleteConfirmOpen(false);
+      setAddressToDelete(null);
     } finally {
-      setLoading(false);
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    if (!deleting) {
+      setDeleteConfirmOpen(false);
+      setAddressToDelete(null);
     }
   };
 
@@ -142,6 +167,11 @@ export function AddressListModal({
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
                 {error}
+              </div>
+            )}
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-600 text-sm">
+                {successMessage}
               </div>
             )}
 
@@ -218,10 +248,10 @@ export function AddressListModal({
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={(e) => handleDelete(address._id, e)}
+                            onClick={(e) => handleDeleteClick(address, e)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Xóa"
-                            disabled={loading}
+                            disabled={loading || deleting}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -276,6 +306,23 @@ export function AddressListModal({
         onClose={handleFormClose}
         onSave={handleFormSave}
         editingAddress={editingAddress}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Xóa địa chỉ"
+        message={
+          addressToDelete
+            ? `Bạn có chắc chắn muốn xóa địa chỉ "${addressToDelete.full_name} - ${addressService.formatFullAddress(addressToDelete)}"?\n\nHành động này không thể hoàn tác.`
+            : "Bạn có chắc chắn muốn xóa địa chỉ này?"
+        }
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+        loading={deleting}
       />
     </>
   );

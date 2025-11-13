@@ -5,7 +5,7 @@ import { CustomerOrderCard } from "@/components/order/CustomerOrderCard";
 import { useOrders } from "@/hooks/useOrders";
 
 export default function CustomerOrdersPage() {
-  const { orders, cancelOrder } = useOrders();
+  const { orders, loading, error, cancelOrder } = useOrders();
   const [filter, setFilter] = useState<"all" | "pending" | "delivered" | "cancelled">("all");
 
   // Filter orders theo trạng thái
@@ -14,6 +14,59 @@ export default function CustomerOrdersPage() {
     if (filter === "pending") return order.status === "pending" || order.status === "confirmed";
     return order.status === filter;
   });
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-50">
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
+            <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
+              <ChevronLeft className="w-3 h-3" />
+            </Link>
+            <h1 className="text-xl font-bold text-gray-800">
+              Đơn Hàng Từng Mua
+            </h1>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className="flex flex-col items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+            <p className="text-gray-600">Đang tải danh sách đơn hàng...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-blue-50">
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
+            <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
+              <ChevronLeft className="w-3 h-3" />
+            </Link>
+            <h1 className="text-xl font-bold text-gray-800">
+              Đơn Hàng Từng Mua
+            </h1>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className="bg-white rounded-lg border border-red-200 p-8 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[#007E42] hover:bg-[#006633] text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -30,13 +83,6 @@ export default function CustomerOrdersPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Subtitle */}
-        <div className="mb-6">
-          <p className="text-gray-600 mt-2">
-            Quản lý và theo dõi đơn hàng của bạn
-          </p>
-        </div>
-
         {/* Filter tabs */}
         <div className="bg-white rounded-lg border border-gray-200 p-1 mb-6 inline-flex">
           <button

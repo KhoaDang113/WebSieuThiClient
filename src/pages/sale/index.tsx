@@ -9,7 +9,7 @@ import type { Product } from "@/types/product.type";
 import type { Category } from "@/types/category.type";
 import { ChevronLeft } from "lucide-react";
 import ScrollButton from "@/components/scroll/ScrollButton";
-import { getProductId, getProductImage } from "@/lib/constants";
+import { getProductId, getProductImage, CATEGORY_PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 export default function KhuyenMaiPage() {
   const { addToCart } = useCart();
@@ -146,7 +146,7 @@ export default function KhuyenMaiPage() {
                         <div className="relative">
                           <div className="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
                             <img
-                              src={category.image || "/placeholder.svg"}
+                              src={category.image || CATEGORY_PLACEHOLDER_IMAGE}
                               alt={category.name}
                               className="w-full h-full object-cover"
                             />

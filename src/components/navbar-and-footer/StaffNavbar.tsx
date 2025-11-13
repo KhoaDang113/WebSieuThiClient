@@ -78,7 +78,12 @@ export function StaffNavbar() {
           {/* User Menu & Notifications */}
           <div className="flex items-center gap-2">
             {/* Notification Bell */}
-            {user && <NotificationDrawer />}
+            {user && (
+              <NotificationDrawer
+                // Chỉ hiển thị thông báo liên quan tới đơn hàng cho staff
+                filter={(n) => n.title?.toLowerCase().includes("đơn hàng")}
+              />
+            )}
             
             {/* User Menu */}
             {user ? (

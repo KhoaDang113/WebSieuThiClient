@@ -11,11 +11,28 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
-export function NotificationDrawer() {
+type NotificationFilter = (n: { id: string; type: string; title: string; message?: string }) => boolean
+
+interface NotificationDrawerProps {
+  // Optional filter to select a subset of notifications to display (e.g., staff-only order notices)
+  filter?: NotificationFilter
+}
+
+export function NotificationDrawer({ filter }: NotificationDrawerProps) {
   const { notificationHistory, clearHistory } = useNotification()
   const [isOpen, setIsOpen] = useState(false)
+
+  // Apply filter if provided
+  const filteredNotifications = useMemo(() => {
+    if (!filter) return notificationHistory
+    try {
+      return notificationHistory.filter(filter)
+    } catch {
+      return notificationHistory
+    }
+  }, [notificationHistory, filter])
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -105,9 +122,9 @@ export function NotificationDrawer() {
           className="relative rounded-full bg-[#008236] hover:bg-green-700 text-white transition-all duration-200 hover:scale-105"
         >
           <Bell className="w-5 h-5" />
-          {notificationHistory.length > 0 && (
+          {filteredNotifications.length > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
-              {notificationHistory.length > 99 ? "99+" : notificationHistory.length}
+              {filteredNotifications.length > 99 ? "99+" : filteredNotifications.length}
             </span>
           )}
         </Button>
@@ -124,10 +141,10 @@ export function NotificationDrawer() {
                 Thông báo
               </SheetTitle>
             </div>
-            {notificationHistory.length > 0 && (
+            {filteredNotifications.length > 0 && (
               <div className="flex items-center justify-between mt-2">
                 <p className="text-sm text-gray-500">
-                  {notificationHistory.length} thông báo
+                  {filteredNotifications.length} thông báo
                 </p>
                 <Button
                   variant="ghost"
@@ -144,7 +161,7 @@ export function NotificationDrawer() {
           
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-4 py-4">
-            {notificationHistory.length === 0 ? (
+            {filteredNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-500">
                 <div className="bg-gray-100 rounded-full p-6 mb-4">
                   <Bell className="w-12 h-12 text-gray-400" />
@@ -158,7 +175,7 @@ export function NotificationDrawer() {
               </div>
             ) : (
               <div className="space-y-3">
-                {notificationHistory.map((notification) => {
+                {filteredNotifications.map((notification) => {
                   const styles = getStyles(notification.type)
                   return (
                     <div

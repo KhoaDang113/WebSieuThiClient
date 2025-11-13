@@ -32,6 +32,20 @@ export default function AuthCallback() {
         // Lưu token vào localStorage
         localStorage.setItem('accessToken', accessToken);
 
+        // Xóa cart cũ trước khi login user mới
+        const oldUserStr = localStorage.getItem("user");
+        if (oldUserStr) {
+          try {
+            const oldUser = JSON.parse(oldUserStr) as { id?: string };
+            if (oldUser?.id) {
+              localStorage.removeItem(`cart_${oldUser.id}`);
+            }
+          } catch {
+            // Ignore parse error
+          }
+        }
+        localStorage.removeItem("cart_guest");
+
         // Lấy thông tin user từ API
         const user = await authService.getMe();
         

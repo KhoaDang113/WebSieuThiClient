@@ -22,6 +22,7 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
     new Set()
   );
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
+  const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -53,13 +54,21 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
   // Load replies for a comment
   const loadReplies = async (commentId: string) => {
     try {
+      setLoadingReplies((prev) => ({ ...prev, [commentId]: true }));
       const response = await commentService.getReplies(commentId, 1, 50);
+      console.log("Replies loaded for comment", commentId, ":", response.comments);
       setReplies((prev) => ({
         ...prev,
-        [commentId]: response.comments,
+        [commentId]: response.comments || [],
       }));
     } catch (error) {
       console.error("Error loading replies:", error);
+      setReplies((prev) => ({
+        ...prev,
+        [commentId]: [],
+      }));
+    } finally {
+      setLoadingReplies((prev) => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -324,10 +333,14 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
                         {isAuthenticated && (
                           <button
                             onClick={() => {
-                              setReplyingTo(
-                                replyingTo === comment._id ? null : comment._id
-                              );
-                              setReplyContent("");
+                              const userName = userInfo?.name || "Người dùng";
+                              if (replyingTo === comment._id) {
+                                setReplyingTo(null);
+                                setReplyContent("");
+                              } else {
+                                setReplyingTo(comment._id);
+                                setReplyContent(`@${userName} `);
+                              }
                             }}
                             className="flex items-center gap-1 text-sm text-gray-600 hover:text-green-600 transition-colors"
                           >
@@ -404,9 +417,15 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
                     )}
 
                     {/* Replies List */}
-                    {isExpanded && commentReplies.length > 0 && (
-                      <div className="mt-4 ml-4 pl-4 border-l-2 border-green-200 space-y-4">
-                        {commentReplies.map((reply) => {
+                    {isExpanded && (
+                      <div className="mt-4 ml-4 pl-4 border-l-2 border-green-200">
+                        {loadingReplies[comment._id] ? (
+                          <div className="text-center py-4 text-gray-500 text-sm">
+                            Đang tải phản hồi...
+                          </div>
+                        ) : commentReplies.length > 0 ? (
+                          <div className="space-y-4">
+                            {commentReplies.map((reply) => {
                           const replyUserInfo = getUserInfo(reply.user_id);
                           const isReplyOwner = isOwner(reply);
 
@@ -465,6 +484,12 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
                             </div>
                           );
                         })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-gray-500 text-sm">
+                            Chưa có phản hồi nào
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

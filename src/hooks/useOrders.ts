@@ -3,30 +3,40 @@
 import { useState, useCallback, useEffect } from "react"
 import type { Order } from "@/types/order"
 import type { CartItem } from "@/types/cart.type"
-import { sampleOrders } from "@/lib/sampleData"
+import { orderService } from "@/api"
+import { useAuthStore } from "@/stores/authStore"
 
 export function useOrders() {
-  const [orders, setOrders] = useState<Order[]>(() => {
-    // Load từ localStorage khi khởi tạo
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("orders")
-      if (saved) {
-        try {
-          return JSON.parse(saved)
-        } catch {
-          return sampleOrders
-        }
+  const { user, isAuthenticated } = useAuthStore()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch orders từ API khi user đăng nhập
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setLoading(false)
+        setOrders([])
+        return
+      }
+
+      try {
+        setLoading(true)
+        setError(null)
+        const fetchedOrders = await orderService.getMyOrders()
+        setOrders(fetchedOrders)
+      } catch (err: any) {
+        console.error("Error fetching orders:", err)
+        setError(err?.response?.data?.message || "Không thể tải danh sách đơn hàng")
+        setOrders([])
+      } finally {
+        setLoading(false)
       }
     }
-    return sampleOrders
-  })
 
-  // Lưu vào localStorage mỗi khi orders thay đổi
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("orders", JSON.stringify(orders))
-    }
-  }, [orders])
+    fetchOrders()
+  }, [isAuthenticated, user?.id])
 
   const confirmOrder = useCallback((orderId: string) => {
     setOrders((prevOrders) =>
@@ -58,14 +68,28 @@ export function useOrders() {
     )
   }, [])
 
-  const cancelOrder = useCallback((orderId: string) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) => 
-        order.id === orderId 
-          ? { ...order, status: "cancelled" as const } 
-          : order
+  const cancelOrder = useCallback(async (orderId: string) => {
+    try {
+      // Thử gọi API cancel order
+      const updatedOrder = await orderService.cancelOrder(orderId)
+      setOrders((prevOrders) =>
+        prevOrders.map((order) => 
+          order.id === orderId 
+            ? updatedOrder
+            : order
+        )
       )
-    )
+    } catch (err) {
+      // Nếu API chưa có, update local state
+      console.warn("Cancel order API not available, updating local state")
+      setOrders((prevOrders) =>
+        prevOrders.map((order) => 
+          order.id === orderId 
+            ? { ...order, status: "cancelled" as const } 
+            : order
+        )
+      )
+    }
   }, [])
 
   // Tạo đơn hàng mới từ giỏ hàng
@@ -104,6 +128,8 @@ export function useOrders() {
 
   return { 
     orders, 
+    loading,
+    error,
     confirmOrder, 
     rejectOrder, 
     deliverOrder, 

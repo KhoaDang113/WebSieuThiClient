@@ -12,6 +12,7 @@ import authService from "@/api/services/authService";
 import { useAuthStore } from "@/stores/authStore";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNotification } from "@/components/notification/NotificationContext";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export function Navbar() {
   const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory();
   const { address, setAddress, getAddressString } = useAddress();
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const { showNotification } = useNotification();
   
   // Sử dụng Zustand store để quản lý auth state
   const { user: currentUser, isAuthenticated, setUser, logout: clearAuth } = useAuthStore();
@@ -117,6 +119,40 @@ export function Navbar() {
   const handleRemoveHistoryItem = (e: React.MouseEvent, searchTerm: string) => {
     e.stopPropagation();
     removeFromHistory(searchTerm);
+  };
+
+  const handleAddressClick = () => {
+    if (!isAuthenticated) {
+      showNotification({
+        type: "warning",
+        title: "Yêu cầu đăng nhập",
+        message: "Bạn phải đăng nhập để quản lý địa chỉ giao hàng. Vui lòng đăng nhập để tiếp tục.",
+        duration: 4000,
+      });
+      // Tùy chọn: redirect đến trang login sau 1 giây
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+      return;
+    }
+    setIsAddressModalOpen(true);
+  };
+
+  const handleCartClick = () => {
+    if (!isAuthenticated) {
+      showNotification({
+        type: "warning",
+        title: "Yêu cầu đăng nhập",
+        message: "Bạn phải đăng nhập để xem giỏ hàng. Vui lòng đăng nhập để tiếp tục.",
+        duration: 4000,
+      });
+      // Redirect đến trang login sau 1.5 giây
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+      return;
+    }
+    navigate("/cart");
   };
 
   return (
@@ -230,25 +266,26 @@ export function Navbar() {
             </div>
 
             {/* Shopping cart */}
-            <Link
-              to="/cart"
+            <button
+              onClick={handleCartClick}
               className="relative cursor-pointer p-2 text-white hover:bg-white/10 rounded-full transition-colors duration-200 flex-shrink-0"
+              aria-label="Giỏ hàng"
             >
               <ShoppingCart className="w-6 h-6" />
-              {totalItems > 0 && (
+              {isAuthenticated && totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-red-500 w-5 h-5 border-2 border-white min-w-[20px]">
                   <span className="text-white text-xs font-bold leading-none">
                     {totalItems}
                   </span>
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* Actions */}
             <div className="flex gap-3 items-center justify-end">
               {/* 🟢 Tooltip cho địa chỉ (Desktop) */}
               <div
-                onClick={() => setIsAddressModalOpen(true)}
+                onClick={handleAddressClick}
                 className="hidden md:flex text-white h-10 w-fit min-w-[220px] max-w-[280px] bg-[#FFFFFF]/[0.15] py-2 px-3 rounded-full items-center justify-center overflow-hidden text-nowrap cursor-pointer hover:bg-[#FFFFFF]/[0.25] transition-colors duration-200 backdrop-blur-sm"
                 title={getAddressString()} // ✅ Tooltip hiển thị địa chỉ
               >
@@ -303,7 +340,7 @@ export function Navbar() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => setIsAddressModalOpen(true)}
+                          onClick={handleAddressClick}
                           className="cursor-pointer px-4"
                         >
                           <MapPin className="mr-2 h-4 w-4" />
@@ -352,6 +389,12 @@ export function Navbar() {
                       <div className="px-2 py-1">
                         <DropdownMenuItem 
                           onClick={async () => {
+                            // Xóa cart của user hiện tại trước khi logout
+                            if (currentUser?.id && typeof window !== "undefined") {
+                              localStorage.removeItem(`cart_${currentUser.id}`);
+                            }
+                            localStorage.removeItem("cart_guest");
+                            
                             await authService.logout();
                             clearAuth();
                             // Dispatch event để notify các components khác
@@ -384,7 +427,7 @@ export function Navbar() {
       {/* 🟢 Tooltip cho địa chỉ (Mobile) */}
       <div className="md:hidden px-4 py-2 bg-[#007E42] border-b border-green-700">
         <button
-          onClick={() => setIsAddressModalOpen(true)}
+          onClick={handleAddressClick}
           className="flex items-center justify-between w-full text-white text-sm py-2 px-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
           title={getAddressString()} // ✅ Tooltip hiển thị địa chỉ
         >

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { X, MapPin } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "./CustomSelect";
 import { addressService } from "@/api";
-import type { Address, CreateAddressDto, UpdateAddressDto } from "@/api/types";
+import type { Address, CreateAddressDto } from "@/api/types";
 import { useAuthStore } from "@/stores/authStore";
+import { useNotification } from "@/components/notification/NotificationContext";
 
 interface Province {
   code: string;
@@ -14,6 +15,23 @@ interface Province {
 interface Ward {
   code: string;
   name: string;
+}
+
+interface ProvinceApiResponse {
+  code: string | number;
+  name: string;
+}
+
+interface WardApiResponse {
+  code: string | number;
+  name: string;
+}
+
+interface ProvinceDetailApiResponse {
+  wards?: WardApiResponse[];
+  districts?: {
+    wards?: WardApiResponse[];
+  }[];
 }
 
 interface AddressFormModalProps {
@@ -37,6 +55,7 @@ export function AddressFormModal({
   editingAddress,
 }: AddressFormModalProps) {
   const { user: currentUser } = useAuthStore();
+  const { showNotification } = useNotification();
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
 
@@ -49,12 +68,94 @@ export function AddressFormModal({
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  const fetchProvinces = useCallback(async () => {
+    try {
+      setLoading(true);
+      // API v2 - Danh sách tỉnh thành sau sát nhập
+      const response = await fetch("https://provinces.open-api.vn/api/v2/", {
+        signal: createTimeoutSignal(10000),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as ProvinceApiResponse[];
+        if (Array.isArray(data)) {
+          // Map data từ v2 format sang format cũ
+          const mappedProvinces = data.map((p: ProvinceApiResponse) => ({
+            code: p.code.toString(), // Convert code to string
+            name: p.name,
+          }));
+          setProvinces(mappedProvinces);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching provinces:", error);
+      showNotification({
+        type: "error",
+        title: "Lỗi",
+        message: "Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại sau.",
+        duration: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [showNotification]);
+
+  const fetchWards = useCallback(async (provinceCode: string) => {
+    try {
+      setLoading(true);
+      
+      // API v2 - Lấy phường/xã trực tiếp từ tỉnh (2 cấp)
+      // depth=2 để lấy districts với wards
+      const response = await fetch(
+        `https://provinces.open-api.vn/api/v2/p/${provinceCode}?depth=2`,
+        {
+          signal: createTimeoutSignal(10000),
+        }
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as ProvinceDetailApiResponse;
+        
+        // API v2 depth=2 trả về wards trực tiếp, không có districts
+        const allWards: Ward[] = [];
+        
+        if (data.wards && Array.isArray(data.wards)) {
+          data.wards.forEach((ward: WardApiResponse) => {
+            allWards.push({
+              code: ward.code.toString(),
+              name: ward.name,
+            });
+          });
+        } else if (data.districts && Array.isArray(data.districts)) {
+          // Fallback: nếu có districts (API khác)
+          data.districts.forEach((district) => {
+            if (district.wards && Array.isArray(district.wards)) {
+              district.wards.forEach((ward: WardApiResponse) => {
+                allWards.push({
+                  code: ward.code.toString(),
+                  name: ward.name,
+                });
+              });
+            }
+          });
+        }
+        
+        setWards(allWards);
+      }
+    } catch {
+      // Silent error - không hiện thông báo
+      setWards([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Load provinces khi mở modal
   useEffect(() => {
     if (isOpen) {
       fetchProvinces();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchProvinces]);
 
   // Load dữ liệu khi edit hoặc khi mở form mới
   useEffect(() => {
@@ -98,111 +199,59 @@ export function AddressFormModal({
       fetchWards(selectedProvince);
       setSelectedWard("");
     }
-  }, [selectedProvince]);
-
-  const fetchProvinces = async () => {
-    try {
-      setLoading(true);
-      // API v2 - Danh sách tỉnh thành sau sát nhập
-      const response = await fetch("https://provinces.open-api.vn/api/v2/", {
-        signal: createTimeoutSignal(10000),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          // Map data từ v2 format sang format cũ
-          const mappedProvinces = data.map((p: any) => ({
-            code: p.code.toString(), // Convert code to string
-            name: p.name,
-          }));
-          setProvinces(mappedProvinces);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching provinces:", error);
-      alert("Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại sau.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchWards = async (provinceCode: string) => {
-    try {
-      setLoading(true);
-      
-      // API v2 - Lấy phường/xã trực tiếp từ tỉnh (2 cấp)
-      // depth=2 để lấy districts với wards
-      const response = await fetch(
-        `https://provinces.open-api.vn/api/v2/p/${provinceCode}?depth=2`,
-        {
-          signal: createTimeoutSignal(10000),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // API v2 depth=2 trả về wards trực tiếp, không có districts
-        const allWards: Ward[] = [];
-        
-        if (data.wards && Array.isArray(data.wards)) {
-          data.wards.forEach((ward: any) => {
-            allWards.push({
-              code: ward.code.toString(),
-              name: ward.name,
-            });
-          });
-        } else if (data.districts && Array.isArray(data.districts)) {
-          // Fallback: nếu có districts (API khác)
-          data.districts.forEach((district: any) => {
-            if (district.wards && Array.isArray(district.wards)) {
-              district.wards.forEach((ward: any) => {
-                allWards.push({
-                  code: ward.code.toString(),
-                  name: ward.name,
-                });
-              });
-            }
-          });
-        }
-        
-        setWards(allWards);
-      }
-    } catch (error) {
-      // Silent error - không hiện thông báo
-      setWards([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedProvince, editingAddress, fetchWards]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
     if (!fullName.trim()) {
-      alert("Vui lòng nhập họ tên người nhận");
+      showNotification({
+        type: "warning",
+        title: "Thông báo",
+        message: "Vui lòng nhập họ tên người nhận",
+        duration: 3000,
+      });
       return;
     }
 
     if (!phone.trim()) {
-      alert("Vui lòng nhập số điện thoại");
+      showNotification({
+        type: "warning",
+        title: "Thông báo",
+        message: "Vui lòng nhập số điện thoại",
+        duration: 3000,
+      });
       return;
     }
 
     if (!addressService.validatePhone(phone)) {
-      alert("Số điện thoại không hợp lệ");
+      showNotification({
+        type: "warning",
+        title: "Thông báo",
+        message: "Số điện thoại không hợp lệ",
+        duration: 3000,
+      });
       return;
     }
 
     if (!selectedProvince || !selectedWard) {
-      alert("Vui lòng chọn đầy đủ Tỉnh/Thành phố và Phường/Xã");
+      showNotification({
+        type: "warning",
+        title: "Thông báo",
+        message: "Vui lòng chọn đầy đủ Tỉnh/Thành phố và Phường/Xã",
+        duration: 3000,
+      });
       return;
     }
 
     if (!street.trim()) {
-      alert("Vui lòng nhập số nhà, tên đường");
+      showNotification({
+        type: "warning",
+        title: "Thông báo",
+        message: "Vui lòng nhập số nhà, tên đường",
+        duration: 3000,
+      });
       return;
     }
 
@@ -229,31 +278,40 @@ export function AddressFormModal({
       if (editingAddress) {
         // Update existing address
         await addressService.updateAddress(editingAddress._id, addressData);
-        alert("Cập nhật địa chỉ thành công!");
+        showNotification({
+          type: "success",
+          title: "Thành công",
+          message: "Cập nhật địa chỉ thành công!",
+          duration: 3000,
+        });
       } else {
         // Create new address
         await addressService.createAddress(addressData);
-        alert("Thêm địa chỉ mới thành công!");
+        showNotification({
+          type: "success",
+          title: "Thành công",
+          message: "Thêm địa chỉ mới thành công!",
+          duration: 3000,
+        });
       }
 
+      // Tự động đóng modal và cập nhật danh sách
       onSave();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving address:", error);
-      const errorMessage = error?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
-      alert(errorMessage);
+      const errorMessage = 
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 
+        "Có lỗi xảy ra. Vui lòng thử lại.";
+      showNotification({
+        type: "error",
+        title: "Lỗi",
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const resetForm = () => {
-    setSelectedProvince("");
-    setSelectedWard("");
-    setStreet("");
-    setFullName("");
-    setPhone("");
-    setIsDefault(false);
   };
 
   if (!isOpen) return null;

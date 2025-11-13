@@ -46,7 +46,7 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
         <div className="flex h-full flex-row rounded-lg bg-white">
           {/* Product Image - Fixed Size */}
           <div
-            className="relative w-32 h-32 flex-shrink-0 overflow-hidden cursor-pointer bg-gray-100"
+            className="relative w-32 h-32 flex-shrink-0 overflow-hidden cursor-pointer bg-gray-100 flex items-center justify-center p-2"
             onClick={() => {
               if (productId) {
                 navigate(`/products-detail/${productId}`);
@@ -56,7 +56,7 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
             <img
               src={imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover:scale-105"
               onError={() => {
                 // Khi ảnh load lỗi, fallback về placeholder
                 setImageError(true);

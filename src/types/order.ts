@@ -10,6 +10,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string
+  _id?: string // Backend field
   customer_name: string
   customer_phone: string
   customer_address: string

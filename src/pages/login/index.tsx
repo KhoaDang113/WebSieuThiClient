@@ -43,6 +43,20 @@ export default function Login() {
     setIsLoading(true);
     
     try {
+      // Xóa cart cũ trước khi login user mới
+      const oldUserStr = localStorage.getItem("user");
+      if (oldUserStr) {
+        try {
+          const oldUser = JSON.parse(oldUserStr) as { id?: string };
+          if (oldUser?.id) {
+            localStorage.removeItem(`cart_${oldUser.id}`);
+          }
+        } catch {
+          // Ignore parse error
+        }
+      }
+      localStorage.removeItem("cart_guest");
+      
       const response = await authService.loginEmail(email, password);
       
       // Trường hợp cần verify email

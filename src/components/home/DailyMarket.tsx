@@ -152,11 +152,11 @@ export default function DailyMarket() {
             className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
           >
             {/* Image */}
-            <div className="relative aspect-square overflow-hidden">
+            <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center p-2">
               <img
                 src={combo.image_url}
                 alt={combo.name}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                className="max-w-full max-h-full w-auto h-auto object-contain hover:scale-105 transition-transform duration-300"
               />
             </div>
 
@@ -253,7 +253,7 @@ export default function DailyMarket() {
                                 >
                                   {/* Image with badges */}
                                   <div
-                                    className="relative aspect-square overflow-hidden bg-gray-50 cursor-pointer"
+                                    className="relative aspect-square overflow-hidden bg-gray-50 cursor-pointer flex items-center justify-center p-1"
                                     onClick={() =>
                                       navigate(
                                         `/products-detail/${ingredient.id}`
@@ -263,7 +263,7 @@ export default function DailyMarket() {
                                     <img
                                       src={ingredient.image_url}
                                       alt={ingredient.name}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                      className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform"
                                     />
                                     {/* Badges */}
                                     <div className="absolute top-1 left-1">
@@ -381,7 +381,7 @@ export default function DailyMarket() {
                               >
                                 {/* Image */}
                                 <div
-                                  className="relative aspect-square overflow-hidden bg-gray-50 cursor-pointer"
+                                  className="relative aspect-square overflow-hidden bg-gray-50 cursor-pointer flex items-center justify-center p-1"
                                   onClick={() =>
                                     navigate(`/products-detail/${spice.id}`)
                                   }
@@ -389,7 +389,7 @@ export default function DailyMarket() {
                                   <img
                                     src={spice.image_url}
                                     alt={spice.name}
-                                    className="w-full h-full object-cover hover:scale-105 transition-transform"
+                                    className="max-w-full max-h-full w-auto h-auto object-contain hover:scale-105 transition-transform"
                                   />
                                   {/* Badge */}
                                   <div className="absolute top-1 left-1">

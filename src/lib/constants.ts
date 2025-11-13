@@ -227,14 +227,15 @@ export const getCategoryImage = (category: {
 
 /**
  * Helper function để lấy ID category
- * Hỗ trợ cả _id (MongoDB) và id
+ * Backend serialize _id thành id khi toJSON, nên ưu tiên id trước
  */
 export const getCategoryId = (category: {
   _id?: string;
   id?: string;
 }): string => {
-  if (category._id) return category._id;
+  // Backend serialize _id thành id khi toJSON, nên ưu tiên id trước
   if (category.id) return category.id;
+  if (category._id) return category._id;
   return "";
 };
 
