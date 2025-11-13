@@ -1,72 +1,54 @@
-import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CategoryTable } from "@/components/admin/categories/CategoryTable";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import type { CategoryNav as Category } from "@/types";
-
-// Dữ liệu từ products/index.tsx
-const sampleCategories: Category[] = [
-  {
-    id: "mi-an-lien",
-    name: "Mì ăn liền",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/menuheader/gau-do_202510031119471876.gif",
-    badge: "86k/thùng",
-    badgeColor: "bg-green-500",
-  },
-  {
-    id: "hu-tieu-mien",
-    name: "Hủ tiếu, miến",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "pho-bun-an-lien",
-    name: "Phở, bún ăn liền",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "chao-goi",
-    name: "Cháo gói, ch...",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "mien-hu-tieu-pho",
-    name: "Miến, hủ tiếu, p...",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "bun-cac-loai",
-    name: "Bún các loại",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "nui-cac-loai",
-    name: "Nui các loại",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "mi-y-mi-trung",
-    name: "Mì Ý, mì trứng",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-  {
-    id: "banh-gao-han",
-    name: "Bánh gạo Hàn Quốc",
-    image:
-      "https://cdnv2.tgdd.vn/bhx-static/bhx/Category/Images/3364/frame-3476166_202503191335420491.png",
-  },
-];
+import { SearchBar } from "@/components/common/SearchBar";
+import type { Category } from "@/types";
+import categoryService from "@/api/services/catalogService";
 
 export default function CategoriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load tất cả categories 1 lần, không filter ở API
+      const response = await categoryService.getCategoriesAdmin(1, 1000);
+
+      // Lưu tất cả categories dạng flat (không build tree ở đây nữa)
+      // Tree sẽ được build trong CategoryTable
+      setCategories(response.categories);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setError("Không thể tải danh sách danh mục. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch categories on mount (chỉ 1 lần)
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Đang tải danh sách danh mục...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -76,20 +58,20 @@ export default function CategoriesPage() {
       </div>
 
       <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Tìm kiếm theo tên danh mục..."
-            value={searchTerm}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSearchTerm(e.target.value)
-            }
-            className="pl-10"
-          />
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Tìm kiếm theo tên hoặc ID..."
+          storageKey="admin_category_search_history"
+          className="flex-1"
+        />
       </div>
 
-      <CategoryTable searchTerm={searchTerm} categories={sampleCategories} />
+      <CategoryTable
+        searchTerm={searchTerm}
+        categories={categories}
+        onRefresh={fetchCategories}
+      />
     </div>
   );
 }

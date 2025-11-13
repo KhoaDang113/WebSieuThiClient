@@ -5,7 +5,7 @@
 
 // API Category type - Khớp với BE Response
 export interface Category {
-  _id?: string; // MongoDB ObjectId
+  _id: string; // MongoDB ObjectId (required for admin)
   id?: string; // Alias cho _id
   parent_id?: string | null; // Parent category ID (null = root category)
   name: string;
@@ -16,9 +16,11 @@ export interface Category {
   is_deleted?: boolean;
   created_at?: string;
   updated_at?: string;
-  
+
   // Virtual fields (computed)
   children?: Category[]; // Subcategories (cấp 2, 3, ...)
+  subCategories?: Category[]; // Alias for children (BE compatibility)
+
   level?: number; // Cấp độ: 1 (root), 2 (sub), 3 (sub-sub)
 }
 
@@ -55,7 +57,7 @@ export interface CategorySideBar {
   subCategories?: SubCategory[];
 }
 
-/**
+/*
  * Helper type - Category with children (tree structure)
  */
 export interface CategoryTree extends Category {

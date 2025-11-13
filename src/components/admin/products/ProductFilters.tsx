@@ -1,8 +1,7 @@
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { SearchBar } from "@/components/common/SearchBar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search } from "lucide-react";
-import type { CategoryNav as Category } from "@/types";
+import type { Category } from "@/types";
 
 interface ProductFiltersProps {
   searchTerm: string;
@@ -14,6 +13,7 @@ interface ProductFiltersProps {
   lowStockOnly: boolean;
   setLowStockOnly: (value: boolean) => void;
   categories: Category[];
+  onSearch?: (value: string) => void;
 }
 
 export function ProductFilters({
@@ -26,20 +26,20 @@ export function ProductFilters({
   lowStockOnly,
   setLowStockOnly,
   categories,
+  onSearch,
 }: ProductFiltersProps) {
   return (
     <Card className="p-6">
       <div className="space-y-4">
         <div className="flex gap-4 flex-col md:flex-row">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Tìm kiếm theo tên sản phẩm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            onSearch={onSearch}
+            placeholder="Tìm kiếm theo tên hoặc ID..."
+            storageKey="admin_product_search_history"
+            className="flex-1"
+          />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -47,8 +47,8 @@ export function ProductFilters({
           >
             <option value="all">Tất cả danh mục</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
+              <option key={cat._id} value={cat._id}>
+                {cat.parent_id ? '  └─ ' : ''}{cat.name}
               </option>
             ))}
           </select>
