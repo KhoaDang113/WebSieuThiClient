@@ -24,6 +24,26 @@ class ProductService {
     return response.data;
   }
 
+  async getProductsAdmin(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    total: number;
+    page: number;
+    limit: number;
+    products: Product[];
+  }> {
+    const response = await api.get<{
+      total: number;
+      page: number;
+      limit: number;
+      products: Product[];
+    }>(`${this.basePath}/products-admin`, {
+      params: { page, limit },
+    });
+    return response.data;
+  }
+
   /**
    * Lấy sản phẩm khuyến mãi (có thể filter theo category)
    * GET /products/promotions?category=slug
@@ -51,9 +71,25 @@ class ProductService {
   }
 
   /**
-   * Lấy sản phẩm liên quan (cùng category)
-   * GET /products/:id/related?limit=5
+   * Xóa sản phẩm (soft delete)
+   * DELETE /products/:id
    */
+  async deleteProduct(id: string): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>(
+      `${this.basePath}/${id}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Cập nhật sản phẩm
+   * PUT /products/:id
+   */
+  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+    const response = await api.put<Product>(`${this.basePath}/${id}`, data);
+    return response.data;
+  }
+   
   async getRelatedProducts(id: string, limit: number = 5): Promise<Product[]> {
     const response = await api.get<Product[]>(
       `${this.basePath}/${id}/related`,

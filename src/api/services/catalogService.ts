@@ -8,6 +8,31 @@ class CategoryService {
   private readonly basePath = "/categories";
 
   /**
+   * Lấy danh sách danh mục cho admin (có pagination)
+   * GET /categories/categories-admin?page=1&limit=10&key=search
+   */
+  async getCategoriesAdmin(
+    page: number = 1,
+    limit: number = 100,
+    key?: string
+  ): Promise<{
+    total: number;
+    page: number;
+    limit: number;
+    categories: Category[];
+  }> {
+    const response = await api.get<{
+      total: number;
+      page: number;
+      limit: number;
+      categories: Category[];
+    }>(`${this.basePath}/categories-admin`, {
+      params: { page, limit, key },
+    });
+    return response.data;
+  }
+
+  /**
    * Lấy tất cả danh mục
    * GET /categories
    */
@@ -51,6 +76,38 @@ class CategoryService {
    */
   async getCategoryBySlug(slug: string): Promise<Category> {
     const response = await api.get<Category>(`${this.basePath}/slug/${slug}`);
+    return response.data;
+  }
+
+  /**
+   * Xóa danh mục (soft delete)
+   * DELETE /categories/:id
+   */
+  async deleteCategory(id: string): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>(
+      `${this.basePath}/${id}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Cập nhật danh mục
+   * PUT /categories/:id
+   */
+  async updateCategory(
+    id: string,
+    data: Partial<Category>
+  ): Promise<Category> {
+    const response = await api.put<Category>(`${this.basePath}/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Tạo danh mục mới
+   * POST /categories
+   */
+  async createCategory(data: Partial<Category>): Promise<Category> {
+    const response = await api.post<Category>(this.basePath, data);
     return response.data;
   }
 }

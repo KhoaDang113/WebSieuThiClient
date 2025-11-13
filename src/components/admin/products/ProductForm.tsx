@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ImageUpload } from "@/components/admin/products/ImageUpload";
 import { ArrowLeft, Save } from "lucide-react";
+import { ProductBasicInfo } from "./forms/ProductBasicInfo";
+import { ProductPricing } from "./forms/ProductPricing";
+import { ProductInventory } from "./forms/ProductInventory";
+import { ProductStatus } from "./forms/ProductStatus";
 
 interface ProductFormProps {
   mode: "add" | "edit";
@@ -95,6 +95,10 @@ export function ProductForm({ mode }: ProductFormProps) {
     setFormData((prev) => ({ ...prev, image_url: imageUrl }));
   };
 
+  const handleIsHotChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, is_hot: checked }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -105,12 +109,8 @@ export function ProductForm({ mode }: ProductFormProps) {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       console.log("Form submitted:", formData);
-
-      // Redirect to products list
       navigate("/admin/products");
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -130,93 +130,13 @@ export function ProductForm({ mode }: ProductFormProps) {
         </Link>
       </div>
 
-      {/* Basic Information */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Thông tin cơ bản</h3>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Tên sản phẩm *</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="Nhập tên sản phẩm"
-              className={errors.name ? "border-destructive" : ""}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive mt-1">{errors.name}</p>
-            )}
-          </div>
+      <ProductBasicInfo
+        formData={formData}
+        errors={errors}
+        onInputChange={handleInputChange}
+        onSelectChange={handleSelectChange}
+      />
 
-          <div>
-            <Label htmlFor="description">Mô tả *</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Nhập mô tả sản phẩm"
-              rows={4}
-              className={errors.description ? "border-destructive" : ""}
-            />
-            {errors.description && (
-              <p className="text-sm text-destructive mt-1">
-                {errors.description}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="category_id">Danh mục *</Label>
-              <select
-                value={formData.category_id}
-                onChange={(e) =>
-                  handleSelectChange("category_id", e.target.value)
-                }
-                className={`w-full px-3 py-2 border bg-background rounded-md text-sm ${
-                  errors.category_id ? "border-destructive" : "border-input"
-                }`}
-              >
-                <option value="">Chọn danh mục</option>
-                <option value="mi-an-lien">Mì ăn liền</option>
-                <option value="dau-an">Dầu ăn</option>
-                <option value="thit-heo">Thịt heo</option>
-                <option value="rau-la">Rau lá</option>
-              </select>
-              {errors.category_id && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.category_id}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="brand_id">Thương hiệu *</Label>
-              <select
-                value={formData.brand_id}
-                onChange={(e) => handleSelectChange("brand_id", e.target.value)}
-                className={`w-full px-3 py-2 border bg-background rounded-md text-sm ${
-                  errors.brand_id ? "border-destructive" : "border-input"
-                }`}
-              >
-                <option value="">Chọn thương hiệu</option>
-                <option value="brand-a">Brand A</option>
-                <option value="brand-b">Brand B</option>
-                <option value="brand-c">Brand C</option>
-              </select>
-              {errors.brand_id && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.brand_id}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Image Upload */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Ảnh sản phẩm</h3>
         <ImageUpload
@@ -225,119 +145,20 @@ export function ProductForm({ mode }: ProductFormProps) {
         />
       </Card>
 
-      {/* Pricing */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Giá cả</h3>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="unit_price">Giá gốc *</Label>
-              <Input
-                id="unit_price"
-                name="unit_price"
-                type="number"
-                value={formData.unit_price}
-                onChange={handleInputChange}
-                placeholder="0"
-                className={errors.unit_price ? "border-destructive" : ""}
-              />
-              {errors.unit_price && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.unit_price}
-                </p>
-              )}
-            </div>
+      <ProductPricing
+        formData={formData}
+        errors={errors}
+        onInputChange={handleInputChange}
+      />
 
-            <div>
-              <Label htmlFor="final_price">Giá bán *</Label>
-              <Input
-                id="final_price"
-                name="final_price"
-                type="number"
-                value={formData.final_price}
-                onChange={handleInputChange}
-                placeholder="0"
-                className={errors.final_price ? "border-destructive" : ""}
-              />
-              {errors.final_price && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.final_price}
-                </p>
-              )}
-            </div>
+      <ProductInventory
+        formData={formData}
+        errors={errors}
+        onInputChange={handleInputChange}
+      />
 
-            <div>
-              <Label htmlFor="discount_percent">Giảm giá (%)</Label>
-              <Input
-                id="discount_percent"
-                name="discount_percent"
-                type="number"
-                value={formData.discount_percent}
-                onChange={handleInputChange}
-                placeholder="0"
-                min="0"
-                max="100"
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
+      <ProductStatus is_hot={formData.is_hot} onIsHotChange={handleIsHotChange} />
 
-      {/* Inventory */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Kho hàng</h3>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="stock_quantity">Số lượng tồn *</Label>
-              <Input
-                id="stock_quantity"
-                name="stock_quantity"
-                type="number"
-                value={formData.stock_quantity}
-                onChange={handleInputChange}
-                placeholder="0"
-                className={errors.stock_quantity ? "border-destructive" : ""}
-              />
-              {errors.stock_quantity && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.stock_quantity}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="quantity">Đơn vị / Khối lượng</Label>
-              <Input
-                id="quantity"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleInputChange}
-                placeholder="VD: 1kg, 500g, 1 cái"
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Status */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Trạng thái</h3>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="is_hot"
-            checked={formData.is_hot}
-            onCheckedChange={(checked) =>
-              setFormData((prev) => ({ ...prev, is_hot: checked as boolean }))
-            }
-          />
-          <Label htmlFor="is_hot" className="cursor-pointer">
-            Đánh dấu sản phẩm nổi bật
-          </Label>
-        </div>
-      </Card>
-
-      {/* Actions */}
       <div className="flex gap-3 justify-end">
         <Link to="/admin/products">
           <Button variant="outline">Hủy</Button>
@@ -354,6 +175,3 @@ export function ProductForm({ mode }: ProductFormProps) {
     </form>
   );
 }
-
-
-

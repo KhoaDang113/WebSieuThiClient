@@ -1,39 +1,78 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { CategoryForm } from "@/components/admin/categories/CategoryForm";
-import type { CategoryNav as Category } from "@/types";
-import { CATEGORY_PLACEHOLDER_IMAGE } from "@/lib/constants";
+import type { Category } from "@/types";
+import categoryService from "@/api/services/catalogService";
+import { buildCategoryTree, flattenCategories } from "./CategoryTreeUtils";
+import { CategoryTableRow } from "./CategoryTableRow";
+// import type { CategoryNav as Category } from "@/types";
+// import { CATEGORY_PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 interface CategoryTableProps {
   searchTerm: string;
   categories: Category[];
+  onRefresh?: () => void;
 }
 
-export function CategoryTable({ searchTerm, categories }: CategoryTableProps) {
+export function CategoryTable({
+  searchTerm,
+  categories,
+  onRefresh,
+}: CategoryTableProps) {
   const [localCategories, setLocalCategories] =
     useState<Category[]>(categories);
   const [editId, setEditId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const filteredCategories = localCategories.filter((category) =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
-  const handleDelete = (id: string) => {
+  const categoryTree = useMemo(() => {
+    return buildCategoryTree(localCategories);
+  }, [localCategories]);
+
+  const filteredCategories = useMemo(() => {
+    return flattenCategories(categoryTree, searchTerm, expandedIds);
+  }, [categoryTree, searchTerm, expandedIds]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDelete = async (id: string) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      setLocalCategories(localCategories.filter((cat) => cat.id !== id));
+      try {
+        await categoryService.deleteCategory(id);
+        setLocalCategories(localCategories.filter((cat) => cat._id !== id));
+        if (onRefresh) onRefresh();
+        alert("Xóa danh mục thành công!");
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        alert("Không thể xóa danh mục. Vui lòng thử lại sau.");
+      }
     }
   };
 
   const handleCategoryAdded = () => {
     setIsAddingNew(false);
+    if (onRefresh) onRefresh();
   };
 
   const handleCategoryUpdated = () => {
     setEditId(null);
+    if (onRefresh) onRefresh();
   };
 
   return (
@@ -53,63 +92,32 @@ export function CategoryTable({ searchTerm, categories }: CategoryTableProps) {
           </Button>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table">
+          <table
+            className="admin-table"
+            style={{ tableLayout: "fixed", width: "100%" }}
+          >
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Ảnh</th>
-                <th>Tên danh mục</th>
-                <th>Badge</th>
-                <th>Hành động</th>
+                <th style={{ width: "50px" }}></th>
+                <th style={{ width: "120px" }}>ID</th>
+                <th style={{ width: "80px" }}>Ảnh</th>
+                <th style={{ width: "280px" }}>Tên danh mục</th>
+                <th style={{ width: "180px" }}>Slug</th>
+                <th style={{ width: "140px" }}>Danh mục cha</th>
+                <th style={{ width: "120px" }}>Trạng thái</th>
+                <th style={{ width: "180px" }}>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {filteredCategories.map((category) => (
-                <tr key={category.id}>
-                  <td className="font-medium text-foreground">{category.id}</td>
-                  <td>
-                    <img
-                      src={category.image || CATEGORY_PLACEHOLDER_IMAGE}
-                      alt={category.name}
-                      className="w-10 h-10 rounded object-cover"
-                    />
-                  </td>
-                  <td className="text-foreground">{category.name}</td>
-                  <td>
-                    {category.badge ? (
-                      <Badge
-                        variant="outline"
-                        className={category.badgeColor || ""}
-                      >
-                        {category.badge}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="flex gap-2 whitespace-nowrap flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 w-20 flex-shrink-0"
-                        onClick={() => setEditId(category.id)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Sửa
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 text-destructive hover:text-destructive w-16 flex-shrink-0"
-                        onClick={() => handleDelete(category.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                <CategoryTableRow
+                  key={category._id}
+                  category={category}
+                  isExpanded={expandedIds.has(category._id)}
+                  onToggleExpand={toggleExpand}
+                  onEdit={setEditId}
+                  onDelete={handleDelete}
+                />
               ))}
             </tbody>
           </table>
@@ -132,6 +140,7 @@ export function CategoryTable({ searchTerm, categories }: CategoryTableProps) {
             <CategoryForm
               mode={editId ? "edit" : "add"}
               categoryId={editId || undefined}
+              allCategories={localCategories}
               onSuccess={editId ? handleCategoryUpdated : handleCategoryAdded}
               onCancel={() => {
                 setIsAddingNew(false);
