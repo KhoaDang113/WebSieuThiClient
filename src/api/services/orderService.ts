@@ -7,17 +7,19 @@ import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants";
  */
 interface BackendOrderItem {
   _id?: string;
-  product_id: string | {
-    _id?: string;
-    id?: string;
-    name?: string;
-    slug?: string;
-    image_primary?: string;
-    unit_price?: number;
-    final_price?: number;
-    discount_percent?: number;
-    stock_status?: string;
-  };
+  product_id:
+    | string
+    | {
+        _id?: string;
+        id?: string;
+        name?: string;
+        slug?: string;
+        image_primary?: string;
+        unit_price?: number;
+        final_price?: number;
+        discount_percent?: number;
+        stock_status?: string;
+      };
   quantity: number;
   unit_price: number;
   discount_percent?: number;
@@ -28,17 +30,19 @@ interface BackendOrder {
   _id?: string;
   id?: string;
   user_id?: string;
-  address_id?: string | {
-    _id?: string;
-    id?: string;
-    full_name?: string;
-    phone?: string;
-    address?: string;
-    ward?: string;
-    district?: string;
-    city?: string;
-    zip_code?: string;
-  };
+  address_id?:
+    | string
+    | {
+        _id?: string;
+        id?: string;
+        full_name?: string;
+        phone?: string;
+        address?: string;
+        ward?: string;
+        district?: string;
+        city?: string;
+        zip_code?: string;
+      };
   items: BackendOrderItem[];
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   subtotal: number;
@@ -58,47 +62,77 @@ interface BackendOrder {
   notes?: string;
 }
 
-/**
- * Order Service - Xử lý các API liên quan đến orders (khớp với NestJS backend)
- */
+interface CreateOrderPayload {
+  addressId: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+  }>;
+  shippingFee?: number;
+  discount?: number;
+  requestInvoice?: boolean;
+  invoiceInfo?: {
+    companyName: string;
+    companyAddress: string;
+    taxCode: string;
+    email: string;
+  };
+}
+
+interface OrderJobCreateResponse {
+  success?: boolean;
+  message?: string;
+  jobId?: string | number;
+  estimatedTime?: string;
+}
+
+interface OrderJobStatusResponse {
+  jobId: string;
+  state: string;
+  result?: {
+    success?: boolean;
+    orderId?: string;
+    message?: string;
+    order?: BackendOrder;
+  } | null;
+  error?: string | null;
+  attemptsMade?: number;
+  timestamp?: number;
+}
+
 class OrderService {
   private readonly basePath = "/orders";
-
-  /**
-   * Transform OrderItem từ backend format sang frontend format
-   */
   private transformOrderItem(item: BackendOrderItem, index: number): OrderItem {
-    const product = typeof item.product_id === 'object' ? item.product_id : null;
-    const productId = typeof item.product_id === 'string' 
-      ? item.product_id 
-      : (product?._id || product?.id || "");
-    
-    // Lấy product ID dạng string hoặc number
+    const product =
+      typeof item.product_id === "object" ? item.product_id : null;
+    const productId =
+      typeof item.product_id === "string"
+        ? item.product_id
+        : product?._id || product?.id || "";
+
     let productIdNum = 0;
-    if (typeof productId === 'string') {
-      // Nếu là MongoDB ObjectId, lấy số từ string hoặc hash
+    if (typeof productId === "string") {
       productIdNum = parseInt(productId.slice(-8), 16) || index;
-    } else if (typeof productId === 'number') {
+    } else if (typeof productId === "number") {
       productIdNum = productId;
     }
-    
+
     return {
       id: item._id || `item-${productIdNum}-${index}`,
       product_id: productIdNum,
       name: product?.name || "Sản phẩm",
-      price: item.unit_price || product?.final_price || product?.unit_price || 0,
+      price:
+        item.unit_price || product?.final_price || product?.unit_price || 0,
       quantity: item.quantity,
       image: product?.image_primary || PRODUCT_PLACEHOLDER_IMAGE,
-      unit: product?.unit_price ? "1 sản phẩm" : "1 sản phẩm", // Backend không có unit trong product
+      unit: product?.unit_price ? "1 sản phẩm" : "1 sản phẩm",
     };
   }
 
-  /**
-   * Transform Order từ backend format sang frontend format
-   */
   private transformOrder(order: BackendOrder): Order {
-    const address = typeof order.address_id === 'object' ? order.address_id : null;
-    
+    const address =
+      typeof order.address_id === "object" ? order.address_id : null;
+
     // Map status từ backend sang frontend
     let frontendStatus: Order["status"];
     switch (order.status) {
@@ -123,27 +157,131 @@ class OrderService {
       id: order._id || order.id || "",
       customer_name: address?.full_name || "Khách hàng",
       customer_phone: address?.phone || "",
-      customer_address: [
-        address?.address,
-        address?.ward,
-        address?.district,
-        address?.city,
-      ].filter(Boolean).join(", ") || "",
-      items: order.items.map((item, index) => this.transformOrderItem(item, index)),
+      customer_address:
+        [address?.address, address?.ward, address?.district, address?.city]
+          .filter(Boolean)
+          .join(", ") || "",
+      items: order.items.map((item, index) =>
+        this.transformOrderItem(item, index)
+      ),
       total_amount: order.total || order.subtotal || 0,
       status: frontendStatus,
+      // Map payment fields from backend
+      payment_status: order.payment_status,
+      paid: order.payment_status === "paid",
+      payment_method: null,
       created_at: order.created_at || new Date().toISOString(),
       notes: order.notes,
       is_company_invoice: !!order.is_company_invoice,
-      invoice_info: order.is_company_invoice && order.invoice_info
-        ? {
-            company_name: order.invoice_info.company_name || "",
-            company_address: order.invoice_info.company_address || "",
-            tax_code: order.invoice_info.tax_code || "",
-            email: order.invoice_info.email || "",
-          }
-        : null,
+      invoice_info:
+        order.is_company_invoice && order.invoice_info
+          ? {
+              company_name: order.invoice_info.company_name || "",
+              company_address: order.invoice_info.company_address || "",
+              tax_code: order.invoice_info.tax_code || "",
+              email: order.invoice_info.email || "",
+            }
+          : null,
     };
+  }
+
+  private buildCreateOrderRequest(payload: CreateOrderPayload) {
+    const body: {
+      address_id: string;
+      items: Array<{ product_id: string; quantity: number }>;
+      discount?: number;
+      shipping_fee?: number;
+      is_company_invoice?: boolean;
+      invoice_info?: {
+        company_name: string;
+        company_address: string;
+        tax_code: string;
+        email: string;
+      };
+    } = {
+      address_id: payload.addressId,
+      items: payload.items.map((item) => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+      })),
+    };
+
+    if (typeof payload.discount === "number") {
+      body.discount = payload.discount;
+    }
+
+    if (typeof payload.shippingFee === "number") {
+      body.shipping_fee = payload.shippingFee;
+    }
+
+    if (payload.requestInvoice) {
+      body.is_company_invoice = true;
+      if (payload.invoiceInfo) {
+        body.invoice_info = {
+          company_name: payload.invoiceInfo.companyName,
+          company_address: payload.invoiceInfo.companyAddress,
+          tax_code: payload.invoiceInfo.taxCode,
+          email: payload.invoiceInfo.email,
+        };
+      }
+    }
+
+    return body;
+  }
+
+  private async getOrderJobStatus(
+    jobId: string
+  ): Promise<OrderJobStatusResponse> {
+    const response = await api.get<OrderJobStatusResponse>(
+      `${this.basePath}/job/${jobId}`
+    );
+    return response.data;
+  }
+
+  private async waitForJobCompletion(
+    jobId: string,
+    timeoutMs = 20000,
+    intervalMs = 1000
+  ): Promise<{
+    jobId: string;
+    orderId?: string;
+    order?: Order;
+  }> {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        const status = await this.getOrderJobStatus(jobId);
+
+        if (status.state === "completed" && status.result?.order) {
+          const transformedOrder = this.transformOrder(status.result.order);
+          return {
+            jobId: status.jobId,
+            orderId: status.result.orderId || transformedOrder.id,
+            order: transformedOrder,
+          };
+        }
+
+        if (status.state === "failed") {
+          const errorMessage =
+            status.error ||
+            status.result?.message ||
+            "Không thể tạo đơn hàng. Vui lòng thử lại.";
+          throw new Error(errorMessage);
+        }
+      } catch (error) {
+        console.error(`[OrderService] Error polling job ${jobId}:`, error);
+        // Nếu time out sẽ break ở điều kiện while, nên tiếp tục loop tới khi hết thời gian
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    console.warn(
+      `[OrderService] Timeout while waiting for order job ${jobId} completion`
+    );
+
+    return { jobId };
   }
 
   /**
@@ -153,11 +291,12 @@ class OrderService {
   async getMyOrders(): Promise<Order[]> {
     try {
       const response = await api.get<BackendOrder[]>(this.basePath);
-      
       // Transform data từ backend format sang frontend format
-      const transformed = (response.data || []).map(order => this.transformOrder(order));
+      const transformed = (response.data || []).map((order) =>
+        this.transformOrder(order)
+      );
       return transformed;
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error fetching orders:`, error);
       throw error;
     }
@@ -169,9 +308,11 @@ class OrderService {
    */
   async getOrderById(orderId: string): Promise<Order> {
     try {
-      const response = await api.get<BackendOrder>(`${this.basePath}/${orderId}`);
+      const response = await api.get<BackendOrder>(
+        `${this.basePath}/${orderId}`
+      );
       return this.transformOrder(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error fetching order ${orderId}:`, error);
       throw error;
     }
@@ -188,7 +329,7 @@ class OrderService {
         cancelReason ? { cancel_reason: cancelReason } : {}
       );
       return this.transformOrder(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error cancelling order ${orderId}:`, error);
       throw error;
     }
@@ -198,7 +339,11 @@ class OrderService {
    * Staff/Admin: Lấy danh sách tất cả đơn hàng
    * GET /orders/admin/all
    */
-  async getStaffOrders(params?: { status?: string; page?: number; limit?: number }): Promise<{
+  async getStaffOrders(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
     orders: Order[];
     total: number;
     page: number;
@@ -225,7 +370,7 @@ class OrderService {
         page: response.data?.page ?? params?.page ?? 1,
         totalPages: response.data?.totalPages ?? 1,
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error fetching staff orders:`, error);
       throw error;
     }
@@ -236,9 +381,11 @@ class OrderService {
    */
   async confirmOrderByStaff(orderId: string): Promise<Order> {
     try {
-      const response = await api.patch<BackendOrder>(`${this.basePath}/admin/${orderId}/confirm`);
+      const response = await api.patch<BackendOrder>(
+        `${this.basePath}/admin/${orderId}/confirm`
+      );
       return this.transformOrder(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error confirming order ${orderId}:`, error);
       throw error;
     }
@@ -249,9 +396,11 @@ class OrderService {
    */
   async shipOrder(orderId: string): Promise<Order> {
     try {
-      const response = await api.patch<BackendOrder>(`${this.basePath}/admin/${orderId}/ship`);
+      const response = await api.patch<BackendOrder>(
+        `${this.basePath}/admin/${orderId}/ship`
+      );
       return this.transformOrder(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error shipping order ${orderId}:`, error);
       throw error;
     }
@@ -262,9 +411,11 @@ class OrderService {
    */
   async deliverOrderByStaff(orderId: string): Promise<Order> {
     try {
-      const response = await api.patch<BackendOrder>(`${this.basePath}/admin/${orderId}/deliver`);
+      const response = await api.patch<BackendOrder>(
+        `${this.basePath}/admin/${orderId}/deliver`
+      );
       return this.transformOrder(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[OrderService] Error delivering order ${orderId}:`, error);
       throw error;
     }
@@ -273,19 +424,49 @@ class OrderService {
   /**
    * Staff/Admin: Hủy đơn hàng
    */
-  async cancelOrderByStaff(orderId: string, cancelReason?: string): Promise<Order> {
+  async cancelOrderByStaff(
+    orderId: string,
+    cancelReason?: string
+  ): Promise<Order> {
     try {
       const response = await api.patch<BackendOrder>(
         `${this.basePath}/admin/${orderId}/cancel`,
-        { cancel_reason: cancelReason ?? 'Cancelled by staff' },
+        { cancel_reason: cancelReason ?? "Cancelled by staff" }
       );
       return this.transformOrder(response.data);
-    } catch (error: any) {
-      console.error(`[OrderService] Error cancelling order ${orderId} by staff:`, error);
+    } catch (error) {
+      console.error(
+        `[OrderService] Error cancelling order ${orderId} by staff:`,
+        error
+      );
+      throw error;
+    }
+  }
+  async createOrder(
+    payload: CreateOrderPayload
+  ): Promise<{ jobId: string; orderId?: string; order?: Order }> {
+    try {
+      const requestBody = this.buildCreateOrderRequest(payload);
+      const response = await api.post<OrderJobCreateResponse>(
+        this.basePath,
+        requestBody
+      );
+
+      const rawJobId = response.data.jobId;
+      if (!rawJobId) {
+        const message =
+          response.data.message || "Không thể tạo đơn hàng. Thiếu jobId.";
+        throw new Error(message);
+      }
+
+      const jobId =
+        typeof rawJobId === "string" ? rawJobId : rawJobId.toString();
+      return await this.waitForJobCompletion(jobId);
+    } catch (error) {
+      console.error("[OrderService] Error creating order:", error);
       throw error;
     }
   }
 }
 
 export default new OrderService();
-

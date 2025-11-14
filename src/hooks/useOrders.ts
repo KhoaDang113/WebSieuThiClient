@@ -1,186 +1,236 @@
-"use client"
+"use client";
 
-import { useState, useCallback, useEffect } from "react"
-import type { Order } from "@/types/order"
-import type { CartItem } from "@/types/cart.type"
-import { orderService } from "@/api"
-import { useAuthStore } from "@/stores/authStore"
+import { useState, useCallback, useEffect } from "react";
+import type { Order } from "@/types/order";
+import type { CartItem } from "@/types/cart.type";
+import { orderService } from "@/api";
+import paymentService from "@/api/services/paymentService";
+import { useAuthStore } from "@/stores/authStore";
 
 export interface CreateOrderCustomerInfo {
-  name: string
-  phone: string
-  address: string
-  notes?: string
-  requestInvoice?: boolean
-  invoiceCompanyName?: string
-  invoiceCompanyAddress?: string
-  invoiceTaxCode?: string
-  invoiceEmail?: string
+  name: string;
+  phone: string;
+  address: string;
+  addressId?: string;
+  notes?: string;
+  requestInvoice?: boolean;
+  invoiceCompanyName?: string;
+  invoiceCompanyAddress?: string;
+  invoiceTaxCode?: string;
+  invoiceEmail?: string;
+  shippingFee?: number;
+  discount?: number;
 }
 
 export function useOrders() {
-  const { user, isAuthenticated } = useAuthStore()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { user, isAuthenticated } = useAuthStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Lấy userId từ cả id và _id (tránh case backend trả về _id)
-  const userId = (user as any)?.id || (user as any)?._id
-  const role = (user as any)?.role?.toLowerCase?.()
-  const isStaff = role === "staff" || role === "admin"
+  const userId = user?.id || user?._id;
+  const role = user?.role?.toLowerCase?.();
+  const isStaff = role === "staff" || role === "admin";
 
   const replaceOrderInState = useCallback((updatedOrder: Order) => {
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
-        const orderId = order.id || order._id
-        const updatedId = updatedOrder.id || updatedOrder._id
-        return orderId === updatedId ? updatedOrder : order
+        const orderId = order.id || order._id;
+        const updatedId = updatedOrder.id || updatedOrder._id;
+        return orderId === updatedId ? updatedOrder : order;
       })
-    )
-  }, [])
+    );
+  }, []);
 
   // Fetch orders từ API khi user đăng nhập
   useEffect(() => {
     const fetchOrders = async () => {
       if (!isAuthenticated || (!userId && !isStaff)) {
-        setLoading(false)
-        setOrders([])
-        return
+        setLoading(false);
+        setOrders([]);
+        return;
       }
 
       try {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
         if (isStaff) {
-          const { orders: staffOrders } = await orderService.getStaffOrders()
-          setOrders(staffOrders)
+          const { orders: staffOrders } = await orderService.getStaffOrders();
+          setOrders(staffOrders);
         } else {
-          const fetchedOrders = await orderService.getMyOrders()
-          setOrders(fetchedOrders)
+          const fetchedOrders = await orderService.getMyOrders();
+          setOrders(fetchedOrders);
         }
       } catch (err: any) {
-        console.error("Error fetching orders:", err)
-        setError(err?.response?.data?.message || "Không thể tải danh sách đơn hàng")
-        setOrders([])
+        console.error("Error fetching orders:", err);
+        setError(
+          err?.response?.data?.message || "Không thể tải danh sách đơn hàng"
+        );
+        setOrders([]);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchOrders()
-  }, [isAuthenticated, userId, isStaff])
+    fetchOrders();
+  }, [isAuthenticated, userId, isStaff]);
 
-  const confirmOrder = useCallback(async (orderId: string) => {
-    if (isStaff) {
-      const updatedOrder = await orderService.confirmOrderByStaff(orderId)
-      replaceOrderInState(updatedOrder)
-    } else {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId ? { ...order, status: "confirmed" } : order
-        )
-      )
-    }
-  }, [isStaff, replaceOrderInState])
+  const confirmOrder = useCallback(
+    async (orderId: string) => {
+      if (isStaff) {
+        const updatedOrder = await orderService.confirmOrderByStaff(orderId);
+        replaceOrderInState(updatedOrder);
+      } else {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status: "confirmed" } : order
+          )
+        );
+      }
+    },
+    [isStaff, replaceOrderInState]
+  );
 
   const rejectOrder = useCallback((orderId: string) => {
     setOrders((prevOrders) =>
-      prevOrders.map((order) => 
-        order.id === orderId 
-          ? { ...order, status: "rejected" as const } 
-          : order
+      prevOrders.map((order) =>
+        order.id === orderId ? { ...order, status: "rejected" as const } : order
       )
-    )
-  }, [])
+    );
+  }, []);
 
-  const deliverOrder = useCallback(async (orderId: string) => {
-    if (isStaff) {
-      // Backend yêu cầu trạng thái shipped trước khi delivered
-      const shippedOrder = await orderService.shipOrder(orderId)
-      replaceOrderInState(shippedOrder)
-      const deliveredOrder = await orderService.deliverOrderByStaff(orderId)
-      replaceOrderInState(deliveredOrder)
-    } else {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId ? { ...order, status: "delivered" } : order
-        )
-      )
-    }
-  }, [isStaff, replaceOrderInState])
+  const deliverOrder = useCallback(
+    async (orderId: string) => {
+      if (isStaff) {
+        // Backend yêu cầu trạng thái shipped trước khi delivered
+        const shippedOrder = await orderService.shipOrder(orderId);
+        replaceOrderInState(shippedOrder);
+        const deliveredOrder = await orderService.deliverOrderByStaff(orderId);
+        replaceOrderInState(deliveredOrder);
+      } else {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status: "delivered" } : order
+          )
+        );
+      }
+    },
+    [isStaff, replaceOrderInState]
+  );
 
-  const cancelOrder = useCallback(async (orderId: string, reason?: string) => {
-    try {
-      const updatedOrder = isStaff
-        ? await orderService.cancelOrderByStaff(orderId, reason)
-        : await orderService.cancelOrder(orderId, reason)
-      replaceOrderInState(updatedOrder)
-    } catch (err: any) {
-      console.error("Cancel order failed:", err)
-      throw err
-    }
-  }, [isStaff, replaceOrderInState])
+  const cancelOrder = useCallback(
+    async (orderId: string, reason?: string) => {
+      try {
+        const updatedOrder = isStaff
+          ? await orderService.cancelOrderByStaff(orderId, reason)
+          : await orderService.cancelOrder(orderId, reason);
+        replaceOrderInState(updatedOrder);
+      } catch (err) {
+        console.error("Cancel order failed:", err);
+        throw err;
+      }
+    },
+    [isStaff, replaceOrderInState]
+  );
+
+  const payOrder = useCallback(
+    async (orderId: string, method: "vnpay" | "momo" = "vnpay") => {
+      try {
+        // Create payment on backend and redirect user to payment gateway
+        const resp = await paymentService.createPayment(orderId, method);
+        const redirectUrl = resp?.data || (resp as unknown);
+        if (typeof redirectUrl === "string" && redirectUrl) {
+          // Redirect to payment provider
+          globalThis.location.href = redirectUrl;
+        } else {
+          alert(
+            "Đã tạo lệnh thanh toán. Vui lòng kiểm tra hướng dẫn để hoàn tất."
+          );
+        }
+      } catch (err) {
+        console.error("Create payment failed:", err);
+        alert("Không thể khởi tạo thanh toán. Vui lòng thử lại sau.");
+      }
+    },
+    []
+  );
 
   // Tạo đơn hàng mới từ giỏ hàng
-  const createOrder = useCallback((
-    cartItems: CartItem[], 
-    customerInfo: CreateOrderCustomerInfo
-  ) => {
-    const invoiceNotes = customerInfo.requestInvoice
-      ? [
-          `Xuất hóa đơn công ty`,
-          customerInfo.invoiceCompanyName && `Tên công ty: ${customerInfo.invoiceCompanyName}`,
-          customerInfo.invoiceCompanyAddress && `Địa chỉ: ${customerInfo.invoiceCompanyAddress}`,
-          customerInfo.invoiceTaxCode && `Mã số thuế: ${customerInfo.invoiceTaxCode}`,
-          customerInfo.invoiceEmail && `Email: ${customerInfo.invoiceEmail}`,
-        ]
-          .filter(Boolean)
-          .join(" | ")
-      : ""
+  const createOrder = useCallback(
+    async (cartItems: CartItem[], customerInfo: CreateOrderCustomerInfo) => {
+      if (!cartItems || cartItems.length === 0) {
+        throw new Error("Giỏ hàng của bạn đang trống.");
+      }
 
-    const combinedNotes = [customerInfo.notes, invoiceNotes].filter(Boolean).join(" | ")
+      if (!customerInfo.addressId) {
+        throw new Error("Vui lòng chọn địa chỉ giao hàng hợp lệ.");
+      }
 
-    const newOrder: Order = {
-      id: `ORD-${Date.now()}`,
-      customer_name: customerInfo.name,
-      customer_phone: customerInfo.phone,
-      customer_address: customerInfo.address,
-      items: cartItems.map((item, index) => ({
-        id: `item-${Date.now()}-${index}`,
-        product_id: parseInt(item.id),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.image,
-        unit: item.unit
-      })),
-      total_amount: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      status: "pending",
-      created_at: new Date().toISOString(),
-      notes: combinedNotes || undefined,
-      is_company_invoice: customerInfo.requestInvoice || false,
-      invoice_info: customerInfo.requestInvoice
-        ? {
-            company_name: customerInfo.invoiceCompanyName || "",
-            company_address: customerInfo.invoiceCompanyAddress || "",
-            tax_code: customerInfo.invoiceTaxCode || "",
-            email: customerInfo.invoiceEmail || "",
+      const payload = {
+        addressId: customerInfo.addressId,
+        items: cartItems.map((item) => ({
+          productId: String(item.id),
+          quantity: item.quantity,
+        })),
+        shippingFee: customerInfo.shippingFee,
+        discount: customerInfo.discount,
+        requestInvoice: customerInfo.requestInvoice,
+        invoiceInfo: customerInfo.requestInvoice
+          ? {
+              companyName: customerInfo.invoiceCompanyName || "",
+              companyAddress: customerInfo.invoiceCompanyAddress || "",
+              taxCode: customerInfo.invoiceTaxCode || "",
+              email: customerInfo.invoiceEmail || "",
+            }
+          : undefined,
+      };
+
+      try {
+        const { order, orderId, jobId } = await orderService.createOrder(
+          payload
+        );
+
+        let finalOrder = order;
+        if (!finalOrder && orderId) {
+          try {
+            finalOrder = await orderService.getOrderById(orderId);
+          } catch (fetchError) {
+            console.warn(
+              "Không thể lấy thông tin chi tiết đơn hàng ngay sau khi tạo:",
+              fetchError
+            );
           }
-        : null
-    }
+        }
 
-    setOrders((prevOrders) => [newOrder, ...prevOrders])
-    return newOrder.id
-  }, [])
+        if (finalOrder) {
+          setOrders((prevOrders) => [finalOrder, ...prevOrders]);
+        }
 
-  return { 
-    orders, 
+        const fallbackId = finalOrder?._id || finalOrder?.id;
+        const idForReturn =
+          orderId ||
+          fallbackId ||
+          (jobId ? jobId.toString() : `JOB-${Date.now()}`);
+
+        return idForReturn;
+      } catch (err) {
+        console.error("Error creating order:", err);
+        throw err;
+      }
+    },
+    []
+  );
+
+  return {
+    orders,
     loading,
     error,
-    confirmOrder, 
-    rejectOrder, 
-    deliverOrder, 
-    cancelOrder, 
-    createOrder 
-  }
+    confirmOrder,
+    rejectOrder,
+    deliverOrder,
+    cancelOrder,
+    payOrder,
+    createOrder,
+  };
 }

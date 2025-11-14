@@ -1,4 +1,16 @@
-import { ChevronDown, MapPin, Search, ShoppingCart, User, Menu, X, Clock, Package, LogOut, Phone } from "lucide-react";
+import {
+  ChevronDown,
+  MapPin,
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  Clock,
+  Package,
+  LogOut,
+  Phone,
+} from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -11,20 +23,31 @@ import { AddressListModal } from "@/components/address/AddressListModal";
 import authService from "@/api/services/authService";
 import { useAuthStore } from "@/stores/authStore";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNotification } from "@/components/notification/NotificationContext";
 
 export function Navbar() {
   const navigate = useNavigate();
   const { totalItems } = useCart();
   const location = useLocation();
-  const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory();
+  const { searchHistory, addToHistory, removeFromHistory, clearHistory } =
+    useSearchHistory();
   const { address, setAddress, getAddressString } = useAddress();
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const { showNotification } = useNotification();
-  
+
   // Sử dụng Zustand store để quản lý auth state
-  const { user: currentUser, isAuthenticated, setUser, logout: clearAuth } = useAuthStore();
+  const {
+    user: currentUser,
+    isAuthenticated,
+    setUser,
+    logout: clearAuth,
+  } = useAuthStore();
 
   useEffect(() => {
     let isMounted = true;
@@ -71,27 +94,27 @@ export function Navbar() {
     };
 
     checkAuth();
-    
+
     // Thêm listener để check auth khi window focus (user quay lại tab)
     const handleFocus = () => {
       checkAuth();
     };
-    
+
     // Thêm listener cho custom event 'auth-changed' để force update
     const handleAuthChanged = () => {
       checkAuth();
     };
-    
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('auth-changed', handleAuthChanged);
-    
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("auth-changed", handleAuthChanged);
+
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('auth-changed', handleAuthChanged);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("auth-changed", handleAuthChanged);
     };
   }, [currentUser, setUser, clearAuth]);
-  
+
   const hints = useMemo(
     () => [
       "Thịt ngon hôm nay",
@@ -117,7 +140,10 @@ export function Navbar() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
         setShowHistory(false);
       }
     };
@@ -174,7 +200,8 @@ export function Navbar() {
       showNotification({
         type: "warning",
         title: "Yêu cầu đăng nhập",
-        message: "Bạn phải đăng nhập để quản lý địa chỉ giao hàng. Vui lòng đăng nhập để tiếp tục.",
+        message:
+          "Bạn phải đăng nhập để quản lý địa chỉ giao hàng. Vui lòng đăng nhập để tiếp tục.",
         duration: 4000,
       });
       // Tùy chọn: redirect đến trang login sau 1 giây
@@ -191,7 +218,8 @@ export function Navbar() {
       showNotification({
         type: "warning",
         title: "Yêu cầu đăng nhập",
-        message: "Bạn phải đăng nhập để xem giỏ hàng. Vui lòng đăng nhập để tiếp tục.",
+        message:
+          "Bạn phải đăng nhập để xem giỏ hàng. Vui lòng đăng nhập để tiếp tục.",
         duration: 4000,
       });
       // Redirect đến trang login sau 1.5 giây
@@ -287,7 +315,9 @@ export function Navbar() {
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <span className="text-sm text-gray-700 truncate">{term}</span>
+                              <span className="text-sm text-gray-700 truncate">
+                                {term}
+                              </span>
                             </div>
                             <button
                               type="button"
@@ -349,14 +379,16 @@ export function Navbar() {
 
               {isAuthenticated ? (
                 <>
-
-
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors">
-                        <img 
-                          src={currentUser?.avatar || currentUser?.avatarUrl || DEFAULT_AVATAR_URL} 
-                          alt="Avatar" 
+                        <img
+                          src={
+                            currentUser?.avatar ||
+                            currentUser?.avatarUrl ||
+                            DEFAULT_AVATAR_URL
+                          }
+                          alt="Avatar"
                           className="w-6 h-6 rounded-full object-cover"
                         />
                         <span className="whitespace-nowrap text-white">
@@ -369,7 +401,8 @@ export function Navbar() {
                       {/* Header */}
                       <div className="px-4 py-3 border-b bg-gray-50">
                         <div className="font-semibold text-sm text-gray-900">
-                          {currentUser?.gender === 'female' ? 'Chị' : 'Anh'} {currentUser?.name || 'Khách hàng'}
+                          {currentUser?.gender === "female" ? "Chị" : "Anh"}{" "}
+                          {currentUser?.name || "Khách hàng"}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
                           CHƯA CÓ HẠNG 0 điểm
@@ -387,15 +420,20 @@ export function Navbar() {
                             <span>Thông tin cá nhân</span>
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={handleAddressClick}
                           className="cursor-pointer px-4"
                         >
                           <MapPin className="mr-2 h-4 w-4" />
-                          <span>Địa chỉ nhận hàng {address ? '(1)' : '(0)'}</span>
+                          <span>
+                            Địa chỉ nhận hàng {address ? "(1)" : "(0)"}
+                          </span>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild className="px-4">
-                          <Link to="/my-orders" className="cursor-pointer w-full">
+                          <Link
+                            to="/my-orders"
+                            className="cursor-pointer w-full"
+                          >
                             <Package className="mr-2 h-4 w-4" />
                             <span>Đơn hàng từng mua</span>
                           </Link>
@@ -407,27 +445,41 @@ export function Navbar() {
                         <div className="text-xs font-semibold text-gray-500 uppercase mb-2 px-2">
                           Hỗ trợ khách hàng
                         </div>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           asChild
                           className="cursor-pointer px-4"
                         >
-                          <a href="tel:19001908" className="flex items-center w-full">
+                          <a
+                            href="tel:19001908"
+                            className="flex items-center w-full"
+                          >
                             <Phone className="mr-2 h-4 w-4 shrink-0" />
                             <div className="flex flex-col">
-                              <span className="text-sm">Tư vấn: 0386.740.043</span>
-                              <span className="text-xs text-gray-500">(08:00 - 22:00) Miễn phí</span>
+                              <span className="text-sm">
+                                Tư vấn: 0386.740.043
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                (08:00 - 22:00) Miễn phí
+                              </span>
                             </div>
                           </a>
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           asChild
                           className="cursor-pointer px-4"
                         >
-                          <a href="tel:18001067" className="flex items-center w-full">
+                          <a
+                            href="tel:18001067"
+                            className="flex items-center w-full"
+                          >
                             <Phone className="mr-2 h-4 w-4 shrink-0" />
                             <div className="flex flex-col">
-                              <span className="text-sm">Khiếu nại: 0386.740.043</span>
-                              <span className="text-xs text-gray-500">(08:00 - 22:00) Miễn phí</span>
+                              <span className="text-sm">
+                                Khiếu nại: 0386.740.043
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                (08:00 - 22:00) Miễn phí
+                              </span>
                             </div>
                           </a>
                         </DropdownMenuItem>
@@ -435,19 +487,22 @@ export function Navbar() {
 
                       {/* Đăng xuất */}
                       <div className="px-2 py-1">
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={async () => {
                             // Xóa cart của user hiện tại trước khi logout
-                            if (currentUser?.id && typeof window !== "undefined") {
+                            if (
+                              currentUser?.id &&
+                              typeof window !== "undefined"
+                            ) {
                               localStorage.removeItem(`cart_${currentUser.id}`);
                             }
                             localStorage.removeItem("cart_guest");
-                            
+
                             await authService.logout();
                             clearAuth();
                             // Dispatch event để notify các components khác
-                            window.dispatchEvent(new Event('auth-changed'));
-                            navigate('/');
+                            window.dispatchEvent(new Event("auth-changed"));
+                            navigate("/");
                           }}
                           className="cursor-pointer text-red-600 px-4"
                         >
@@ -464,7 +519,9 @@ export function Navbar() {
                   className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
                 >
                   <User className="w-5 h-5 text-white" />
-                  <span className="whitespace-nowrap text-white">Đăng nhập</span>
+                  <span className="whitespace-nowrap text-white">
+                    Đăng nhập
+                  </span>
                 </Link>
               )}
             </div>
@@ -484,9 +541,7 @@ export function Navbar() {
             <span className="font-medium">Giao đến:</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="truncate max-w-[150px]">
-              {getAddressString()}
-            </span>
+            <span className="truncate max-w-[150px]">{getAddressString()}</span>
             <ChevronDown className="w-4 h-4 flex-shrink-0" />
           </div>
         </button>
@@ -500,6 +555,7 @@ export function Navbar() {
           // Cập nhật AddressContext khi chọn địa chỉ
           if (selectedAddress) {
             setAddress({
+              id: selectedAddress._id,
               province: selectedAddress.city || "",
               district: selectedAddress.district || "",
               ward: selectedAddress.ward || "",

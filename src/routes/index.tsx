@@ -23,7 +23,14 @@ import CustomerOrdersPage from "@/pages/customer-orders";
 import KhuyenMaiPage from "@/pages/sale";
 import AccountPage from "@/pages/account";
 import SearchPage from "@/pages/search";
-import { ProtectedRoute, PublicRoute, AdminRoute, StaffRoute } from "@/components/auth/ProtectedRoute";
+import PaymentSuccessPage from "@/pages/payments/success";
+import PaymentFailedPage from "@/pages/payments/failed";
+import {
+  ProtectedRoute,
+  PublicRoute,
+  AdminRoute,
+  StaffRoute,
+} from "@/components/auth/ProtectedRoute";
 
 const router: RouteObject[] = [
   // User
@@ -75,18 +82,18 @@ const router: RouteObject[] = [
         path: "/verify-email",
         element: <VerifyEmailPage />,
       },
-        {
-          path: "/forgot-password",
-          element: (
-            <PublicRoute>
-              <ForgotPasswordPage />
-            </PublicRoute>
-          ),
-        },
-        {
-          path: "/auth-callback",
-          element: <AuthCallbackPage />,
-        },
+      {
+        path: "/forgot-password",
+        element: (
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: "/auth-callback",
+        element: <AuthCallbackPage />,
+      },
       {
         path: "/my-orders",
         element: (
@@ -107,9 +114,17 @@ const router: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
+      {
+        path: "/payments/success",
+        element: <PaymentSuccessPage />,
+      },
+      {
+        path: "/payments/failed",
+        element: <PaymentFailedPage />,
+      },
     ],
   },
-  
+
   // Admin
   {
     path: "/admin",

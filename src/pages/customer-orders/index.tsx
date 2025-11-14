@@ -5,13 +5,16 @@ import { CustomerOrderCard } from "@/components/order/CustomerOrderCard";
 import { useOrders } from "@/hooks/useOrders";
 
 export default function CustomerOrdersPage() {
-  const { orders, loading, error, cancelOrder } = useOrders();
-  const [filter, setFilter] = useState<"all" | "pending" | "delivered" | "cancelled">("all");
+  const { orders, loading, error, cancelOrder, payOrder } = useOrders();
+  const [filter, setFilter] = useState<
+    "all" | "pending" | "delivered" | "cancelled"
+  >("all");
 
   // Filter orders theo trạng thái
   const filteredOrders = orders.filter((order) => {
     if (filter === "all") return true;
-    if (filter === "pending") return order.status === "pending" || order.status === "confirmed";
+    if (filter === "pending")
+      return order.status === "pending" || order.status === "confirmed";
     return order.status === filter;
   });
 
@@ -21,7 +24,10 @@ export default function CustomerOrdersPage() {
       <div className="min-h-screen bg-blue-50">
         <div className="bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
-            <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
+            <Link
+              to="/"
+              className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors"
+            >
               <ChevronLeft className="w-3 h-3" />
             </Link>
             <h1 className="text-xl font-bold text-gray-800">
@@ -45,7 +51,10 @@ export default function CustomerOrdersPage() {
       <div className="min-h-screen bg-blue-50">
         <div className="bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
-            <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
+            <Link
+              to="/"
+              className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors"
+            >
               <ChevronLeft className="w-3 h-3" />
             </Link>
             <h1 className="text-xl font-bold text-gray-800">
@@ -73,12 +82,13 @@ export default function CustomerOrdersPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
-          <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors">
+          <Link
+            to="/"
+            className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors"
+          >
             <ChevronLeft className="w-3 h-3" />
           </Link>
-          <h1 className="text-xl font-bold text-gray-800">
-            Đơn Hàng Từng Mua
-          </h1>
+          <h1 className="text-xl font-bold text-gray-800">Đơn Hàng Từng Mua</h1>
         </div>
       </div>
 
@@ -135,6 +145,7 @@ export default function CustomerOrdersPage() {
                 key={order.id}
                 order={order}
                 onCancelOrder={cancelOrder}
+                onPayOrder={payOrder}
               />
             ))
           ) : (
@@ -183,4 +194,3 @@ export default function CustomerOrdersPage() {
     </div>
   );
 }
-

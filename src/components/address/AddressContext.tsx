@@ -1,10 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import type { ReactNode } from "react";
 import { addressService } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 
 interface AddressData {
+  id?: string;
   province: string;
   district: string;
   ward: string;
@@ -30,13 +37,14 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     try {
       const response = await addressService.getAddresses();
       const addresses = response.addresses || [];
-      
+
       // Tìm địa chỉ mặc định
       const defaultAddress = addresses.find((addr) => addr.is_default);
-      
+
       if (defaultAddress) {
         // Cập nhật AddressContext với địa chỉ mặc định
         setAddressState({
+          id: defaultAddress._id,
           province: defaultAddress.city || "",
           district: defaultAddress.district || "",
           ward: defaultAddress.ward || "",
@@ -71,14 +79,14 @@ export function AddressProvider({ children }: { children: ReactNode }) {
 
   const getAddressString = () => {
     if (!address) return "Chọn địa chỉ giao hàng";
-    
+
     const parts = [
       address.street,
       address.ward,
       address.district,
-      address.province
+      address.province,
     ].filter(Boolean);
-    
+
     return parts.join(", ") || "Chưa nhập địa chỉ";
   };
 
@@ -96,4 +104,3 @@ export function useAddress() {
   }
   return context;
 }
-

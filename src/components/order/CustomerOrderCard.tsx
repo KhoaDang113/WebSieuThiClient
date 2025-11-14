@@ -7,9 +7,14 @@ import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants";
 interface CustomerOrderCardProps {
   order: Order;
   onCancelOrder?: (orderId: string) => void;
+  onPayOrder?: (orderId: string) => void;
 }
 
-export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardProps) {
+export function CustomerOrderCard({
+  order,
+  onCancelOrder,
+  onPayOrder,
+}: CustomerOrderCardProps) {
   const { addToCart } = useCart();
   const [showAllProducts, setShowAllProducts] = useState(false);
 
@@ -28,7 +33,9 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
   };
 
   // Hiển thị tối đa 3 sản phẩm, phần còn lại hiện +N
-  const visibleProducts = showAllProducts ? order.items : order.items.slice(0, 3);
+  const visibleProducts = showAllProducts
+    ? order.items
+    : order.items.slice(0, 3);
   const remainingCount = order.items.length - 3;
 
   // Xử lý mua lại
@@ -53,8 +60,26 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
     }
   };
 
+  // Xử lý thanh toán
+  const handlePay = () => {
+    if (onPayOrder) {
+      onPayOrder(order.id);
+    } else {
+      // fallback: redirect to payment page
+      window.location.href = `/checkout?orderId=${encodeURIComponent(
+        order.id
+      )}`;
+    }
+  };
+
   // Kiểm tra xem có thể hủy đơn không (chỉ pending mới hủy được)
   const canCancel = order.status === "pending";
+
+  // Kiểm tra có thể thanh toán hay không
+  const canPay =
+    !(order.paid || order.payment_status === "paid") &&
+    order.status !== "cancelled" &&
+    order.status !== "rejected";
 
   // Nhãn trạng thái
   const statusConfig: Record<
@@ -102,6 +127,16 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
             {statusConfig[order.status]?.label ?? order.status}
           </span>
 
+          {/* Payment status badge */}
+          {order.paid || order.payment_status === "paid" ? (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+              Đã thanh toán
+            </span>
+          ) : (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+              Chưa thanh toán
+            </span>
+          )}
         </div>
       </div>
 
@@ -113,25 +148,28 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
             const normalizedImage =
               typeof rawImage === "string" ? rawImage.trim() : "";
             const imageSrc =
-              normalizedImage !== "" ? normalizedImage : PRODUCT_PLACEHOLDER_IMAGE;
+              normalizedImage !== ""
+                ? normalizedImage
+                : PRODUCT_PLACEHOLDER_IMAGE;
             return (
-            <div key={item.id} className="relative">
-              <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-white">
-                <img
-                  src={imageSrc}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Promotion badge nếu có giảm giá */}
-              {item.price < 100000 && (
-                <div className="absolute -top-2 -left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md font-bold shadow-md">
-                  -{Math.floor(Math.random() * 30 + 10)}%
+              <div key={item.id} className="relative">
+                <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-white">
+                  <img
+                    src={imageSrc}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              )}
-            </div>
-          )})}
-          
+                {/* Promotion badge nếu có giảm giá */}
+                {item.price < 100000 && (
+                  <div className="absolute -top-2 -left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md font-bold shadow-md">
+                    -{Math.floor(Math.random() * 30 + 10)}%
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
           {/* +N nếu còn nhiều sản phẩm */}
           {!showAllProducts && remainingCount > 0 && (
             <button
@@ -149,7 +187,10 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
         {showAllProducts && order.items.length > 3 && (
           <div className="mt-3 space-y-2">
             {order.items.slice(3).map((item) => (
-              <div key={item.id} className="flex items-center gap-2 text-sm text-gray-700">
+              <div
+                key={item.id}
+                className="flex items-center gap-2 text-sm text-gray-700"
+              >
                 <span className="font-medium">{item.quantity}x</span>
                 <span>{item.name}</span>
               </div>
@@ -170,13 +211,30 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
           {canCancel && (
             <button
               onClick={handleCancel}
-              className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
+              className="px-3 py-2 text-sm font-medium rounded-lg 
+               bg-gradient-to-r from-red-500 to-red-600 
+               text-white shadow-sm hover:shadow-md 
+               hover:brightness-110 active:scale-95
+               transition-all"
             >
               Huỷ đơn hàng
             </button>
           )}
+
+          {canPay && (
+            <button
+              onClick={handlePay}
+              className="px-3 py-2 text-sm font-semibold rounded-lg
+               bg-[#00A559] text-white
+               hover:bg-[#008F4C] active:bg-[#007E42]
+               shadow-sm hover:shadow-md active:scale-95
+               transition-all"
+            >
+              Thanh toán
+            </button>
+          )}
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-sm text-gray-600">Tổng đơn hàng:</p>
@@ -195,4 +253,3 @@ export function CustomerOrderCard({ order, onCancelOrder }: CustomerOrderCardPro
     </div>
   );
 }
-
