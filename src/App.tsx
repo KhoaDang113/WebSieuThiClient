@@ -7,6 +7,7 @@ import { AddressProvider } from "@/components/address/AddressContext";
 import { NotificationProvider } from "@/components/notification/NotificationContext";
 import { NotificationPopup } from "@/components/notification/NotificationPopup";
 import { useAuthStore } from "@/stores/authStore";
+import { Toaster } from "sonner";
 
 function App() {
   const initAuth = useAuthStore((state) => state.initAuth);
@@ -21,6 +22,7 @@ function App() {
         <CartProvider>
           <RouterProvider router={routes} />
           <NotificationPopup />
+          <Toaster position="top-right" richColors />
         </CartProvider>
       </NotificationProvider>
     </AddressProvider>

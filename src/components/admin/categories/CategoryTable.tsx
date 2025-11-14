@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { CategoryForm } from "@/components/admin/categories/CategoryForm";
-import type { Category } from "@/types";
+import type { Category } from "@/types/category.type.ts";
 import categoryService from "@/api/services/catalogService";
 import { buildCategoryTree, flattenCategories } from "./CategoryTreeUtils";
 import { CategoryTableRow } from "./CategoryTableRow";
@@ -25,6 +25,9 @@ export function CategoryTable({
     useState<Category[]>(categories);
   const [editId, setEditId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [parentIdForNewChild, setParentIdForNewChild] = useState<string | null>(
+    null
+  );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -67,12 +70,18 @@ export function CategoryTable({
 
   const handleCategoryAdded = () => {
     setIsAddingNew(false);
+    setParentIdForNewChild(null);
     if (onRefresh) onRefresh();
   };
 
   const handleCategoryUpdated = () => {
     setEditId(null);
     if (onRefresh) onRefresh();
+  };
+
+  const handleAddSubCategory = (parentId: string) => {
+    setParentIdForNewChild(parentId);
+    setIsAddingNew(true);
   };
 
   return (
@@ -117,6 +126,7 @@ export function CategoryTable({
                   onToggleExpand={toggleExpand}
                   onEdit={setEditId}
                   onDelete={handleDelete}
+                  onAddSubCategory={handleAddSubCategory}
                 />
               ))}
             </tbody>
@@ -132,18 +142,24 @@ export function CategoryTable({
 
       {/* Add/Edit Dialog */}
       {(isAddingNew || !!editId) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background p-6 rounded-lg max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">
-              {editId ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
+              {editId
+                ? "Chỉnh sửa danh mục"
+                : parentIdForNewChild
+                ? "Thêm danh mục con"
+                : "Thêm danh mục mới"}
             </h3>
             <CategoryForm
               mode={editId ? "edit" : "add"}
               categoryId={editId || undefined}
+              parentId={parentIdForNewChild || undefined}
               allCategories={localCategories}
               onSuccess={editId ? handleCategoryUpdated : handleCategoryAdded}
               onCancel={() => {
                 setIsAddingNew(false);
+                setParentIdForNewChild(null);
                 setEditId(null);
               }}
             />

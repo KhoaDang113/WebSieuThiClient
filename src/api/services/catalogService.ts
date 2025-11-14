@@ -91,23 +91,31 @@ class CategoryService {
   }
 
   /**
-   * Cập nhật danh mục
+   * Cập nhật danh mục với upload ảnh
    * PUT /categories/:id
    */
   async updateCategory(
     id: string,
-    data: Partial<Category>
+    data: FormData | Partial<Category>
   ): Promise<Category> {
-    const response = await api.put<Category>(`${this.basePath}/${id}`, data);
+    const config = data instanceof FormData
+      ? { headers: { "Content-Type": "multipart/form-data" } }
+      : {};
+    
+    const response = await api.put<Category>(`${this.basePath}/${id}`, data, config);
     return response.data;
   }
 
   /**
-   * Tạo danh mục mới
+   * Tạo danh mục mới với upload ảnh
    * POST /categories
    */
-  async createCategory(data: Partial<Category>): Promise<Category> {
-    const response = await api.post<Category>(this.basePath, data);
+  async createCategory(data: FormData | Partial<Category>): Promise<Category> {
+    const config = data instanceof FormData
+      ? { headers: { "Content-Type": "multipart/form-data" } }
+      : {};
+    
+    const response = await api.post<Category>(this.basePath, data, config);
     return response.data;
   }
 }

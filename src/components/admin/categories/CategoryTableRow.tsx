@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2, ChevronRight, ChevronDown } from "lucide-react";
+import { Edit2, Trash2, ChevronRight, ChevronDown, Plus } from "lucide-react";
 import type { Category } from "@/types";
 
 interface CategoryTableRowProps {
@@ -9,6 +9,7 @@ interface CategoryTableRowProps {
   onToggleExpand: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onAddSubCategory: (parentId: string) => void;
 }
 
 export function CategoryTableRow({
@@ -17,6 +18,7 @@ export function CategoryTableRow({
   onToggleExpand,
   onEdit,
   onDelete,
+  onAddSubCategory,
 }: CategoryTableRowProps) {
   const indent = (category.level || 0) * 20;
   const hasChildren = category.subCategories && category.subCategories.length > 0;
@@ -133,7 +135,20 @@ export function CategoryTableRow({
 
       {/* Actions column */}
       <td style={{ width: "180px" }}>
-        <div className="flex gap-2 whitespace-nowrap">
+        <div className="flex gap-1 whitespace-nowrap">
+          {/* Nếu là danh mục gốc, hiện nút "Thêm con" */}
+          {!category.parent_id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 flex-shrink-0"
+              onClick={() => onAddSubCategory(category._id)}
+              title="Thêm danh mục con"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden xl:inline">Con</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -141,7 +156,7 @@ export function CategoryTableRow({
             onClick={() => onEdit(category._id)}
           >
             <Edit2 className="w-4 h-4" />
-            Sửa
+            <span className="hidden xl:inline">Sửa</span>
           </Button>
           <Button
             variant="ghost"
@@ -150,7 +165,7 @@ export function CategoryTableRow({
             onClick={() => onDelete(category._id)}
           >
             <Trash2 className="w-4 h-4" />
-            Xóa
+            <span className="hidden xl:inline">Xóa</span>
           </Button>
         </div>
       </td>

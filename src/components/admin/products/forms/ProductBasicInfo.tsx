@@ -1,7 +1,11 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import categoryService from "@/api/services/catalogService";
+import brandService from "@/api/services/brandService";
+import type { Category, Brand } from "@/types";
 
 interface ProductBasicInfoProps {
   formData: {
@@ -9,6 +13,7 @@ interface ProductBasicInfoProps {
     description: string;
     category_id: string;
     brand_id: string;
+    unit?: string;
   };
   errors: Record<string, string>;
   onInputChange: (
@@ -23,6 +28,35 @@ export function ProductBasicInfo({
   onInputChange,
   onSelectChange,
 }: ProductBasicInfoProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [categoriesData, brandsData] = await Promise.all([
+        categoryService.getCategoriesAdmin(1, 1000),
+        brandService.getBrandsAdmin(1, 1000),
+      ]);
+      
+      // Filter active categories and brands
+      const activeCategories = categoriesData.categories.filter(c => c.is_active && !c.is_deleted);
+      const activeBrands = brandsData.brands.filter(b => b.is_active && !b.is_deleted);
+      
+      setCategories(activeCategories);
+      setBrands(activeBrands);
+    } catch (error) {
+      console.error("Error loading categories and brands:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-4">Thông tin cơ bản</h3>
@@ -43,13 +77,13 @@ export function ProductBasicInfo({
         </div>
 
         <div>
-          <Label htmlFor="description">Mô tả *</Label>
+          <Label htmlFor="description">Mô tả</Label>
           <Textarea
             id="description"
             name="description"
-            value={formData.description}
+            value={formData.description || ""}
             onChange={onInputChange}
-            placeholder="Nhập mô tả sản phẩm"
+            placeholder="Nhập mô tả sản phẩm (tùy chọn)"
             rows={4}
             className={errors.description ? "border-destructive" : ""}
           />
@@ -69,12 +103,16 @@ export function ProductBasicInfo({
               className={`w-full px-3 py-2 border bg-background rounded-md text-sm ${
                 errors.category_id ? "border-destructive" : "border-input"
               }`}
+              disabled={loading}
             >
-              <option value="">Chọn danh mục</option>
-              <option value="mi-an-lien">Mì ăn liền</option>
-              <option value="dau-an">Dầu ăn</option>
-              <option value="thit-heo">Thịt heo</option>
-              <option value="rau-la">Rau lá</option>
+              <option value="">
+                {loading ? "Đang tải..." : "Chọn danh mục"}
+              </option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
             {errors.category_id && (
               <p className="text-sm text-destructive mt-1">
@@ -91,11 +129,16 @@ export function ProductBasicInfo({
               className={`w-full px-3 py-2 border bg-background rounded-md text-sm ${
                 errors.brand_id ? "border-destructive" : "border-input"
               }`}
+              disabled={loading}
             >
-              <option value="">Chọn thương hiệu</option>
-              <option value="brand-a">Brand A</option>
-              <option value="brand-b">Brand B</option>
-              <option value="brand-c">Brand C</option>
+              <option value="">
+                {loading ? "Đang tải..." : "Chọn thương hiệu"}
+              </option>
+              {brands.map((brand) => (
+                <option key={brand._id} value={brand._id}>
+                  {brand.name}
+                </option>
+              ))}
             </select>
             {errors.brand_id && (
               <p className="text-sm text-destructive mt-1">
@@ -104,8 +147,21 @@ export function ProductBasicInfo({
             )}
           </div>
         </div>
+
+        <div>
+          <Label htmlFor="unit">Đơn vị tính</Label>
+          <Input
+            id="unit"
+            name="unit"
+            value={formData.unit || ""}
+            onChange={onInputChange}
+            placeholder="VD: kg, lít, hộp, gói..."
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Đơn vị đo lường của sản phẩm (kg, lít, hộp, gói, v.v.)
+          </p>
+        </div>
       </div>
     </Card>
   );
 }
-

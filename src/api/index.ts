@@ -18,6 +18,7 @@ export { default as addressService } from "./services/addressService";
 export { default as bannerService } from "./services/bannerService";
 export { default as ratingService } from "./services/ratingService";
 export { default as orderService } from "./services/orderService";
+export { default as brandService } from "./services/brandService";
 
 // Export types
 export type * from "./types";
