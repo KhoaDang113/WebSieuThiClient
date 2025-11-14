@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -6,8 +6,12 @@ import {
   FolderOpen,
   LogOut,
   MessageSquare,
+  Boxes,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { authService } from "@/api";
+import { toast } from "sonner";
 
 const menuItems = [
   {
@@ -31,6 +35,16 @@ const menuItems = [
     icon: FolderOpen,
   },
   {
+    label: "Quản lý Kho",
+    href: "/admin/inventory",
+    icon: Boxes,
+  },
+  {
+    label: "Quản lý Thương hiệu",
+    href: "/admin/brands",
+    icon: Store,
+  },
+  {
     label: "Quản lý Tin nhắn",
     href: "/admin/messages",
     icon: MessageSquare,
@@ -40,6 +54,22 @@ const menuItems = [
 export function AdminSidebar() {
   const location = useLocation();
   const pathname = location.pathname;
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      toast.success("Đăng xuất thành công!");
+      // Redirect về trang chủ
+      window.location.href = "http://localhost:5173";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Vẫn xóa token và redirect dù có lỗi
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      window.location.href = "http://localhost:5173";
+    }
+  };
 
   return (
     <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -78,7 +108,10 @@ export function AdminSidebar() {
 
       {/* Logout */}
       <div className="p-4 border-t border-sidebar-border">
-        <button className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+        >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Đăng xuất</span>
         </button>

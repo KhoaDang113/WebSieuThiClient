@@ -10,3 +10,6 @@ export * from "./cart.type";
 export * from "./order";
 export * from "./review.type";
 export * from "./chat.type";
+export * from "./inventory.type";
+export * from "./menu.type";
+

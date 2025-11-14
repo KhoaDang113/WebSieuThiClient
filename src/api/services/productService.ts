@@ -96,10 +96,36 @@ class ProductService {
   }
 
   /**
-   * Cập nhật sản phẩm
+   * Tạo sản phẩm mới với upload ảnh
+   * POST /products
+   */
+  async createProduct(formData: FormData): Promise<Product> {
+    const response = await api.post<Product>(`${this.basePath}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  }
+
+  /**
+   * Cập nhật sản phẩm với upload ảnh
    * PUT /products/:id
    */
-  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+  async updateProduct(id: string, formData: FormData): Promise<Product> {
+    const response = await api.put<Product>(`${this.basePath}/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  }
+
+  /**
+   * Cập nhật thông tin sản phẩm (không có ảnh)
+   * PUT /products/:id
+   */
+  async updateProductData(id: string, data: Partial<Product>): Promise<Product> {
     const response = await api.put<Product>(`${this.basePath}/${id}`, data);
     return response.data;
   }

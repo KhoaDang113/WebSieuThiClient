@@ -20,6 +20,18 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
 
+  // Populated fields (when retrieved with populate)
+  category?: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+  brand?: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+
   // Các field tùy chỉnh cho FE
   selectedQuantity?: number; // Số lượng được chọn khi thêm vào giỏ
   image_url?: string; // Alias cho image_primary

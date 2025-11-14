@@ -6,8 +6,12 @@ import AdminUsers from "@/pages/admin/users";
 import AdminProducts from "@/pages/admin/products";
 import AdminCategories from "@/pages/admin/categories";
 import AddProductPage from "@/pages/admin/products/add";
+import EditProductPage from "@/pages/admin/products/edit/[id]";
 import AdminMessages from "@/pages/admin/messages";
 import ConversationDetailPage from "@/pages/admin/messages/detail";
+import AdminInventory from "@/pages/admin/inventory";
+import AdminInventoryHistory from "@/pages/admin/inventory/history";
+import AdminBrands from "@/pages/admin/brands";
 import StaffLayout from "@/layouts/StaffLayout";
 import HomePage from "@/pages/home/index";
 import ProductsPage from "@/pages/products";
@@ -151,6 +155,10 @@ const router: RouteObject[] = [
         element: <AddProductPage />,
       },
       {
+        path: "/admin/products/edit/:id",
+        element: <EditProductPage />,
+      },
+      {
         path: "/admin/categories",
         element: <AdminCategories />,
       },
@@ -161,6 +169,18 @@ const router: RouteObject[] = [
       {
         path: "/admin/messages/:id",
         element: <ConversationDetailPage />,
+      },
+      {
+        path: "/admin/inventory",
+        element: <AdminInventory />,
+      },
+      {
+        path: "/admin/inventory/history",
+        element: <AdminInventoryHistory />,
+      },
+      {
+        path: "/admin/brands",
+        element: <AdminBrands />,
       },
     ],
   },
