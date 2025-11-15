@@ -107,7 +107,7 @@ export function ProductTable({
               <th style={{ width: "120px" }}>ID</th>
               <th style={{ width: "80px" }}>Ảnh</th>
               <th style={{ width: "250px" }}>Tên sản phẩm</th>
-              <th style={{ width: "100px" }}>Số lượng</th>
+              <th style={{ width: "100px" }}>Đơn vị</th>
               <th style={{ width: "120px" }}>Giá gốc</th>
               <th style={{ width: "120px" }}>Giá bán</th>
               <th style={{ width: "80px" }}>Giảm giá</th>

@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -54,7 +54,7 @@ const menuItems = [
 export function AdminSidebar() {
   const location = useLocation();
   const pathname = location.pathname;
-  const navigate = useNavigate();
+  
 
   const handleLogout = async () => {
     try {

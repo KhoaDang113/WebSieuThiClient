@@ -10,7 +10,6 @@ import { ProductInventory } from "./forms/ProductInventory";
 import { ProductStatus } from "./forms/ProductStatus";
 import productService from "@/api/services/productService";
 import { toast } from "sonner";
-import type { Product } from "@/types";
 
 interface ProductFormProps {
   mode: "add" | "edit";
@@ -19,7 +18,6 @@ interface ProductFormProps {
 
 interface FormData {
   name: string;
-  description: string;
   slug: string;
   unit: string;
   category_id: string;
@@ -35,7 +33,6 @@ interface FormData {
 
 const initialFormData: FormData = {
   name: "",
-  description: "",
   slug: "",
   unit: "",
   category_id: "",
@@ -60,32 +57,51 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
   const [primaryImageFile, setPrimaryImageFile] = useState<File | null>(null);
   const [galleryImageFiles, setGalleryImageFiles] = useState<File[]>([]);
   const [currentPrimaryImage, setCurrentPrimaryImage] = useState<string>("");
-  const [currentGalleryImages, setCurrentGalleryImages] = useState<string[]>([]);
+  const [currentGalleryImages, setCurrentGalleryImages] = useState<string[]>(
+    []
+  );
 
   // Load product data if in edit mode
   useEffect(() => {
     if (mode === "edit" && productId) {
       loadProductData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, productId]);
 
   const loadProductData = async () => {
     try {
       setIsLoading(true);
       const product = await productService.getProductById(productId!);
-      
+
       // Populate form data
+      const unitPrice = product.unit_price?.toString() || "";
+      const discountPercent = product.discount_percent?.toString() || "0";
+      
+      // Tính lại giá bán từ giá gốc và % giảm giá
+      let finalPrice = "";
+      if (unitPrice) {
+        const unitPriceNum = parseFloat(unitPrice);
+        const discountPercentNum = parseFloat(discountPercent) || 0;
+        finalPrice = discountPercentNum > 0
+          ? (unitPriceNum * (1 - discountPercentNum / 100)).toFixed(0)
+          : unitPrice;
+      }
+      
       setFormData({
         name: product.name || "",
-        description: product.description || "",
         slug: product.slug || "",
         unit: product.unit || "",
-        category_id: typeof product.category_id === 'string' ? product.category_id : "",
-        brand_id: typeof product.brand_id === 'string' ? product.brand_id : "",
-        unit_price: product.unit_price?.toString() || "",
-        final_price: product.final_price?.toString() || "",
-        discount_percent: product.discount_percent?.toString() || "",
-        stock_quantity: product.quantity?.toString() || product.stock_quantity?.toString() || "",
+        category_id:
+          typeof product.category_id === "string" ? product.category_id : "",
+        brand_id: typeof product.brand_id === "string" ? product.brand_id : "",
+        unit_price: unitPrice,
+        final_price: finalPrice || product.final_price?.toString() || "",
+        discount_percent: discountPercent,
+        stock_quantity:
+          product.quantity?.toString() ||
+          product.stock_quantity?.toString() ||
+          "",
         is_hot: product.is_hot || false,
         stock_status: product.stock_status || "in_stock",
         is_active: product.is_active !== undefined ? product.is_active : true,
@@ -114,7 +130,7 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
     if (!formData.category_id) newErrors.category_id = "Danh mục là bắt buộc";
     if (!formData.brand_id) newErrors.brand_id = "Thương hiệu là bắt buộc";
     if (!formData.unit_price) newErrors.unit_price = "Giá gốc là bắt buộc";
-    
+
     // Check for primary image only in add mode
     if (mode === "add" && !primaryImageFile && !currentPrimaryImage) {
       newErrors.image_primary = "Ảnh chính là bắt buộc";
@@ -154,11 +170,18 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
       
       setFormData((prev) => ({ ...prev, [name]: value, slug }));
     } else {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
     
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleFinalPriceChange = (finalPrice: string) => {
+    setFormData((prev) => ({ ...prev, final_price: finalPrice }));
+    if (errors.final_price) {
+      setErrors((prev) => ({ ...prev, final_price: "" }));
     }
   };
 
@@ -197,7 +220,7 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
     try {
       // Create FormData
       const formDataToSend = new FormData();
-      
+
       // Add all form fields
       formDataToSend.append("name", formData.name);
       formDataToSend.append("slug", formData.slug);
@@ -206,17 +229,20 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
       formDataToSend.append("unit_price", formData.unit_price);
       formDataToSend.append("stock_status", formData.stock_status);
       formDataToSend.append("is_active", formData.is_active.toString());
-      
+
       if (formData.unit) formDataToSend.append("unit", formData.unit);
-      if (formData.description) formDataToSend.append("description", formData.description);
-      if (formData.discount_percent) formDataToSend.append("discount_percent", formData.discount_percent);
-      if (formData.final_price) formDataToSend.append("final_price", formData.final_price);
-      
-      // For add mode, set quantity to 0 by default (managed in inventory)
+      if (formData.discount_percent)
+        formDataToSend.append("discount_percent", formData.discount_percent);
+      if (formData.final_price)
+        formDataToSend.append("final_price", formData.final_price);
+
+      // Luôn gửi quantity để đảm bảo backend nhận được
+      // Mode add: quantity = 0
+      // Mode edit: không gửi quantity (backend giữ nguyên)
       if (mode === "add") {
         formDataToSend.append("quantity", "0");
       }
-      // For edit mode, don't send quantity as it's managed in inventory module only
+      // Edit mode: không gửi quantity vì được quản lý trong inventory module
 
       // Add primary image if new file is selected
       if (primaryImageFile) {
@@ -240,9 +266,11 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
       }
 
       navigate("/admin/products");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting form:", error);
-      const errorMessage = error?.response?.data?.message || "Có lỗi xảy ra";
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Có lỗi xảy ra";
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -295,6 +323,7 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
         formData={formData}
         errors={errors}
         onInputChange={handleInputChange}
+        onFinalPriceChange={handleFinalPriceChange}
       />
 
       <ProductInventory
@@ -304,11 +333,16 @@ export function ProductForm({ mode, productId }: ProductFormProps) {
         onInputChange={handleInputChange}
       />
 
-      <ProductStatus is_hot={formData.is_hot} onIsHotChange={handleIsHotChange} />
+      <ProductStatus
+        is_hot={formData.is_hot}
+        onIsHotChange={handleIsHotChange}
+      />
 
       <div className="flex gap-3 justify-end">
         <Link to="/admin/products">
-          <Button type="button" variant="outline">Hủy</Button>
+          <Button type="button" variant="outline">
+            Hủy
+          </Button>
         </Link>
         <Button type="submit" disabled={isSubmitting} className="gap-2">
           <Save className="w-4 h-4" />

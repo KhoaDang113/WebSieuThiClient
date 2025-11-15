@@ -55,8 +55,8 @@ export function ProductGridView({ products, onDeleteProduct }: ProductGridViewPr
               )}
             </div>
 
-            {/* Product Image */}
-            <div className="relative overflow-hidden">
+            {/* PHẦN 1: Product Image - Chiều cao cố định */}
+            <div className="relative overflow-hidden h-48 flex-shrink-0">
               <img
                 src={
                   product.image_primary ||
@@ -64,7 +64,7 @@ export function ProductGridView({ products, onDeleteProduct }: ProductGridViewPr
                   "/placeholder.svg"
                 }
                 alt={product.name}
-                className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
               {isOutOfStock && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -75,8 +75,8 @@ export function ProductGridView({ products, onDeleteProduct }: ProductGridViewPr
               )}
             </div>
 
-            {/* Product Info */}
-            <div className="flex flex-col p-2.5 sm:p-3">
+            {/* PHẦN 2: Product Info - Có thể co giãn */}
+            <div className="flex flex-col flex-1 p-2.5 sm:p-3">
               {/* Product Name */}
               <h3 className="mb-2 text-sm font-semibold leading-snug text-gray-800 line-clamp-2 min-h-[2.5rem] transition-colors">
                 {product.name}
@@ -119,8 +119,8 @@ export function ProductGridView({ products, onDeleteProduct }: ProductGridViewPr
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2">
+              {/* PHẦN 3: Action Buttons - Luôn dính đáy với margin-top: auto */}
+              <div className="flex gap-2 mt-auto">
                 <Link
                   to={`/admin/products/edit/${product._id}`}
                   className="flex-1"

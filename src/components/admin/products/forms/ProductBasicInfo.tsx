@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import categoryService from "@/api/services/catalogService";
 import brandService from "@/api/services/brandService";
 import type { Category, Brand } from "@/types";
@@ -10,7 +9,6 @@ import type { Category, Brand } from "@/types";
 interface ProductBasicInfoProps {
   formData: {
     name: string;
-    description: string;
     category_id: string;
     brand_id: string;
     unit?: string;
@@ -48,7 +46,16 @@ export function ProductBasicInfo({
       const activeCategories = categoriesData.categories.filter(c => c.is_active && !c.is_deleted);
       const activeBrands = brandsData.brands.filter(b => b.is_active && !b.is_deleted);
       
-      setCategories(activeCategories);
+      // Sort categories: root categories first, then subcategories
+      const sortedCategories = activeCategories.sort((a, b) => {
+        // Root categories come first
+        if (!a.parent_id && b.parent_id) return -1;
+        if (a.parent_id && !b.parent_id) return 1;
+        // If both are root or both are subcategories, sort by name
+        return a.name.localeCompare(b.name);
+      });
+      
+      setCategories(sortedCategories);
       setBrands(activeBrands);
     } catch (error) {
       console.error("Error loading categories and brands:", error);
@@ -76,24 +83,6 @@ export function ProductBasicInfo({
           )}
         </div>
 
-        <div>
-          <Label htmlFor="description">Mô tả</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description || ""}
-            onChange={onInputChange}
-            placeholder="Nhập mô tả sản phẩm (tùy chọn)"
-            rows={4}
-            className={errors.description ? "border-destructive" : ""}
-          />
-          {errors.description && (
-            <p className="text-sm text-destructive mt-1">
-              {errors.description}
-            </p>
-          )}
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="category_id">Danh mục *</Label>
@@ -108,17 +97,35 @@ export function ProductBasicInfo({
               <option value="">
                 {loading ? "Đang tải..." : "Chọn danh mục"}
               </option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
-                </option>
-              ))}
+              {categories.map((category) => {
+                // Root category (parent) - không cho chọn, chỉ hiển thị
+                if (!category.parent_id) {
+                  return (
+                    <optgroup key={category._id} label={`${category.name}`}>
+                      {/* Show subcategories under this parent */}
+                      {categories
+                        .filter(subCat => subCat.parent_id === category._id)
+                        .map(subCategory => (
+                          <option key={subCategory._id} value={subCategory._id}>
+                            {subCategory.name}
+                          </option>
+                        ))
+                      }
+                    </optgroup>
+                  );
+                }
+                // Skip subcategories here as they're already rendered under their parent
+                return null;
+              })}
             </select>
             {errors.category_id && (
               <p className="text-sm text-destructive mt-1">
                 {errors.category_id}
               </p>
             )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Chỉ có thể chọn danh mục con (subcategory)
+            </p>
           </div>
 
           <div>
