@@ -24,7 +24,7 @@ class AuthService {
       { email, password, name },
       { withCredentials: true } // Để nhận cookies
     );
-    
+
     // Xóa cart cũ trước khi register user mới (nếu có user cũ)
     const oldUserStr = localStorage.getItem("user");
     if (oldUserStr) {
@@ -38,7 +38,7 @@ class AuthService {
       }
     }
     localStorage.removeItem("cart_guest");
-    
+
     // Lưu token vào localStorage
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
@@ -91,7 +91,7 @@ class AuthService {
     if (response.data.requiresEmailVerification) {
       return response.data;
     }
-    
+
     // Xóa cart cũ trước khi login user mới (nếu có user cũ)
     const oldUserStr = localStorage.getItem("user");
     if (oldUserStr) {
@@ -105,13 +105,25 @@ class AuthService {
       }
     }
     localStorage.removeItem("cart_guest");
-    
+
     // Lưu token vào localStorage
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
     }
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Nếu là staff, set ONLINE sau khi login thành công
+      if (response.data.user.role === "staff") {
+        try {
+          const staffService = (await import("./staffService")).default;
+          await staffService.setOnline().catch(() => {
+            // Silent fail nếu API error
+          });
+        } catch {
+          // Ignore
+        }
+      }
     }
 
     return response.data;
@@ -154,17 +166,38 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await api.post(`${this.basePath}/logout`, {}, { withCredentials: true });
+      // Nếu là staff, set OFFLINE trước khi logout
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr) as { role?: string };
+          if (user?.role === "staff") {
+            const staffService = (await import("./staffService")).default;
+            await staffService.setOffline().catch(() => {
+              // Silent fail nếu API error
+            });
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      await api
+        .post(`${this.basePath}/logout`, {}, { withCredentials: true })
+        .catch(() => {});
     } finally {
       // Lấy userId trước khi xóa user
       const userStr = localStorage.getItem("user");
-      const userId = userStr ? (JSON.parse(userStr) as { id?: string })?.id : null;
-      
+      const userId = userStr
+        ? (JSON.parse(userStr) as { id?: string })?.id
+        : null;
+
       // Luôn xóa token khỏi localStorage dù API có lỗi
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
-      
+      localStorage.removeItem("conversation_id");
+
       // Xóa cart của user vừa logout
       if (userId) {
         localStorage.removeItem(`cart_${userId}`);
@@ -190,13 +223,16 @@ class AuthService {
     } finally {
       // Lấy userId trước khi xóa user
       const userStr = localStorage.getItem("user");
-      const userId = userStr ? (JSON.parse(userStr) as { id?: string })?.id : null;
-      
+      const userId = userStr
+        ? (JSON.parse(userStr) as { id?: string })?.id
+        : null;
+
       // Xóa token khỏi localStorage
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
-      
+      localStorage.removeItem("conversation_id");
+
       // Xóa cart của user vừa logout
       if (userId) {
         localStorage.removeItem(`cart_${userId}`);
@@ -344,12 +380,14 @@ class AuthService {
   clearAuthData(): void {
     // Lấy userId trước khi xóa user
     const userStr = localStorage.getItem("user");
-    const userId = userStr ? (JSON.parse(userStr) as { id?: string })?.id : null;
-    
+    const userId = userStr
+      ? (JSON.parse(userStr) as { id?: string })?.id
+      : null;
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-    
+
     // Xóa cart của user
     if (userId) {
       localStorage.removeItem(`cart_${userId}`);

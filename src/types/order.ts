@@ -23,7 +23,13 @@ export interface Order {
   customer_address: string;
   items: OrderItem[];
   total_amount: number;
-  status: "pending" | "confirmed" | "rejected" | "cancelled" | "delivered";
+  status:
+    | "pending"
+    | "confirmed"
+    | "rejected"
+    | "cancelled"
+    | "delivered"
+    | "shipped";
 
   // Payment fields (optional) - backend may supply these
   paid?: boolean; // true if order has been paid

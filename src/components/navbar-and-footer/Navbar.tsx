@@ -502,7 +502,8 @@ export function Navbar() {
                             clearAuth();
                             // Dispatch event để notify các components khác
                             window.dispatchEvent(new Event("auth-changed"));
-                            navigate("/");
+                            // navigate("/login");
+                            window.location.href = "/login";
                           }}
                           className="cursor-pointer text-red-600 px-4"
                         >

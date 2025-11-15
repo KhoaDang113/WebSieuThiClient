@@ -2,9 +2,6 @@ import api from "../axiosConfig";
 import type { Order, OrderItem } from "@/types/order";
 import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants";
 
-/**
- * Backend Order format (từ API)
- */
 interface BackendOrderItem {
   _id?: string;
   product_id:
@@ -112,7 +109,7 @@ class OrderService {
 
     let productIdNum = 0;
     if (typeof productId === "string") {
-      productIdNum = parseInt(productId.slice(-8), 16) || index;
+      productIdNum = Number.parseInt(productId.slice(-8), 16) || index;
     } else if (typeof productId === "number") {
       productIdNum = productId;
     }

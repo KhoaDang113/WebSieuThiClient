@@ -23,7 +23,7 @@ export interface ChatMessage {
 export interface Message {
   id: string;
   text: string;
-  sender: "user" | "ai" | "admin";
+  sender_type: "USER" | "AI" | "STAFF";
   image?: string;
   timestamp?: string;
 }

@@ -3,6 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { getAccessToken } from "@/lib/auth";
 
 // Tạo axios instance
 const api = axios.create({
@@ -13,30 +14,6 @@ const api = axios.create({
   },
   withCredentials: true, // Quan trọng: Để gửi và nhận cookies từ backend
 });
-
-// Helper function để lấy token từ localStorage hoặc cookies
-const getAccessToken = (): string | null => {
-  // Ưu tiên localStorage trước
-  let token = localStorage.getItem("accessToken");
-  
-  if (!token) {
-    // Nếu không có trong localStorage, thử lấy từ cookies
-    const cookies = document.cookie.split(';');
-    const accessTokenCookie = cookies.find(cookie => 
-      cookie.trim().startsWith('accessToken=')
-    );
-    
-    if (accessTokenCookie) {
-      token = accessTokenCookie.split('=')[1];
-      // Lưu vào localStorage để sử dụng lần sau
-      if (token) {
-        localStorage.setItem("accessToken", token);
-      }
-    }
-  }
-  
-  return token;
-};
 
 // Request interceptor
 api.interceptors.request.use(
@@ -66,6 +43,9 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
+    const status = error.response?.status;
+    const url = originalRequest.url || "";
+
     // Log error
     console.error("❌ Response Error:", {
       status: error.response?.status,
@@ -74,11 +54,16 @@ api.interceptors.response.use(
     });
 
     // Xử lý token hết hạn (401 Unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      status === 401 &&
+      !originalRequest._retry &&
+      !url.includes("/auth/login-email") &&
+      !url.includes("/auth/refresh-token") &&
+      !url.includes("/auth/logout")
+    ) {
       originalRequest._retry = true;
 
       try {
-
         // Gọi API refresh token (sử dụng cookies)
         const response = await axios.post(
           `${api.defaults.baseURL}/auth/refresh-token`,
@@ -98,9 +83,22 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
+        const userStr = localStorage.getItem("user");
+        const userId = userStr
+          ? (JSON.parse(userStr) as { id?: string })?.id
+          : null;
         // Refresh token thất bại, chuyển về trang login
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("conversation_id");
+
+        // Xóa cart của user vừa logout
+        if (userId) {
+          localStorage.removeItem(`cart_${userId}`);
+        }
+        // Xóa cart guest nếu có
+        localStorage.removeItem("cart_guest");
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }

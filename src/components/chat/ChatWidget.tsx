@@ -3,13 +3,78 @@
 import { useState } from "react";
 
 import { MessageCircle, X, Zap, Headphones } from "lucide-react";
-
+import chatService from "@/api/services/chatAdminService";
 import { AIChat } from "./AiChat";
 import { AdminChat } from "./AdminChat";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"menu" | "ai" | "admin">("menu");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  const openAdminChat = async () => {
+    let convId = localStorage.getItem("conversation_id");
+    if (!convId) {
+      const res = await chatService.createConversation();
+      convId = res.conversation_id as string;
+      localStorage.setItem("conversation_id", convId);
+    }
+    setConversationId(convId);
+    setActiveTab("admin");
+  };
+
+  let content: React.ReactNode = null;
+
+  if (activeTab === "menu") {
+    content = (
+      <div className="flex flex-col divide-y divide-border w-56">
+        {/* Chat với AI Option */}
+        <button
+          onClick={() => setActiveTab("ai")}
+          className="px-4 py-4 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+        >
+          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm text-foreground">
+              Chat với AI
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Hỗ trợ tự động 24/7
+            </div>
+          </div>
+        </button>
+
+        {/* Chat với Quản trị viên Option */}
+        <button
+          onClick={openAdminChat}
+          className="px-4 py-4 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+        >
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <Headphones className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm text-foreground">
+              Chat với Quản trị viên
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Hỗ trợ từ đội ngũ
+            </div>
+          </div>
+        </button>
+      </div>
+    );
+  } else if (activeTab === "ai") {
+    content = <AIChat onBack={() => setActiveTab("menu")} />;
+  } else if (activeTab === "admin" && conversationId) {
+    content = (
+      <AdminChat
+        conversationId={conversationId}
+        onBack={() => setActiveTab("menu")}
+      />
+    );
+  }
 
   return (
     <>
@@ -29,49 +94,7 @@ export function ChatWidget() {
       {/* Popup Menu */}
       {isOpen && (
         <div className="fixed bottom-24 right-6 bg-white rounded-lg shadow-xl border border-border z-40 overflow-hidden">
-          {activeTab === "menu" ? (
-            <div className="flex flex-col divide-y divide-border w-56">
-              {/* Chat với AI Option */}
-              <button
-                onClick={() => setActiveTab("ai")}
-                className="px-4 py-4 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Zap className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-foreground">
-                    Chat với AI
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Hỗ trợ tự động 24/7
-                  </div>
-                </div>
-              </button>
-
-              {/* Chat với Quản trị viên Option */}
-              <button
-                onClick={() => setActiveTab("admin")}
-                className="px-4 py-4 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
-              >
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Headphones className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-foreground">
-                    Chat với Quản trị viên
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Hỗ trợ từ đội ngũ
-                  </div>
-                </div>
-              </button>
-            </div>
-          ) : activeTab === "ai" ? (
-            <AIChat onBack={() => setActiveTab("menu")} />
-          ) : (
-            <AdminChat onBack={() => setActiveTab("menu")} />
-          )}
+          {content}
         </div>
       )}
     </>

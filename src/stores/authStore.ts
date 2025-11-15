@@ -29,13 +29,20 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: !!user,
         });
       },
-      logout: () => {
-        // Clear cart của user hiện tại khi logout
+
+      logout: async () => {
         const currentUser = get().user;
+
+        try {
+          await authService.logout();
+        } catch (e) {
+          console.log("Logout API error", e);
+        }
+
+        // Clear cart của user hiện tại khi logout
         if (currentUser?.id && typeof window !== "undefined") {
           localStorage.removeItem(`cart_${currentUser.id}`);
         }
-        // Clear guest cart
         if (typeof window !== "undefined") {
           localStorage.removeItem("cart_guest");
         }
@@ -53,25 +60,40 @@ export const useAuthStore = create<AuthState>()(
               ? localStorage.getItem("accessToken")
               : null;
 
+          let user: User | null = null;
+
           if (accessToken) {
-            const user = await authService.getMe();
+            user = await authService.getMe();
+          } else {
+            const { success, accessToken: newToken } =
+              await authService.refreshToken();
+
+            if (!success || !newToken) {
+              throw new Error("Refresh failed");
+            }
+
+            if (typeof window !== "undefined") {
+              localStorage.setItem("accessToken", newToken);
+            }
+
+            user = await authService.getMe();
+          }
+
+          if (user) {
             set({ user, isAuthenticated: true });
-            return;
+            if (user.role === "staff") {
+              try {
+                const staffService = (
+                  await import("@/api/services/staffService")
+                ).default;
+                staffService.setOnline().catch(() => {});
+              } catch {
+                // ignore
+              }
+            }
+          } else {
+            set({ user: null, isAuthenticated: false });
           }
-
-          const { success, accessToken: newToken } =
-            await authService.refreshToken();
-
-          if (!success || !newToken) {
-            throw new Error("Refresh failed");
-          }
-
-          if (typeof window !== "undefined") {
-            localStorage.setItem("accessToken", newToken);
-          }
-
-          const user = await authService.getMe();
-          set({ user, isAuthenticated: true });
         } catch (error) {
           console.log("Auth initialization failed", error);
           if (typeof window !== "undefined") {
@@ -81,7 +103,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
-
     {
       name: "auth-storage", // key trong localStorage
     }

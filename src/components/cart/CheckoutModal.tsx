@@ -497,7 +497,14 @@ export default function CheckoutModal({
                             : "border-gray-200 bg-white"
                         }`}
                       >
-                        <span>Thanh toán qua VNPAY</span>
+                        <div className="flex items-center">
+                          <img
+                            src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png"
+                            alt="vnpay logo"
+                            className="w-7 h-auto"
+                          />
+                          <span>Thanh toán qua VNPAY</span>
+                        </div>
                         {paymentMethod === "vnpay" && (
                           <span className="text-xs text-[#007E42] font-semibold">
                             Đã chọn
