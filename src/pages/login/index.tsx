@@ -90,14 +90,20 @@ export default function Login() {
         }
         
         // Chuyển đến trang home hoặc trang trước đó (cho user thường)
-        const from = (location.state as any)?.from?.pathname || "/";
+        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
         setError(response.message || "Đăng nhập thất bại");
       }
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error("Login error:", err);
-      const errorMessage = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
+      let errorMessage = "Email hoặc mật khẩu không đúng";
+      if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
       setError(errorMessage);
     } finally {
       setIsLoading(false);

@@ -1,14 +1,8 @@
 "use client"
 
 import { Bell, Trash2 } from "lucide-react"
-import { useNotification } from "./NotificationContext"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { useNotification } from "@/hooks/useNotification"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -175,7 +169,7 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredNotifications.map((notification) => {
+                {filteredNotifications.map((notification: { id: string; type: string; title: string; message?: string }) => {
                   const styles = getStyles(notification.type)
                   return (
                     <div

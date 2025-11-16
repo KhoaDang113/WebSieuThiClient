@@ -6,7 +6,7 @@ import userService from "@/api/services/userService";
 import type { ErrorResponse } from "@/api/types";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
 import { useAuthStore } from "@/stores/authStore";
-import { useNotification } from "@/components/notification/NotificationContext";
+import { useNotification } from "@/hooks/useNotification";
 
 export default function AccountPage() {
   const setUser = useAuthStore((state) => state.setUser);

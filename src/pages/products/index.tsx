@@ -12,7 +12,7 @@ import Promotion from "@/components/productPage/promotion/Promotion";
 import { bannerService, categoryService, productService } from "@/api";
 import type { Category as CategoryType } from "@/types/category.type";
 import { toCategoryNav } from "@/lib/constants";
-import { useNotification } from "@/components/notification/NotificationContext";
+import { useNotification } from "@/hooks/useNotification";
 import { mapProductFromApi } from "@/lib/utils/productMapper";
 
 export default function ProductsPage() {
@@ -94,7 +94,7 @@ export default function ProductsPage() {
           
           if (allCategories && Array.isArray(allCategories) && allCategories.length > 0) {
             // Helper function để so sánh ID (chuyển về string để so sánh)
-            const compareIds = (id1: string | undefined, id2: string | undefined): boolean => {
+            const compareIds = (id1: string | undefined | null, id2: string | undefined | null): boolean => {
               if (!id1 || !id2) return false;
               return String(id1) === String(id2);
             };

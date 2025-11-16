@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({
 
 /**
  * Lấy tất cả sản phẩm có sẵn trong kho từ productData
- */
+ */ 
 function getAllAvailableProducts(): Product[] {
   const allProducts: Product[] = [];
 

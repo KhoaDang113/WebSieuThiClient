@@ -9,10 +9,16 @@ import { getProductId, getProductImage } from "@/lib/constants";
 import type { Product } from "@/types";
 import type { Banner } from "@/types/banner.type";
 
+interface Category {
+  _id?: string;
+  id?: string;
+  name: string;
+  slug: string;
+}
+
 export default function HomePage() {
   const { addToCart } = useCart();
-  const [productsByCategory, setProductsByCategory] = useState<Record<string, Product[]>>({});
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [mainBanners, setMainBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 

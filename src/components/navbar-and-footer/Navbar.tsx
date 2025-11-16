@@ -29,7 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNotification } from "@/components/notification/NotificationContext";
+import { useNotification } from "@/hooks/useNotification";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -277,7 +277,7 @@ export function Navbar() {
                 <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 z-10" />
                 <input
                   id="search"
-                  type="search"
+                  type="text"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   onFocus={() => {
@@ -285,7 +285,8 @@ export function Navbar() {
                     setShowHistory(true);
                   }}
                   placeholder={placeholder}
-                  className="w-full h-12 pl-12 pr-4 rounded-full bg-white text-gray-900 placeholder:text-gray-400 outline-none shadow-sm border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all duration-200"
+                  autoComplete="off"
+                  className="w-full h-12 pl-12 pr-4 rounded-full bg-white text-gray-900 placeholder:text-gray-400 outline-none shadow-sm border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all duration-200 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
                 />
                 {/* Dropdown lịch sử tìm kiếm */}
                 {showHistory && (

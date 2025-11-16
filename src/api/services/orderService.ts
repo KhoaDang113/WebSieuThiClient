@@ -1,6 +1,6 @@
 import api from "../axiosConfig";
 import type { Order, OrderItem } from "@/types/order";
-import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants";
+import { PRODUCT_PLACEHOLDER_IMAGE, getProductImage } from "@/lib/constants";
 
 interface BackendOrderItem {
   _id?: string;
@@ -12,10 +12,13 @@ interface BackendOrderItem {
         name?: string;
         slug?: string;
         image_primary?: string;
+        images?: string[];
+        image_url?: string;
         unit_price?: number;
         final_price?: number;
         discount_percent?: number;
         stock_status?: string;
+        unit?: string;
       };
   quantity: number;
   unit_price: number;
@@ -114,15 +117,22 @@ class OrderService {
       productIdNum = productId;
     }
 
+    // Sử dụng getProductImage để lấy hình ảnh đúng cách (kiểm tra image_primary, images[0], etc.)
+    const productImage = product ? getProductImage(product) : PRODUCT_PLACEHOLDER_IMAGE;
+    
     return {
       id: item._id || `item-${productIdNum}-${index}`,
       product_id: productIdNum,
+      product_id_string: String(productId),
       name: product?.name || "Sản phẩm",
       price:
         item.unit_price || product?.final_price || product?.unit_price || 0,
       quantity: item.quantity,
-      image: product?.image_primary || PRODUCT_PLACEHOLDER_IMAGE,
-      unit: product?.unit_price ? "1 sản phẩm" : "1 sản phẩm",
+      image: productImage, // Giữ lại để backward compatibility
+      images: product?.images || (product?.image_primary ? [product.image_primary] : undefined),
+      image_primary: product?.image_primary,
+      image_url: product?.image_primary || product?.image_url,
+      unit: product?.unit || "1 sản phẩm",
     };
   }
 

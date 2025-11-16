@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/order";
 import { useCart } from "@/components/cart/CartContext";
-import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants";
+import { PRODUCT_PLACEHOLDER_IMAGE, getProductImage } from "@/lib/constants";
+import { productService } from "@/api";
+import type { Product } from "@/types/product.type";
 
 interface CustomerOrderCardProps {
   order: Order;
@@ -17,6 +19,8 @@ export function CustomerOrderCard({
 }: CustomerOrderCardProps) {
   const { addToCart } = useCart();
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [productsMap, setProductsMap] = useState<Record<string, Product>>({});
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -31,6 +35,44 @@ export function CustomerOrderCard({
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN").format(price);
   };
+
+  // Fetch đầy đủ product data để lấy hình ảnh giống ProductCard
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const productIds = order.items
+        .map((item) => item.product_id_string || item.product_id.toString())
+        .filter((id) => id && !productsMap[id]);
+      
+      if (productIds.length === 0) return;
+
+      try {
+        const products = await Promise.all(
+          productIds.map(async (id) => {
+            try {
+              const product = await productService.getProductById(id);
+              return { id, product };
+            } catch (error) {
+              console.error(`Error fetching product ${id}:`, error);
+              return null;
+            }
+          })
+        );
+
+        const newProductsMap: Record<string, Product> = {};
+        products.forEach((result) => {
+          if (result) {
+            newProductsMap[result.id] = result.product;
+          }
+        });
+
+        setProductsMap((prev) => ({ ...prev, ...newProductsMap }));
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, [order.items]);
 
   // Hiển thị tối đa 3 sản phẩm, phần còn lại hiện +N
   const visibleProducts = showAllProducts
@@ -72,8 +114,9 @@ export function CustomerOrderCard({
     }
   };
 
-  // Kiểm tra xem có thể hủy đơn không (chỉ pending mới hủy được)
-  const canCancel = order.status === "pending";
+  // Kiểm tra xem có thể hủy đơn không (chỉ pending và chưa thanh toán mới hủy được)
+  const isPaid = order.paid || order.payment_status === "paid";
+  const canCancel = order.status === "pending" && !isPaid;
 
   // Kiểm tra có thể thanh toán hay không
   const canPay =
@@ -144,20 +187,32 @@ export function CustomerOrderCard({
       <div className="p-4">
         <div className="flex items-center gap-3">
           {visibleProducts.map((item) => {
-            const rawImage = item.image;
-            const normalizedImage =
-              typeof rawImage === "string" ? rawImage.trim() : "";
-            const imageSrc =
-              normalizedImage !== ""
-                ? normalizedImage
-                : PRODUCT_PLACEHOLDER_IMAGE;
+            // Lấy product đầy đủ từ productsMap (đã fetch từ API) hoặc dùng item data
+            const productId = item.product_id_string || item.product_id.toString();
+            const fullProduct = productsMap[productId];
+            
+            // Sử dụng product đầy đủ nếu có, nếu không thì dùng item data
+            const productForImage = fullProduct || {
+              image_primary: item.image_primary || item.image,
+              image_url: item.image_url || item.image,
+              images: item.images || (item.image ? [item.image] : undefined),
+            };
+            
+            // Sử dụng getProductImage giống ProductCard để đảm bảo nhất quán
+            const imageUrl = imageErrors[item.id]
+              ? PRODUCT_PLACEHOLDER_IMAGE
+              : getProductImage(productForImage);
+            
             return (
               <div key={item.id} className="relative">
                 <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-white">
                   <img
-                    src={imageSrc}
+                    src={imageUrl}
                     alt={item.name}
                     className="w-full h-full object-cover"
+                    onError={() => {
+                      setImageErrors((prev) => ({ ...prev, [item.id]: true }));
+                    }}
                   />
                 </div>
                 {/* Promotion badge nếu có giảm giá */}

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Star, ThumbsUp, X, Upload, User } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Star, X, Upload, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ratingService from "@/api/services/ratingService";
 import authService from "@/api/services/authService";
@@ -41,7 +41,7 @@ export default function ProductRatings({ productId }: ProductRatingsProps) {
   const isAuthenticated = authService.isAuthenticated();
 
   // Load ratings
-  const loadRatings = async (page: number = 1) => {
+  const loadRatings = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       const response = await ratingService.getRatingsByProduct(
@@ -70,13 +70,13 @@ export default function ProductRatings({ productId }: ProductRatingsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, pagination.limit]);
 
   useEffect(() => {
     if (productId) {
       loadRatings();
     }
-  }, [productId]);
+  }, [productId, loadRatings]);
 
   // Handle image selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,10 +143,11 @@ export default function ProductRatings({ productId }: ProductRatingsProps) {
       // Reload ratings
       await loadRatings(1);
       alert("Đánh giá của bạn đã được gửi thành công!");
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       console.error("Error creating rating:", error);
       alert(
-        error.response?.data?.message || "Không thể gửi đánh giá. Vui lòng thử lại."
+        err.response?.data?.message || "Không thể gửi đánh giá. Vui lòng thử lại."
       );
     } finally {
       setSubmitting(false);
@@ -211,7 +212,7 @@ export default function ProductRatings({ productId }: ProductRatingsProps) {
   };
 
   // Get user info
-  const getUserInfo = (user: any) => {
+  const getUserInfo = (user: string | { _id?: string; name?: string; avatar?: string; role?: string }) => {
     if (typeof user === "string") return null;
     return user;
   };

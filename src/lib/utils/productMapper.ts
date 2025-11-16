@@ -1,6 +1,33 @@
 import type { Product } from "@/types/product.type";
 
-export const mapProductFromApi = (apiProduct: any): Product => {
+interface ApiProduct {
+  _id?: string;
+  id?: string;
+  name?: string;
+  slug?: string;
+  category_id?: string;
+  brand_id?: string;
+  unit?: string;
+  unit_price?: number | string;
+  price?: number | string;
+  discount_percent?: number | string;
+  final_price?: number;
+  image_primary?: string;
+  image_url?: string;
+  image?: string;
+  images?: string[];
+  quantity?: number;
+  stock_quantity?: number;
+  stock_status?: string;
+  is_active?: boolean;
+  is_deleted?: boolean;
+  is_hot?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  description?: string;
+}
+
+export const mapProductFromApi = (apiProduct: ApiProduct): Product => {
   if (!apiProduct) {
     throw new Error("Invalid product data received from API");
   }
@@ -17,18 +44,28 @@ export const mapProductFromApi = (apiProduct: any): Product => {
       ? rawQuantity
       : undefined;
 
-  const stockStatus =
-    typeof apiProduct.stock_status === "string" && apiProduct.stock_status.trim() !== ""
-      ? apiProduct.stock_status
+  const stockStatus: "in_stock" | "out_of_stock" | "preorder" =
+    typeof apiProduct.stock_status === "string" && 
+    ["in_stock", "out_of_stock", "preorder"].includes(apiProduct.stock_status)
+      ? (apiProduct.stock_status as "in_stock" | "out_of_stock" | "preorder")
       : typeof quantity === "number"
         ? quantity > 0
           ? "in_stock"
           : "out_of_stock"
         : "in_stock";
 
+  // Nếu stock_status là 'in_stock' nhưng quantity không được cung cấp, 
+  // không nên default quantity về 0 vì sẽ làm sản phẩm hiển thị hết hàng
+  const finalQuantity = 
+    typeof quantity === "number" 
+      ? quantity 
+      : stockStatus === "in_stock" 
+        ? undefined 
+        : 0;
+
   return {
-    _id: apiProduct._id || apiProduct.id,
-    id: apiProduct.id || apiProduct._id,
+    _id: apiProduct._id || apiProduct.id || "",
+    id: apiProduct.id || apiProduct._id || "",
     name: apiProduct.name || "Sản phẩm không tên",
     slug: apiProduct.slug || apiProduct.id || apiProduct._id || "",
     category_id: apiProduct.category_id,
@@ -48,8 +85,8 @@ export const mapProductFromApi = (apiProduct: any): Product => {
       : apiProduct.image
         ? [apiProduct.image]
         : [],
-    quantity,
-    stock_quantity: quantity,
+    quantity: finalQuantity ?? 0,
+    stock_quantity: finalQuantity ?? 0,
     stock_status: stockStatus,
     is_active: apiProduct.is_active ?? true,
     is_deleted: apiProduct.is_deleted ?? false,
@@ -60,7 +97,7 @@ export const mapProductFromApi = (apiProduct: any): Product => {
   };
 };
 
-export const mapProductsFromApi = (products: any[] = []): Product[] => {
+export const mapProductsFromApi = (products: ApiProduct[] = []): Product[] => {
   return products.map(mapProductFromApi);
 };
 

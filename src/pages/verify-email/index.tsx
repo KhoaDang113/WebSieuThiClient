@@ -12,7 +12,6 @@ export default function VerifyEmail() {
   const codeFromUrl = searchParams.get("code") || "";
   const formRef = useRef<HTMLFormElement>(null);
   const hasAutoSubmitted = useRef(false);
-
   const [code, setCode] = useState(codeFromUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -98,11 +97,16 @@ export default function VerifyEmail() {
       navigate("/login", {
         state: { message: "Xác thực email thành công! Vui lòng đăng nhập." },
       });
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error("Verify error:", err);
-      setError(
-        err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn"
-      );
+      let errorMessage = "Mã OTP không đúng hoặc đã hết hạn";
+      if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -117,12 +121,16 @@ export default function VerifyEmail() {
       await authService.resendEmailVerification(email);
       setResendSuccess(true);
       setTimeout(() => setResendSuccess(false), 3000);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error("Resend error:", err);
-      setError(
-        err.response?.data?.message ||
-          "Không thể gửi lại OTP. Vui lòng thử lại sau."
-      );
+      let errorMessage = "Không thể gửi lại OTP. Vui lòng thử lại sau.";
+      if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setResending(false);
     }

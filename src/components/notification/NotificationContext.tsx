@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react"
+import { createContext, useState, useCallback, useEffect, type ReactNode } from "react"
 
 export type NotificationType = "success" | "error" | "warning" | "info"
 
@@ -108,11 +108,5 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useNotification() {
-  const context = useContext(NotificationContext)
-  if (!context) {
-    throw new Error("useNotification must be used within NotificationProvider")
-  }
-  return context
-}
+export { NotificationContext }
 

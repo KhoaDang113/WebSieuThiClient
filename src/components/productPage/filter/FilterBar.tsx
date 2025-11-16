@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SORT_OPTIONS, BRAND_OPTIONS } from "@/lib/constants";
-import type { Brand, FilterBarFilters } from "@/types/filter.type";
+import type { FilterBarFilters } from "@/types/filter.type";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface FilterBarProps {
@@ -10,44 +10,6 @@ interface FilterBarProps {
   onBrandSelect?: (brandId: string) => void;
   selectedBrands?: string[];
 }
-
-const brands: Brand[] = [
-  {
-    id: "hao-hao",
-    name: "Hảo Hảo",
-    logo: "https://cdn.tgdd.vn/Brand/11/vietcoco-05042021165111.jpg",
-  },
-  {
-    id: "3-mien",
-    name: "3 Miền",
-    logo: "https://cdn.tgdd.vn/Brand/11/cai-lan-22062022115940.png",
-  },
-  {
-    id: "gau-do",
-    name: "Gấu Đỏ",
-    logo: "https://cdn.tgdd.vn/Brand/11/simply-06052022122049.png",
-  },
-  {
-    id: "omachi",
-    name: "Omachi",
-    logo: "https://cdn.tgdd.vn/Brand/11/vietcoco-05042021165111.jpg",
-  },
-  {
-    id: "de-nhat",
-    name: "ĐỆ NHẤT",
-    logo: "https://cdn.tgdd.vn/Brand/11/kiddy-1010202211200.png",
-  },
-  {
-    id: "gau-do",
-    name: "Gấu Đỏ",
-    logo: "https://cdn.tgdd.vn/Brand/11/simply-06052022122049.png",
-  },
-  {
-    id: "omachi",
-    name: "Omachi",
-    logo: "https://cdn.tgdd.vn/Brand/11/vietcoco-05042021165111.jpg",
-  },
-];
 
 export default function FilterBar({
   onFilterChange,
@@ -58,7 +20,7 @@ export default function FilterBar({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
-  const totalSlides = Math.ceil(brands.length / 4);
+  const totalSlides = Math.ceil(BRAND_OPTIONS.length / 4);
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides);
   };
@@ -164,17 +126,17 @@ export default function FilterBar({
               transform: `translateX(-${currentSlide * 100}%)`,
             }}
           >
-            {brands.map((brand) => (
+            {BRAND_OPTIONS.map((brand) => (
               <img
-                key={brand.id}
+                key={brand.value}
                 src={brand.logo}
-                alt={brand.name}
+                alt={brand.label}
                 className={`  w-12 h-8 hover:border-2 hover:border-green-500 cursor-pointer transition-all   ${
-                  selectedBrands.includes(brand.id)
+                  selectedBrands.includes(brand.value)
                     ? "border-2 border-green-500"
                     : ""
                 }`}
-                onClick={() => handleBrandClick(brand.id)}
+                onClick={() => handleBrandClick(brand.value)}
               />
             ))}
           </div>

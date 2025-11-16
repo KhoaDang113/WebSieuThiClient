@@ -156,11 +156,12 @@ export const PRODUCT_PLACEHOLDER_IMAGE =
 
 /**
  * Helper function để lấy ảnh sản phẩm
- * Ưu tiên: image_primary > images[0] > placeholder
+ * Ưu tiên: image_primary > image_url > images[0] > placeholder
  * Kiểm tra cả null, undefined, string rỗng, và kiểu dữ liệu
  */
 export const getProductImage = (product: {
   image_primary?: string | null | unknown;
+  image_url?: string | null | unknown;
   images?: string[] | null;
 }): string => {
   // Kiểm tra image_primary: chỉ chấp nhận string hợp lệ
@@ -168,6 +169,14 @@ export const getProductImage = (product: {
     const trimmed = product.image_primary.trim();
     if (trimmed !== '') {
       return product.image_primary;
+    }
+  }
+  
+  // Kiểm tra image_url: chỉ chấp nhận string hợp lệ
+  if (product.image_url && typeof product.image_url === 'string') {
+    const trimmed = product.image_url.trim();
+    if (trimmed !== '') {
+      return product.image_url;
     }
   }
   

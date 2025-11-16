@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MessageSquare, Send, Trash2, Edit2, Reply, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import commentService from "@/api/services/commentService";
@@ -34,7 +34,7 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
   const isAuthenticated = authService.isAuthenticated();
 
   // Load comments
-  const loadComments = async (page: number = 1) => {
+  const loadComments = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       const response = await commentService.getCommentsByProduct(
@@ -49,7 +49,7 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, pagination.limit]);
 
   // Load replies for a comment
   const loadReplies = async (commentId: string) => {
@@ -76,7 +76,7 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
     if (productId) {
       loadComments();
     }
-  }, [productId]);
+  }, [productId, loadComments]);
 
   // Toggle replies visibility
   const toggleReplies = (commentId: string) => {
@@ -104,9 +104,10 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
       });
       setNewComment("");
       await loadComments(1);
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       console.error("Error creating comment:", error);
-      alert(error.response?.data?.message || "Không thể đăng bình luận");
+      alert(err.response?.data?.message || "Không thể đăng bình luận");
     } finally {
       setSubmitting(false);
     }
@@ -127,9 +128,10 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
       setReplyingTo(null);
       await loadReplies(parentId);
       await loadComments(pagination.page); // Refresh to update reply_count
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       console.error("Error creating reply:", error);
-      alert(error.response?.data?.message || "Không thể đăng phản hồi");
+      alert(err.response?.data?.message || "Không thể đăng phản hồi");
     } finally {
       setSubmitting(false);
     }
@@ -147,9 +149,10 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
       setEditingId(null);
       setEditContent("");
       await loadComments(pagination.page);
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       console.error("Error updating comment:", error);
-      alert(error.response?.data?.message || "Không thể cập nhật bình luận");
+      alert(err.response?.data?.message || "Không thể cập nhật bình luận");
     } finally {
       setSubmitting(false);
     }
@@ -173,9 +176,10 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
         });
         return newReplies;
       });
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       console.error("Error deleting comment:", error);
-      alert(error.response?.data?.message || "Không thể xóa bình luận");
+      alert(err.response?.data?.message || "Không thể xóa bình luận");
     } finally {
       setSubmitting(false);
     }

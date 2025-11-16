@@ -46,5 +46,3 @@ export function searchVietnamese(str: string, keyword: string): boolean {
   if (!str || !keyword) return false;
   return removeVietnameseAccents(str).includes(removeVietnameseAccents(keyword));
 }
-
-

@@ -1,10 +1,14 @@
 export interface OrderItem {
   id: string;
   product_id: number;
+  product_id_string?: string; // Product ID dạng string để fetch lại product đầy đủ
   name: string;
   price: number;
   quantity: number;
   image: string;
+  images?: string[]; // Mảng hình ảnh để dùng getProductImage giống ProductCard
+  image_primary?: string; // Hình ảnh chính
+  image_url?: string; // Alias cho image_primary
   unit: string;
 }
 
@@ -23,13 +27,7 @@ export interface Order {
   customer_address: string;
   items: OrderItem[];
   total_amount: number;
-  status:
-    | "pending"
-    | "confirmed"
-    | "rejected"
-    | "cancelled"
-    | "delivered"
-    | "shipped";
+  status: "pending" | "confirmed" | "shipped" | "rejected" | "cancelled" | "delivered";
 
   // Payment fields (optional) - backend may supply these
   paid?: boolean; // true if order has been paid
