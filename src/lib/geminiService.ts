@@ -1,8 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
-import type { Ingredient } from "@/types/menu.type";
+import type { Ingredient, MenuCombo } from "@/types/menu.type";
 import type { Product } from "@/types";
 import productService from "@/api/services/productService";
 import categoryService from "@/api/services/catalogService";
+import comboService from "@/api/services/comboService";
 
 // Khởi tạo Gemini AI
 const ai = new GoogleGenAI({
@@ -161,5 +162,107 @@ Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự
     throw new Error(
       "Không thể lấy danh sách nguyên liệu. Vui lòng thử lại sau."
     );
+  }
+}
+
+/**
+ * Gọi Gemini API để lấy danh sách món ăn gợi ý dựa trên tên sản phẩm
+ * @param productName - Tên sản phẩm (ví dụ: "Thịt ba chỉ", "Ức gà", "Cánh gà")
+ * @returns Promise<MenuCombo[]> - Danh sách món ăn gợi ý từ database
+ */
+export async function getSuggestedDishesForProduct(
+  productName: string
+): Promise<MenuCombo[]> {
+  try {
+    // Lấy tất cả combos từ database
+    const allCombos = await comboService.getCombos();
+
+    if (!allCombos || allCombos.length === 0) {
+      console.warn("No combos found in database");
+      return [];
+    }
+
+    // Tạo danh sách tên món ăn có trong database
+    const comboNames = allCombos.map((c) => c.name).join("\n");
+
+    const model = "gemini-2.0-flash";
+
+    const prompt = `
+Bạn là một trợ lý ẩm thực chuyên nghiệp. Hãy gợi ý các món ăn phù hợp có thể nấu với nguyên liệu "${productName}".
+
+QUAN TRỌNG: Bạn CHỈ ĐƯỢC chọn món ăn từ danh sách MÓN ĂN CÓ SẴN dưới đây. KHÔNG ĐƯỢC tự ý thêm món ăn không có trong danh sách.
+
+DANH SÁCH MÓN ĂN CÓ SẴN:
+${comboNames}
+
+YÊU CẦU:
+1. Phân tích xem "${productName}" có thể dùng để nấu món gì
+2. CHỈ chọn từ danh sách món ăn trên (chọn từ 3-5 món)
+3. Chọn những món ăn PHỔ BIẾN và PHÙNG HỢP NHẤT với nguyên liệu "${productName}"
+4. Ưu tiên những món ăn mà "${productName}" là nguyên liệu CHÍNH
+
+Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự đặc biệt):
+[
+  "Tên món ăn 1 từ danh sách",
+  "Tên món ăn 2 từ danh sách",
+  "Tên món ăn 3 từ danh sách"
+]
+`;
+
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ];
+
+    const response = await ai.models.generateContent({
+      model,
+      contents,
+    });
+
+    // Lấy text từ response
+    let responseText = "";
+    if (response.text) {
+      responseText = response.text;
+    }
+
+    // Parse JSON từ response
+    // Loại bỏ markdown code blocks nếu có
+    let jsonText = responseText.trim();
+    if (jsonText.startsWith("```json")) {
+      jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?$/g, "");
+    } else if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/```\n?/g, "").replace(/```\n?$/g, "");
+    }
+
+    const suggestedDishNames: string[] = JSON.parse(jsonText);
+    console.log("🤖 AI suggested dishes:", suggestedDishNames);
+
+    // Tìm combo khớp với tên món ăn gợi ý
+    const suggestedCombos: MenuCombo[] = [];
+
+    for (const dishName of suggestedDishNames) {
+      const matchedCombo = allCombos.find(
+        (combo) =>
+          combo.name.toLowerCase().trim() === dishName.toLowerCase().trim() ||
+          combo.name.toLowerCase().includes(dishName.toLowerCase()) ||
+          dishName.toLowerCase().includes(combo.name.toLowerCase())
+      );
+
+      if (
+        matchedCombo &&
+        !suggestedCombos.find((c) => c._id === matchedCombo._id)
+      ) {
+        suggestedCombos.push(matchedCombo);
+      }
+    }
+
+    console.log("✅ Matched combos from database:", suggestedCombos.length);
+    return suggestedCombos.slice(0, 5); // Giới hạn 5 món
+  } catch (error) {
+    console.error("Error calling Gemini API for dish suggestions:", error);
+    // Không throw error, chỉ return empty array để không làm gián đoạn UX
+    return [];
   }
 }
