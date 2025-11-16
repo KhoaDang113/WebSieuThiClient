@@ -60,12 +60,13 @@ export default function CategoryProductsSection({
               setCategoryBanners([]);
             }
           }
-        } catch (error: any) {
+        } catch (error: Error | unknown) {
           console.error(`[CategoryProductsSection] Error fetching banners for category "${categorySlug}":`, error);
+          const axiosError = error as { message?: string; response?: { data?: unknown; status?: number } };
           console.error(`[CategoryProductsSection] Error details:`, {
-            message: error?.message,
-            response: error?.response?.data,
-            status: error?.response?.status,
+            message: axiosError?.message,
+            response: axiosError?.response?.data,
+            status: axiosError?.response?.status,
           });
           if (mounted) setCategoryBanners([]);
         }

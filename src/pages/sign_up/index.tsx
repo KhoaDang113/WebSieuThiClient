@@ -82,9 +82,15 @@ export default function SignUp() {
         } else {
           setErrors({ email: response.message || "Đăng ký thất bại" });
         }
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error("Register error:", err);
-        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại";
+        let errorMessage = "Có lỗi xảy ra, vui lòng thử lại";
+        if (err && typeof err === "object" && "response" in err) {
+          const response = (err as { response?: { data?: { message?: string } } }).response;
+          if (response?.data?.message) {
+            errorMessage = response.data.message;
+          }
+        }
         setErrors({ email: errorMessage });
       } finally {
         setIsLoading(false);

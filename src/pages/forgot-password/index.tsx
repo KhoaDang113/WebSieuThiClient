@@ -52,10 +52,11 @@ export default function ForgotPassword() {
     try {
       await authService.forgotPassword(email);
       setStep(2);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       console.error("Forgot password error:", err);
       setError(
-        err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại."
+        error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại."
       );
     } finally {
       setIsLoading(false);
@@ -76,10 +77,11 @@ export default function ForgotPassword() {
     try {
       await authService.verifyResetPasswordOTP(email, code);
       setStep(3);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       console.error("Verify OTP error:", err);
       setError(
-        err.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn"
+        error.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn"
       );
     } finally {
       setIsLoading(false);
@@ -112,10 +114,11 @@ export default function ForgotPassword() {
       navigate("/login", {
         state: { message: "Đặt lại mật khẩu thành công! Vui lòng đăng nhập." },
       });
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       console.error("Reset password error:", err);
       setError(
-        err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại."
+        error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại."
       );
     } finally {
       setIsLoading(false);

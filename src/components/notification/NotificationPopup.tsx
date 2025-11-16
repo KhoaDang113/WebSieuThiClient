@@ -1,7 +1,8 @@
 "use client"
 
-import { useNotification } from "./NotificationContext"
+import { useNotification } from "@/hooks/useNotification"
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react"
+import type { ReactNode } from "react"
 
 export function NotificationPopup() {
   const { notifications, removeNotification } = useNotification()
@@ -92,7 +93,7 @@ interface NotificationItemProps {
     message?: string
   }
   onClose: () => void
-  getIcon: (type: string) => JSX.Element
+  getIcon: (type: string) => ReactNode
   getStyles: (type: string) => {
     bg: string
     border: string

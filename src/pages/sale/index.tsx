@@ -47,7 +47,8 @@ export default function KhuyenMaiPage() {
     // TODO: Hiển thị thông báo đã thêm vào giỏ hàng
   };
 
-  const handleCategoryClick = (categoryId: string) => {
+  const handleCategoryClick = (categoryId: string | undefined) => {
+    if (!categoryId) return;
     const section = sectionRefs.current[categoryId];
     if (section) {
       section.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -170,7 +171,9 @@ export default function KhuyenMaiPage() {
               <div
                 key={sectionId}
                 ref={(el) => {
-                  sectionRefs.current[sectionId] = el;
+                  if (sectionId) {
+                    sectionRefs.current[sectionId] = el;
+                  }
                 }}
                 id={sectionId}
                 className="w-full [&>div]:mb-0"

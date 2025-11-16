@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { searchVietnamese } from "@/utils/stringUtils";
+import { searchVietnamese } from "@/lib/helpers";
 import type { Product } from "@/types";
 import productService from "@/api/services/productService";
 import { ProductTableRow } from "./ProductTableRow";

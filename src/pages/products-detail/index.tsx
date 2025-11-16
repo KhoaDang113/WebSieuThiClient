@@ -10,7 +10,8 @@ import { Link, useParams } from "react-router-dom";
 import ProductComments from "@/components/products/ProductComments";
 import ProductRatings from "@/components/products/ProductRatings";
 import { productService, bannerService } from "@/api";
-import { PRODUCT_PLACEHOLDER_IMAGE } from "@/lib/constants";
+import { PRODUCT_PLACEHOLDER_IMAGE, getProductId, getProductImage } from "@/lib/constants";
+import { useCart } from "@/components/cart/CartContext";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,7 @@ export default function ProductDetail() {
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const { addToCart } = useCart();
 
   // Get product ID from URL params
   const productId = id || "";
@@ -153,8 +155,15 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = (product: Product, quantity: number) => {
-    // TODO: Tích hợp giỏ hàng thật
-    console.log("Add to cart:", product, quantity);
+    // Chuyển đổi Product sang CartItem và thêm vào giỏ hàng
+    addToCart({
+      id: getProductId(product),
+      name: product.name,
+      price: product.final_price || product.unit_price,
+      image: getProductImage(product),
+      unit: product.unit || "1 sản phẩm",
+      quantity: quantity,
+    });
   };
 
   // Loading state

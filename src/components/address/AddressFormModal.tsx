@@ -5,7 +5,7 @@ import { CustomSelect } from "./CustomSelect";
 import { addressService } from "@/api";
 import type { Address, CreateAddressDto } from "@/api/types";
 import { useAuthStore } from "@/stores/authStore";
-import { useNotification } from "@/components/notification/NotificationContext";
+import { useNotification } from "@/hooks/useNotification";
 
 interface Province {
   code: string;
@@ -58,7 +58,6 @@ export function AddressFormModal({
   const { showNotification } = useNotification();
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
-
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedWard, setSelectedWard] = useState<string>("");
   const [street, setStreet] = useState<string>("");
@@ -103,9 +102,6 @@ export function AddressFormModal({
   const fetchWards = useCallback(async (provinceCode: string) => {
     try {
       setLoading(true);
-      
-      // API v2 - Lấy phường/xã trực tiếp từ tỉnh (2 cấp)
-      // depth=2 để lấy districts với wards
       const response = await fetch(
         `https://provinces.open-api.vn/api/v2/p/${provinceCode}?depth=2`,
         {
@@ -116,7 +112,6 @@ export function AddressFormModal({
       if (response.ok) {
         const data = (await response.json()) as ProvinceDetailApiResponse;
         
-        // API v2 depth=2 trả về wards trực tiếp, không có districts
         const allWards: Ward[] = [];
         
         if (data.wards && Array.isArray(data.wards)) {
@@ -143,30 +138,25 @@ export function AddressFormModal({
         setWards(allWards);
       }
     } catch {
-      // Silent error - không hiện thông báo
       setWards([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Load provinces khi mở modal
   useEffect(() => {
     if (isOpen) {
       fetchProvinces();
     }
   }, [isOpen, fetchProvinces]);
 
-  // Load dữ liệu khi edit hoặc khi mở form mới
   useEffect(() => {
     if (isOpen && editingAddress) {
-      // Edit mode: Load dữ liệu từ editingAddress
       setFullName(editingAddress.full_name);
       setPhone(editingAddress.phone);
       setStreet(editingAddress.address);
       setIsDefault(editingAddress.is_default);
 
-      // Tìm province code từ tên (vì editingAddress lưu tên)
       const provinceObj = provinces.find(p => p.name === editingAddress.city);
       if (provinceObj) {
         setSelectedProvince(provinceObj.code);
@@ -176,13 +166,11 @@ export function AddressFormModal({
       
       setSelectedWard(editingAddress.ward);
     } else if (isOpen) {
-      // Create mode: Reset form và tự động điền tên và số điện thoại từ tài khoản đăng nhập
       setSelectedProvince("");
       setSelectedWard("");
       setStreet("");
       setIsDefault(false);
       
-      // Tự động điền tên và số điện thoại từ user hiện tại
       if (currentUser) {
         setFullName(currentUser.name || "");
         setPhone(currentUser.phone || currentUser.phoneNumber || "");
@@ -193,7 +181,6 @@ export function AddressFormModal({
     }
   }, [isOpen, editingAddress, provinces, currentUser]);
 
-  // Load wards khi province thay đổi (2 cấp: Tỉnh → Xã)
   useEffect(() => {
     if (selectedProvince && !editingAddress) {
       fetchWards(selectedProvince);
@@ -204,7 +191,6 @@ export function AddressFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!fullName.trim()) {
       showNotification({
         type: "warning",
@@ -258,7 +244,6 @@ export function AddressFormModal({
     try {
       setSubmitting(true);
 
-      // Get names from codes
       const provinceName =
         provinces.find((p) => p.code === selectedProvince)?.name || selectedProvince;
       const wardName =
@@ -276,7 +261,6 @@ export function AddressFormModal({
       };
 
       if (editingAddress) {
-        // Update existing address
         await addressService.updateAddress(editingAddress._id, addressData);
         showNotification({
           type: "success",
@@ -285,7 +269,6 @@ export function AddressFormModal({
           duration: 3000,
         });
       } else {
-        // Create new address
         await addressService.createAddress(addressData);
         showNotification({
           type: "success",
@@ -295,7 +278,6 @@ export function AddressFormModal({
         });
       }
 
-      // Tự động đóng modal và cập nhật danh sách
       onSave();
       onClose();
     } catch (error) {

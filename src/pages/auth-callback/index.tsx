@@ -6,8 +6,7 @@ import { useAuthStore } from "@/stores/authStore";
 export default function AuthCallback() {
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Đang xử lý đăng nhập...');
+  const [, setMessage] = useState('Đang xử lý đăng nhập...');
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -72,10 +71,10 @@ export default function AuthCallback() {
           navigate('/', { replace: true });
         }
 
-      } catch (error: any) {
+      } catch (error: Error | unknown) {
+        const err = error as { message?: string };
         console.error('Auth callback error:', error);
-        setStatus('error');
-        setMessage(error.message || 'Đăng nhập thất bại');
+        setMessage(err.message || 'Đăng nhập thất bại');
         
         // Chuyển về trang login sau 3 giây
         setTimeout(() => {

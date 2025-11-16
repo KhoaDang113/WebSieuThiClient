@@ -5,7 +5,7 @@ import { ScrollToTop } from "@/components/scroll/ScrollToTop";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { StaffNavbar } from "@/components/navbar-and-footer/StaffNavbar";
 import { useOrders } from "@/hooks/useOrders";
-import { useNotification } from "@/components/notification/NotificationContext";
+import { useNotification } from "@/hooks/useNotification";
 import { useEffect, useRef } from "react";
 import authService from "@/api/services/authService";
 import { useAuthStore } from "@/stores/authStore";

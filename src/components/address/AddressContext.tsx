@@ -1,11 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import { addressService } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -37,12 +31,9 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     try {
       const response = await addressService.getAddresses();
       const addresses = response.addresses || [];
-
-      // Tìm địa chỉ mặc định
       const defaultAddress = addresses.find((addr) => addr.is_default);
 
       if (defaultAddress) {
-        // Cập nhật AddressContext với địa chỉ mặc định
         setAddressState({
           id: defaultAddress._id,
           province: defaultAddress.city || "",
@@ -56,16 +47,12 @@ export function AddressProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error loading default address:", error);
-      // Không hiển thị lỗi cho user, chỉ log
     }
   }, []);
 
-  // Xóa localStorage và load địa chỉ mặc định từ API khi mount
   useEffect(() => {
-    // Xóa dữ liệu cũ trong localStorage
     localStorage.removeItem("savedAddress");
 
-    // Load địa chỉ mặc định từ API nếu user đã đăng nhập
     if (isAuthenticated) {
       loadDefaultAddress();
     }
@@ -73,8 +60,6 @@ export function AddressProvider({ children }: { children: ReactNode }) {
 
   const setAddress = (newAddress: AddressData) => {
     setAddressState(newAddress);
-    // Không lưu vào localStorage nữa, chỉ lưu trong state
-    // localStorage.removeItem("savedAddress");
   };
 
   const getAddressString = () => {

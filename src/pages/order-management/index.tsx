@@ -4,368 +4,11 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useOrders } from "@/hooks/useOrders";
-import {
-  Search,
-  Check,
-  Trash2,
-  Eye,
-  Phone,
-  MapPin,
-  Calendar,
-  User,
-  Truck,
-} from "lucide-react";
+import { Search, ChevronLeft, Phone, MapPin, Calendar, User } from "lucide-react";
 import type { Order } from "@/types/order";
-import { OrderDetailView } from "./OrderDetailView";
-import { useNotification } from "@/components/notification/NotificationContext";
-
-// Component OrderStatusBadge
-function OrderStatusBadge({ status }: { status: Order["status"] }) {
-  const statusConfig = {
-    pending: {
-      label: "Chờ Xác Nhận",
-      color: "bg-amber-500 text-white",
-    },
-    confirmed: {
-      label: "Đã Xác Nhận",
-      color: "bg-blue-500 text-white",
-    },
-    shipped: {
-      label: "Đang Giao Hàng",
-      color: "bg-cyan-500 text-white",
-    },
-    delivered: {
-      label: "Đã Giao Hàng",
-      color: "bg-green-500 text-white",
-    },
-    rejected: {
-      label: "Đã Từ Chối",
-      color: "bg-red-500 text-white",
-    },
-    cancelled: {
-      label: "Đã Hủy",
-      color: "bg-red-500 text-white",
-    },
-  };
-
-  const config = statusConfig[status] ?? statusConfig.pending;
-  return (
-    <span className={`${config.color} px-3 py-1 rounded text-xs font-semibold`}>
-      {config.label}
-    </span>
-  );
-}
-
-// Component OrderListItem
-function OrderListItem({
-  order,
-  onConfirm,
-  onCancel,
-  onDeliver,
-  onViewDetail,
-}: {
-  order: Order;
-  onConfirm: (orderId: string) => Promise<void>;
-  onCancel: (orderId: string, reason?: string) => Promise<void>;
-  onDeliver: (orderId: string) => Promise<void>;
-  onViewDetail: (order: Order) => void;
-}) {
-  const [actionLoading, setActionLoading] = useState<
-    null | "confirm" | "cancel" | "deliver"
-  >(null);
-
-  const handleConfirm = async () => {
-    if (actionLoading) return;
-    try {
-      setActionLoading("confirm");
-      await onConfirm(order.id);
-    } catch (error) {
-      console.error("Confirm order failed:", error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleCancel = async () => {
-    if (actionLoading) return;
-    let reason: string | undefined;
-    if (order.status === "pending") {
-      reason = undefined;
-    } else {
-      const promptValue = window.prompt(
-        "Nhập lý do hủy đơn hàng",
-        "Hủy bởi nhân viên"
-      );
-      if (promptValue === null) {
-        return;
-      }
-      reason = promptValue || undefined;
-    }
-    try {
-      setActionLoading("cancel");
-      await onCancel(order.id, reason);
-    } catch (error) {
-      console.error("Cancel order failed:", error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleDeliver = async () => {
-    if (actionLoading) return;
-    try {
-      setActionLoading("deliver");
-      await onDeliver(order.id);
-    } catch (error) {
-      console.error("Deliver order failed:", error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  return (
-    <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full">
-      <CardContent className="p-3 sm:p-4 flex flex-col h-full">
-        <div className="space-y-3 flex-1">
-          {/* Mã đơn hàng - trên cùng */}
-          <div className="pb-2 border-b border-gray-200 flex items-center justify-between gap-3">
-            <div>
-              <span className="text-sm font-bold text-gray-900 truncate max-w-[65%]">
-                {order.id}
-              </span>
-            </div>
-            <OrderStatusBadge status={order.status} />
-          </div>
-
-          {/* Thông tin đơn hàng */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span className="font-medium">Ngày tạo:</span>
-              <span>{formatDate(order.created_at)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span className="font-medium">Người nhận:</span>
-              <span className="truncate" title={order.customer_name}>
-                {order.customer_name}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <Phone className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span className="font-medium">Số điện thoại:</span>
-              <span>{order.customer_phone}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span className="font-medium">Địa chỉ:</span>
-              <span className="truncate flex-1" title={order.customer_address}>
-                {order.customer_address}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <span className="font-medium">Sản phẩm:</span>
-              <span
-                className="truncate flex-1"
-                title={order.items
-                  .map((item) => `${item.name} (${item.quantity} ${item.unit})`)
-                  .join(", ")}
-              >
-                {order.items
-                  .map((item) => `${item.name} (${item.quantity} ${item.unit})`)
-                  .join(", ")}
-              </span>
-            </div>
-          </div>
-
-          {/* Tổng tiền */}
-          <div className="pt-2 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Tổng tiền cước:
-              </span>
-              <span className="text-base font-bold text-green-600">
-                {order.total_amount.toLocaleString("vi-VN")}đ
-              </span>
-            </div>
-          </div>
-
-          {/* Nút xem chi tiết */}
-        </div>
-
-        {/* Các nút xác nhận, hủy, giao hàng */}
-        <div className="mt-3 pt-2 border-t border-dashed border-gray-200 flex flex-col gap-2">
-          {order.status === "pending" && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onClick={handleConfirm}
-                  size="sm"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={actionLoading !== null}
-                >
-                  <Check className="w-4 h-4 mr-1" />
-                  {actionLoading === "confirm"
-                    ? "Đang xác nhận..."
-                    : "Xác nhận"}
-                </Button>
-                <Button
-                  onClick={handleCancel}
-                  size="sm"
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                  disabled={actionLoading !== null}
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  {actionLoading === "cancel" ? "Đang hủy..." : "Hủy"}
-                </Button>
-              </div>
-              <Button
-                onClick={() => onViewDetail(order)}
-                variant="outline"
-                size="sm"
-                className="w-full border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Xem chi tiết
-              </Button>
-            </>
-          )}
-          {order.status === "confirmed" && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onClick={handleDeliver}
-                  size="sm"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={actionLoading !== null}
-                >
-                  <Truck className="w-4 h-4 mr-1" />
-                  {actionLoading === "deliver" ? "Đang giao..." : "Giao hàng"}
-                </Button>
-                <Button
-                  onClick={handleCancel}
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 border-red-500 text-red-600 hover:bg-red-50"
-                  disabled={actionLoading !== null}
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  {actionLoading === "cancel" ? "Đang hủy..." : "Hủy"}
-                </Button>
-              </div>
-              <Button
-                onClick={() => onViewDetail(order)}
-                variant="outline"
-                size="sm"
-                className="w-full border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Xem chi tiết
-              </Button>
-            </>
-          )}
-          {order.status === "shipped" && (
-            <>
-              <div className="w-full text-center text-sm font-medium py-2 text-blue-600 bg-blue-50 rounded">
-                Đơn hàng đang được giao
-              </div>
-              <Button
-                onClick={() => onViewDetail(order)}
-                variant="outline"
-                size="sm"
-                className="w-full border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Xem chi tiết
-              </Button>
-            </>
-          )}
-          {order.status === "delivered" && (
-            <>
-              <div className="w-full text-center text-sm font-medium py-2 text-green-600 bg-green-50 rounded">
-                Đơn hàng đã được giao
-              </div>
-              <Button
-                onClick={() => onViewDetail(order)}
-                variant="outline"
-                size="sm"
-                className="w-full border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Xem chi tiết
-              </Button>
-            </>
-          )}
-          {order.status === "cancelled" && (
-            <>
-              <div className="w-full text-center text-sm font-medium py-2 text-red-600 bg-red-50 rounded">
-                Đơn hàng đã bị hủy
-              </div>
-              <Button
-                onClick={() => onViewDetail(order)}
-                variant="outline"
-                size="sm"
-                className="w-full border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Xem chi tiết
-              </Button>
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Component OrderList
-function OrderList({
-  orders,
-  onConfirm,
-  onCancel,
-  onDeliver,
-  onViewDetail,
-}: {
-  orders: Order[];
-  onConfirm: (orderId: string) => Promise<void>;
-  onCancel: (orderId: string, reason?: string) => Promise<void>;
-  onDeliver: (orderId: string) => Promise<void>;
-  onViewDetail: (order: Order) => void;
-}) {
-  if (orders.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-sm">Không có đơn hàng nào</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-      {orders.map((order) => (
-        <OrderListItem
-          key={order.id}
-          order={order}
-          onConfirm={onConfirm}
-          onCancel={onCancel}
-          onDeliver={onDeliver}
-          onViewDetail={onViewDetail}
-        />
-      ))}
-    </div>
-  );
-}
+import { OrderList } from "@/components/order/OrderList";
+import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
+import { useNotification } from "@/hooks/useNotification";
 
 export default function OrdersPage() {
   const { orders, loading, error, confirmOrder, cancelOrder, deliverOrder } =
@@ -386,9 +29,14 @@ export default function OrdersPage() {
         message: `Đơn hàng ${orderId} đã được xác nhận.`,
         duration: 4000,
       });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message || "Không thể xác nhận đơn hàng.";
+    } catch (err: Error | unknown) {
+      let message = "Không thể xác nhận đơn hàng.";
+      if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) {
+          message = response.data.message;
+        }
+      }
       showNotification({
         type: "error",
         title: "Lỗi xác nhận",
@@ -408,10 +56,14 @@ export default function OrdersPage() {
         message: `Đã cập nhật đơn hàng ${orderId} sang trạng thái giao thành công.`,
         duration: 4000,
       });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        "Không thể cập nhật trạng thái giao hàng.";
+    } catch (err: Error | unknown) {
+      let message = "Không thể cập nhật trạng thái giao hàng.";
+      if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) {
+          message = response.data.message;
+        }
+      }
       showNotification({
         type: "error",
         title: "Lỗi giao hàng",
@@ -431,8 +83,14 @@ export default function OrdersPage() {
         message: `Đơn hàng ${orderId} đã được hủy.`,
         duration: 4000,
       });
-    } catch (err: any) {
-      const message = err?.response?.data?.message || "Không thể hủy đơn hàng.";
+    } catch (err: Error | unknown) {
+      let message = "Không thể hủy đơn hàng.";
+      if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) {
+          message = response.data.message;
+        }
+      }
       showNotification({
         type: "error",
         title: "Lỗi hủy đơn",
@@ -443,7 +101,6 @@ export default function OrdersPage() {
     }
   };
 
-  // Tạo đơn hàng test mới
   const filteredOrders = orders.filter((order) => {
     if (filter !== "all") {
       if (filter === "confirmed") {
@@ -475,6 +132,120 @@ export default function OrdersPage() {
     delivered: orders.filter((o) => o.status === "delivered").length,
     rejected: orders.filter((o) => o.status === "rejected").length,
     cancelled: orders.filter((o) => o.status === "cancelled").length,
+  };
+
+  // Component OrderDetailView
+  const OrderDetailView = ({ order, onBack }: { order: Order; onBack: () => void }) => {
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Header với mã đơn hàng và status */}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+              <span className="text-sm font-bold text-gray-900">Mã đơn hàng: {order.id}</span>
+              <OrderStatusBadge status={order.status} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            onClick={onBack}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="w-2 h-2" />
+            Quay lại
+          </Button>
+        </div>
+
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-bold mb-3 pb-3 border-b border-gray-200 text-gray-900">
+              Thông tin khách hàng
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Ngày tạo:</span>
+                <span>{formatDate(order.created_at)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <User className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Tên người nhận:</span>
+                <span>{order.customer_name}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Phone className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Số điện thoại:</span>
+                <span>{order.customer_phone}</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-gray-700">
+                <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
+                <span className="font-medium">Địa chỉ:</span>
+                <span className="flex-1">{order.customer_address}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-bold mb-3 pb-3 border-b border-gray-200 text-gray-900">
+              Sản phẩm đã đặt
+            </h3>
+            <div className="space-y-3">
+              {order.items.map((item) => (
+                <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded"
+                    onError={(e) => {
+                      e.currentTarget.src = "https://via.placeholder.com/64x64?text=No+Image";
+                    }}
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm">{item.name}</h4>
+                    <p className="text-xs text-gray-600">
+                      {item.quantity} {item.unit} × {item.price.toLocaleString("vi-VN")}đ
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">
+                      {(item.price * item.quantity).toLocaleString("vi-VN")}đ
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Tổng tiền cước:</span>
+              <span className="text-base font-bold text-green-600">
+                {order.total_amount.toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   if (selectedOrder) {

@@ -2,17 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  X,
-  User,
-  Phone,
-  MapPin,
-  StickyNote,
-  ShoppingBag,
-  CheckCircle,
-  Building2,
-  Mail,
-} from "lucide-react";
+import { X, User, Phone, MapPin, StickyNote, ShoppingBag, CheckCircle, Building2, Mail } from "lucide-react";
 import type { CartItem } from "@/types/cart.type";
 import type { CreateOrderCustomerInfo } from "@/hooks/useOrders";
 import { useAddress } from "@/components/address/AddressContext";
