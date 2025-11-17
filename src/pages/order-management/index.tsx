@@ -4,7 +4,14 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useOrders } from "@/hooks/useOrders";
-import { Search, ChevronLeft, Phone, MapPin, Calendar, User } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  Phone,
+  MapPin,
+  Calendar,
+  User,
+} from "lucide-react";
 import type { Order } from "@/types/order";
 import { OrderList } from "@/components/order/OrderList";
 import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
@@ -32,7 +39,8 @@ export default function OrdersPage() {
     } catch (err: Error | unknown) {
       let message = "Không thể xác nhận đơn hàng.";
       if (err && typeof err === "object" && "response" in err) {
-        const response = (err as { response?: { data?: { message?: string } } }).response;
+        const response = (err as { response?: { data?: { message?: string } } })
+          .response;
         if (response?.data?.message) {
           message = response.data.message;
         }
@@ -59,7 +67,8 @@ export default function OrdersPage() {
     } catch (err: Error | unknown) {
       let message = "Không thể cập nhật trạng thái giao hàng.";
       if (err && typeof err === "object" && "response" in err) {
-        const response = (err as { response?: { data?: { message?: string } } }).response;
+        const response = (err as { response?: { data?: { message?: string } } })
+          .response;
         if (response?.data?.message) {
           message = response.data.message;
         }
@@ -86,7 +95,8 @@ export default function OrdersPage() {
     } catch (err: Error | unknown) {
       let message = "Không thể hủy đơn hàng.";
       if (err && typeof err === "object" && "response" in err) {
-        const response = (err as { response?: { data?: { message?: string } } }).response;
+        const response = (err as { response?: { data?: { message?: string } } })
+          .response;
         if (response?.data?.message) {
           message = response.data.message;
         }
@@ -135,7 +145,13 @@ export default function OrdersPage() {
   };
 
   // Component OrderDetailView
-  const OrderDetailView = ({ order, onBack }: { order: Order; onBack: () => void }) => {
+  const OrderDetailView = ({
+    order,
+    onBack,
+  }: {
+    order: Order;
+    onBack: () => void;
+  }) => {
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleDateString("vi-VN", {
@@ -153,7 +169,9 @@ export default function OrdersPage() {
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
-              <span className="text-sm font-bold text-gray-900">Mã đơn hàng: {order.id}</span>
+              <span className="text-sm font-bold text-gray-900">
+                Mã đơn hàng: {order.id}
+              </span>
               <OrderStatusBadge status={order.status} />
             </div>
           </CardContent>
@@ -208,19 +226,24 @@ export default function OrdersPage() {
             </h3>
             <div className="space-y-3">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded">
+                <div
+                  key={item.id}
+                  className="flex items-center gap-4 p-3 border border-gray-200 rounded"
+                >
                   <img
                     src={item.image}
                     alt={item.name}
                     className="w-16 h-16 object-cover rounded"
                     onError={(e) => {
-                      e.currentTarget.src = "https://via.placeholder.com/64x64?text=No+Image";
+                      e.currentTarget.src =
+                        "https://via.placeholder.com/64x64?text=No+Image";
                     }}
                   />
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm">{item.name}</h4>
                     <p className="text-xs text-gray-600">
-                      {item.quantity} {item.unit} × {item.price.toLocaleString("vi-VN")}đ
+                      {item.quantity} {item.unit} ×{" "}
+                      {item.price.toLocaleString("vi-VN")}đ
                     </p>
                   </div>
                   <div className="text-right">
@@ -237,7 +260,9 @@ export default function OrdersPage() {
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Tổng tiền cước:</span>
+              <span className="text-sm font-medium text-gray-700">
+                Tổng tiền cước:
+              </span>
               <span className="text-base font-bold text-green-600">
                 {order.total_amount.toLocaleString("vi-VN")}đ
               </span>

@@ -197,10 +197,10 @@ export interface Address {
   user_id: string;
   full_name: string;
   phone: string;
-  address: string;          // Street address
-  ward: string;             // Phường/Xã
-  district?: string;        // Quận/Huyện (optional - mô hình 2 cấp: chỉ có Tỉnh và Xã)
-  city: string;             // Tỉnh/Thành phố
+  address: string; // Street address
+  ward: string; // Phường/Xã
+  district?: string; // Quận/Huyện (optional - mô hình 2 cấp: chỉ có Tỉnh và Xã)
+  city: string; // Tỉnh/Thành phố
   zip_code?: string;
   is_default: boolean;
   is_active: boolean;
@@ -213,7 +213,7 @@ export interface CreateAddressDto {
   phone: string;
   address: string;
   ward: string;
-  district?: string;       // Optional - mô hình 2 cấp: chỉ có Tỉnh và Xã
+  district?: string; // Optional - mô hình 2 cấp: chỉ có Tỉnh và Xã
   city: string;
   zip_code?: string;
   is_default?: boolean;
@@ -234,4 +234,57 @@ export interface UpdateAddressDto {
 
 export interface AddressResponse {
   addresses: Address[];
+}
+
+// Notification Types
+export type NotificationType =
+  | "comment_reply"
+  | "order_update"
+  | "product_review"
+  | "system";
+
+export interface NotificationActor {
+  _id: string;
+  name: string;
+  avatar?: string;
+}
+
+export interface NotificationData {
+  _id: string;
+  user_id: string;
+  actor_id: string | NotificationActor;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string;
+  reference_id?: string;
+  reference_type?: string;
+  metadata?: Record<string, unknown>;
+  is_read: boolean;
+  is_hidden: boolean;
+  is_deleted: boolean;
+  read_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationsResponse {
+  notifications: NotificationData[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  unreadCount: number;
+}
+
+export interface UnreadCountResponse {
+  unreadCount: number;
+}
+
+export interface QueryNotificationParams {
+  page?: number;
+  limit?: number;
+  type?: NotificationType;
+  is_read?: boolean;
+  unread_only?: boolean;
 }

@@ -10,7 +10,11 @@ import { Link, useParams } from "react-router-dom";
 import ProductComments from "@/components/products/ProductComments";
 import ProductRatings from "@/components/products/ProductRatings";
 import { productService, bannerService } from "@/api";
-import { PRODUCT_PLACEHOLDER_IMAGE, getProductId, getProductImage } from "@/lib/constants";
+import {
+  PRODUCT_PLACEHOLDER_IMAGE,
+  getProductId,
+  getProductImage,
+} from "@/lib/constants";
 import { useCart } from "@/components/cart/CartContext";
 import SuggestedDishes from "@/components/products/SuggestedDishes";
 
@@ -48,12 +52,12 @@ export default function ProductDetail() {
           bannerService.getAllBanners(),
         ]);
 
-              console.log("✅ Product loaded:", productData);
-              console.log("✅ Banners loaded:", bannersData);
+        console.log("✅ Product loaded:", productData);
+        console.log("✅ Banners loaded:", bannersData);
 
-              setProduct(productData);
-              setBanners(bannersData || []);
-              setImageErrors({}); // Reset image errors khi load product mới
+        setProduct(productData);
+        setBanners(bannersData || []);
+        setImageErrors({}); // Reset image errors khi load product mới
       } catch (error: any) {
         console.error("❌ Error loading product:", error);
         console.error("❌ Error response:", error.response?.data);
@@ -90,18 +94,21 @@ export default function ProductDetail() {
 
   // Get product images
   // LƯU Ý: Backend có thể trả về image_primary là mảng [String] hoặc string
-  const getFirstImage = (img: string | string[] | undefined): string | undefined => {
+  const getFirstImage = (
+    img: string | string[] | undefined
+  ): string | undefined => {
     if (!img) return undefined;
     if (Array.isArray(img)) return img[0];
     return img;
   };
 
   const productImages = product
-    ? [
-        getFirstImage(product.image_primary) || getFirstImage(product.image_url),
+    ? ([
+        getFirstImage(product.image_primary) ||
+          getFirstImage(product.image_url),
         // Thêm các ảnh phụ từ mảng images
         ...(product.images || []),
-      ].filter(Boolean) as string[]
+      ].filter(Boolean) as string[])
     : [];
 
   // Keep active thumbnail in view (only scroll horizontally to avoid page jump)
@@ -219,9 +226,7 @@ export default function ProductDetail() {
           >
             <ChevronLeft className="w-3 h-3 text-gray-700" />
           </Link>
-          <h1 className="text-xl font-bold text-gray-800">
-            Quay Về
-          </h1>
+          <h1 className="text-xl font-bold text-gray-800">Quay Về</h1>
         </div>
       </div>
 
@@ -231,83 +236,98 @@ export default function ProductDetail() {
           <div className="space-y-2 lg:col-span-2">
             {/* Main Image */}
             {productImages.length > 0 && (
-            <div className="relative bg-white rounded-lg overflow-hidden border h-[60vh] max-h-screen">
-              <img
-                  src={imageErrors[selectedImage] ? PRODUCT_PLACEHOLDER_IMAGE : (productImages[selectedImage] || PRODUCT_PLACEHOLDER_IMAGE)}
+              <div className="relative bg-white rounded-lg overflow-hidden border h-[60vh] max-h-screen">
+                <img
+                  src={
+                    imageErrors[selectedImage]
+                      ? PRODUCT_PLACEHOLDER_IMAGE
+                      : productImages[selectedImage] ||
+                        PRODUCT_PLACEHOLDER_IMAGE
+                  }
                   alt={product.name}
-                className="w-full h-full object-contain p-6"
-                onError={() => {
-                  setImageErrors(prev => ({ ...prev, [selectedImage]: true }));
-                }}
-              />
-              {/* Navigation Buttons for main image */}
+                  className="w-full h-full object-contain p-6"
+                  onError={() => {
+                    setImageErrors((prev) => ({
+                      ...prev,
+                      [selectedImage]: true,
+                    }));
+                  }}
+                />
+                {/* Navigation Buttons for main image */}
                 {productImages.length > 1 && (
                   <>
-              <ScrollButton direction="left" onClick={goPrevImage} />
-              <ScrollButton direction="right" onClick={goNextImage} />
+                    <ScrollButton direction="left" onClick={goPrevImage} />
+                    <ScrollButton direction="right" onClick={goNextImage} />
                   </>
                 )}
-            </div>
+              </div>
             )}
 
             {/* Thumbnail Images */}
             {productImages.length > 1 && (
-            <div 
-              className="relative group/container"
-              onMouseEnter={() => setIsMouseOver(true)}
-              onMouseLeave={() => setIsMouseOver(false)}
-            >
-              {/* Scroll buttons - hiển thị khi hover */}
-              <div className="opacity-0 group-hover/container:opacity-100 transition-opacity">
-                {showLeftButton && (
+              <div
+                className="relative group/container"
+                onMouseEnter={() => setIsMouseOver(true)}
+                onMouseLeave={() => setIsMouseOver(false)}
+              >
+                {/* Scroll buttons - hiển thị khi hover */}
+                <div className="opacity-0 group-hover/container:opacity-100 transition-opacity">
+                  {showLeftButton && (
                     <ScrollButton
                       direction="left"
                       onClick={() => scroll("left")}
                     />
-                )}
-                {showRightButton && (
+                  )}
+                  {showRightButton && (
                     <ScrollButton
                       direction="right"
                       onClick={() => scroll("right")}
                     />
-                )}
-              </div>
+                  )}
+                </div>
 
-              <div
-                ref={thumbsRef}
-                className="flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-              >
+                <div
+                  ref={thumbsRef}
+                  className="flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
                   {productImages.map((image, index) => (
-                  <button
-                    key={index}
-                    data-thumb-index={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-40 h-40 rounded-lg overflow-hidden transition-all border-2 select-none ${
-                      selectedImage === index
-                        ? "border-green-500"
-                        : "border-transparent hover:border-gray-300"
-                    }`}
-                      style={{ userSelect: "none" }}
-                    onDragStart={(e) => e.preventDefault()}
-                  >
-                    <img
-                      src={imageErrors[index] ? PRODUCT_PLACEHOLDER_IMAGE : (image || PRODUCT_PLACEHOLDER_IMAGE)}
-                        alt={`${product.name} - ${index + 1}`}
-                      className={`w-full h-full object-cover transition-all select-none ${
+                    <button
+                      key={index}
+                      data-thumb-index={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`flex-shrink-0 w-40 h-40 rounded-lg overflow-hidden transition-all border-2 select-none ${
                         selectedImage === index
-                          ? "opacity-100"
-                          : "opacity-50 hover:opacity-70"
+                          ? "border-green-500"
+                          : "border-transparent hover:border-gray-300"
                       }`}
+                      style={{ userSelect: "none" }}
+                      onDragStart={(e) => e.preventDefault()}
+                    >
+                      <img
+                        src={
+                          imageErrors[index]
+                            ? PRODUCT_PLACEHOLDER_IMAGE
+                            : image || PRODUCT_PLACEHOLDER_IMAGE
+                        }
+                        alt={`${product.name} - ${index + 1}`}
+                        className={`w-full h-full object-cover transition-all select-none ${
+                          selectedImage === index
+                            ? "opacity-100"
+                            : "opacity-50 hover:opacity-70"
+                        }`}
                         style={{ userSelect: "none", pointerEvents: "none" }}
-                      draggable={false}
-                      onError={() => {
-                        setImageErrors(prev => ({ ...prev, [index]: true }));
-                      }}
-                    />
-                  </button>
-                ))}
+                        draggable={false}
+                        onError={() => {
+                          setImageErrors((prev) => ({
+                            ...prev,
+                            [index]: true,
+                          }));
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
             )}
           </div>
 
@@ -362,15 +382,15 @@ export default function ProductDetail() {
 
               {/* Special Offers */}
               {product.discount_percent > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <h3 className="font-semibold text-gray-900 mb-1.5 text-sm">
-                  🎁 ƯU ĐÃI ĐẶC BIỆT
-                </h3>
-                <ul className="space-y-1 text-xs text-gray-700">
-                  <li>• Mua 2 tặng 1 tiền</li>
-                  <li>• Giảm 10% cho đơn hàng từ 500.000₫</li>
-                </ul>
-              </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <h3 className="font-semibold text-gray-900 mb-1.5 text-sm">
+                    🎁 ƯU ĐÃI ĐẶC BIỆT
+                  </h3>
+                  <ul className="space-y-1 text-xs text-gray-700">
+                    <li>• Mua 2 tặng 1 tiền</li>
+                    <li>• Giảm 10% cho đơn hàng từ 500.000₫</li>
+                  </ul>
+                </div>
               )}
 
               {/* Shipping Info */}
@@ -406,9 +426,9 @@ export default function ProductDetail() {
 
         {/* Banners */}
         {banners.length > 0 && (
-        <div className="mt-4">
+          <div className="mt-4">
             <Banners banners={banners} />
-        </div>
+          </div>
         )}
 
         {/* Product Specifications */}
@@ -443,13 +463,13 @@ export default function ProductDetail() {
                 </tr>
                 {product.discount_percent > 0 && (
                   <tr className={product.unit ? "bg-white" : "bg-gray-50"}>
-                      <td className="py-3 px-4 font-medium text-gray-700 w-1/3">
+                    <td className="py-3 px-4 font-medium text-gray-700 w-1/3">
                       Giảm giá
                     </td>
                     <td className="py-3 px-4 text-gray-600">
                       {product.discount_percent}%
-                      </td>
-                    </tr>
+                    </td>
+                  </tr>
                 )}
                 <tr
                   className={
@@ -458,8 +478,8 @@ export default function ProductDetail() {
                         ? "bg-gray-50"
                         : "bg-white"
                       : product.unit
-                        ? "bg-white"
-                        : "bg-gray-50"
+                      ? "bg-white"
+                      : "bg-gray-50"
                   }
                 >
                   <td className="py-3 px-4 font-medium text-gray-700 w-1/3">
@@ -469,8 +489,8 @@ export default function ProductDetail() {
                     {product.stock_status === "in_stock"
                       ? "Còn hàng"
                       : product.stock_status === "out_of_stock"
-                        ? "Hết hàng"
-                        : "Đặt trước"}
+                      ? "Hết hàng"
+                      : "Đặt trước"}
                   </td>
                 </tr>
               </tbody>
@@ -494,7 +514,7 @@ export default function ProductDetail() {
 
       {/* Product Modal */}
       {product && (
-      <ProductModal
+        <ProductModal
           product={{
             ...product,
             // Compatibility fields
@@ -502,10 +522,10 @@ export default function ProductDetail() {
             stock_quantity: product.quantity,
             price: product.unit_price,
           }}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddToCart={handleAddToCart}
-      />
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onAddToCart={handleAddToCart}
+        />
       )}
     </div>
   );

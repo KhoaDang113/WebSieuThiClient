@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNotification } from "@/hooks/useNotification";
+import { NotificationDrawer } from "../notification/NotificationDrawer";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -253,7 +254,6 @@ export function Navbar() {
                 />
               </SheetContent>
             </Sheet>
-
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <img
@@ -270,7 +270,6 @@ export function Navbar() {
                 </p>
               </div>
             </Link>
-
             {/* Search bar */}
             <div className="flex-1 lg:ml-2" ref={searchContainerRef}>
               <form onSubmit={handleSearch} className="relative">
@@ -343,7 +342,6 @@ export function Navbar() {
                 )}
               </form>
             </div>
-
             {/* Shopping cart */}
             <button
               onClick={handleCartClick}
@@ -360,7 +358,12 @@ export function Navbar() {
                 </span>
               )}
             </button>
-
+            {/* Hiển thị thông báo (comment reply và order update) */}
+            <NotificationDrawer
+              filter={(n) =>
+                n.type === "comment_reply" || n.type === "order_update"
+              }
+            />
             {/* Actions */}
             <div className="flex gap-3 items-center justify-end">
               {/* 🟢 Tooltip cho địa chỉ (Desktop) */}
