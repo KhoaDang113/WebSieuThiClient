@@ -19,7 +19,7 @@ export default function CategoryProductsSection({
   categorySlug,
   isPromotion = false,
   page = 1,
-  limit = 10,
+  limit = 5, // Giới hạn hiển thị 5 sản phẩm
   onAddToCart,
 }: CategoryProductsSectionProps) {
   const [loading, setLoading] = useState(true);
@@ -121,6 +121,7 @@ export default function CategoryProductsSection({
       
       <CategorySection
         categoryName={title}
+        categorySlug={categorySlug}
         products={products}
         onAddToCart={onAddToCart}
       />

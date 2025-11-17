@@ -12,8 +12,8 @@ interface ApiProduct {
   price?: number | string;
   discount_percent?: number | string;
   final_price?: number;
-  image_primary?: string;
-  image_url?: string;
+  image_primary?: string | string[]; // Backend có thể trả về mảng [String]
+  image_url?: string | string[];
   image?: string;
   images?: string[];
   quantity?: number;
@@ -78,8 +78,13 @@ export const mapProductFromApi = (apiProduct: ApiProduct): Product => {
       typeof apiProduct.final_price === "number"
         ? apiProduct.final_price
         : Number(apiProduct.unit_price) || 0,
-    image_primary: apiProduct.image_primary || apiProduct.image_url || "",
-    image_url: apiProduct.image_primary || apiProduct.image_url || "",
+    // Xử lý image_primary: có thể là string hoặc mảng [String] từ backend
+    image_primary: Array.isArray(apiProduct.image_primary) 
+      ? apiProduct.image_primary[0] || ""
+      : apiProduct.image_primary || apiProduct.image_url || "",
+    image_url: Array.isArray(apiProduct.image_primary) 
+      ? apiProduct.image_primary[0] || ""
+      : apiProduct.image_primary || apiProduct.image_url || "",
     images: Array.isArray(apiProduct.images)
       ? apiProduct.images
       : apiProduct.image

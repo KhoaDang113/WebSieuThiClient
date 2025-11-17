@@ -38,7 +38,7 @@ export function ProductModal({
 
       try {
         setLoadingRelated(true);
-        const related = await productService.getRelatedProducts(productId, 5);
+        const related = await productService.getRelatedProducts(productId, 4);
         setRelatedProducts(related);
         setRelatedImageErrors({}); // Reset related image errors khi load lại
       } catch (error) {
@@ -78,68 +78,115 @@ export function ProductModal({
     }
   };
 
-  const createFlyingAnimation = () => {
-    if (!productImageRef.current) return;
+  const createFlyingAnimation = (imageElement: HTMLElement | null, productImage: string) => {
+    if (!imageElement) {
+      console.warn('Image element not found for flying animation');
+      return;
+    }
 
-    const imgRect = productImageRef.current.getBoundingClientRect();
+    const imgRect = imageElement.getBoundingClientRect();
     const cartIcon = document.querySelector('[data-cart-icon]');
     
-    if (!cartIcon) return;
+    if (!cartIcon) {
+      console.warn('Cart icon not found with data-cart-icon attribute');
+      // Thử tìm bằng cách khác nếu không tìm thấy
+      const fallbackCart = document.querySelector('button[aria-label*="Giỏ hàng"]') || 
+                          document.querySelector('button[aria-label*="Cart"]');
+      if (!fallbackCart) {
+        console.error('Cannot find cart icon for animation');
+        return;
+      }
+      const cartRect = fallbackCart.getBoundingClientRect();
+      animateToCart(imageElement, imgRect, cartRect, productImage);
+      return;
+    }
 
     const cartRect = cartIcon.getBoundingClientRect();
+    animateToCart(imageElement, imgRect, cartRect, productImage);
+  };
 
+  const animateToCart = (
+    imageElement: HTMLElement,
+    imgRect: DOMRect,
+    cartRect: DOMRect,
+    productImage: string
+  ) => {
     // Tạo clone của hình ảnh
     const flyingImg = document.createElement('img');
-    flyingImg.src = getProductImage(product);
+    flyingImg.src = productImage;
     flyingImg.style.position = 'fixed';
     flyingImg.style.left = `${imgRect.left}px`;
     flyingImg.style.top = `${imgRect.top}px`;
     flyingImg.style.width = `${imgRect.width}px`;
     flyingImg.style.height = `${imgRect.height}px`;
-    flyingImg.style.zIndex = '9999';
+    flyingImg.style.zIndex = '99999';
     flyingImg.style.transition = 'all 0.8s cubic-bezier(0.45, 0, 0.55, 1)';
     flyingImg.style.pointerEvents = 'none';
     flyingImg.style.objectFit = 'contain';
+    flyingImg.style.borderRadius = '8px';
+    flyingImg.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
 
     document.body.appendChild(flyingImg);
 
     // Trigger animation sau một frame để CSS transition hoạt động
     requestAnimationFrame(() => {
-      flyingImg.style.left = `${cartRect.left + cartRect.width / 2}px`;
-      flyingImg.style.top = `${cartRect.top + cartRect.height / 2}px`;
-      flyingImg.style.width = '0px';
-      flyingImg.style.height = '0px';
-      flyingImg.style.opacity = '0.5';
+      requestAnimationFrame(() => {
+        flyingImg.style.left = `${cartRect.left + cartRect.width / 2}px`;
+        flyingImg.style.top = `${cartRect.top + cartRect.height / 2}px`;
+        flyingImg.style.width = '0px';
+        flyingImg.style.height = '0px';
+        flyingImg.style.opacity = '0.5';
+      });
     });
 
     // Xóa element sau khi animation xong
     setTimeout(() => {
-      document.body.removeChild(flyingImg);
+      if (document.body.contains(flyingImg)) {
+        document.body.removeChild(flyingImg);
+      }
     }, 800);
   };
 
   const handleComplete = () => {
-    // Tạo hiệu ứng bay vào giỏ hàng
-    createFlyingAnimation();
+    // Tạo hiệu ứng bay vào giỏ hàng cho sản phẩm chính
+    createFlyingAnimation(productImageRef.current, getProductImage(product));
     
-    // Delay một chút để animation diễn ra trước khi thực hiện các hành động
+    // Delay để animation sản phẩm chính diễn ra trước khi thêm sản phẩm
     setTimeout(() => {
       // Thêm sản phẩm chính vào giỏ hàng
-      onAddToCart(product, quantity);
+      if (quantity > 0) {
+        onAddToCart(product, quantity);
+      }
       
-      // Thêm các sản phẩm liên quan có số lượng > 0 vào giỏ hàng
+      // Thêm các sản phẩm liên quan có số lượng > 0 vào giỏ hàng với hiệu ứng
+      let delay = 200; // Delay giữa các animation
       Object.entries(relatedQuantities).forEach(([productId, qty]) => {
         if (qty > 0) {
           const relatedProduct = relatedProducts.find(p => getProductId(p) === productId);
           if (relatedProduct) {
-            onAddToCart(relatedProduct, qty);
+            setTimeout(() => {
+              // Tìm hình ảnh của sản phẩm liên quan
+              const relatedImageElement = document.querySelector(`[data-related-product-image="${productId}"]`) as HTMLElement;
+              if (relatedImageElement) {
+                createFlyingAnimation(relatedImageElement, getProductImage(relatedProduct));
+              }
+              
+              // Thêm sản phẩm vào giỏ hàng sau khi animation bắt đầu
+              setTimeout(() => {
+                onAddToCart(relatedProduct, qty);
+              }, 400);
+            }, delay);
+            delay += 200; // Tăng delay cho sản phẩm tiếp theo
           }
         }
       });
       
-      onClose();
-      setQuantity(1);
-      setRelatedQuantities({});
+      // Đóng modal sau khi tất cả animation hoàn thành
+      setTimeout(() => {
+        onClose();
+        setQuantity(1);
+        setRelatedQuantities({});
+      }, delay + 800);
     }, 400);
   };
 
@@ -168,10 +215,13 @@ export function ProductModal({
     
     const stockQuantity = relatedProduct.quantity || relatedProduct.stock_quantity || 0;
     if (currentQuantity > 0 && stockQuantity > 0) {
-      // Tạo hiệu ứng bay vào giỏ hàng cho sản phẩm liên quan
-      createFlyingAnimation();
+      // Tìm hình ảnh của sản phẩm liên quan để tạo hiệu ứng bay
+      const relatedImageElement = document.querySelector(`[data-related-product-image="${relatedProductId}"]`) as HTMLElement;
+      if (relatedImageElement) {
+        createFlyingAnimation(relatedImageElement, getProductImage(relatedProduct));
+      }
       
-      // Thêm sản phẩm liên quan vào giỏ hàng ngay lập tức
+      // Thêm sản phẩm liên quan vào giỏ hàng sau khi animation bắt đầu
       setTimeout(() => {
         onAddToCart(relatedProduct, currentQuantity);
         
@@ -236,11 +286,13 @@ export function ProductModal({
                     )}
                   </span>
                  
-                  {hasDiscount && (
+                  {hasDiscount && product.unit_price && product.final_price && product.unit_price > product.final_price && (
                     <>
                       <span className="text-base text-gray-400 line-through">
                         {formatPrice(product.unit_price)}
-                        {product.quantity && `/${product.quantity}`}
+                        {product.unit && (
+                          <span className="text-base">/{product.unit}</span>
+                        )}
                       </span>
                       <Badge className="bg-red-600 text-white">
                         -{product.discount_percent}%
@@ -302,7 +354,7 @@ export function ProductModal({
                 Không có sản phẩm liên quan
               </div>
             ) : (
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
+              <div className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 scroll-smooth snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', msOverflowStyle: '-ms-autohiding-scrollbar' }}>
             {relatedProducts.map((relatedProduct) => {
                   const relatedProductId = getProductId(relatedProduct);
                   const currentQuantity = relatedQuantities[relatedProductId] || 0;
@@ -314,6 +366,7 @@ export function ProductModal({
                   {/* Product Image */}
                       <div className="relative h-28 flex-shrink-0">
                     <img
+                          data-related-product-image={relatedProductId}
                           src={relatedImageErrors[relatedProductId] ? PRODUCT_PLACEHOLDER_IMAGE : relatedImageUrl}
                       alt={relatedProduct.name}
                           className="w-full h-full object-contain bg-gray-50"
@@ -340,10 +393,13 @@ export function ProductModal({
                             <span className="text-sm font-bold text-red-600 leading-tight">
                               {formatPrice(relatedProduct.final_price || relatedProduct.unit_price)}
                         </span>
-                        {relatedProduct.discount_percent > 0 && (
+                        {relatedProduct.discount_percent > 0 && relatedProduct.unit_price && relatedProduct.final_price && relatedProduct.unit_price > relatedProduct.final_price && (
                               <div className="flex items-center gap-1 flex-wrap">
                                 <span className="text-[10px] text-gray-400 line-through">
                               {formatPrice(relatedProduct.unit_price)}
+                                  {relatedProduct.unit && (
+                                    <span className="text-[10px]">/{relatedProduct.unit}</span>
+                                  )}
                             </span>
                                 <Badge className="bg-red-600 text-white text-[10px] px-1 py-0.5 leading-tight">
                               -{relatedProduct.discount_percent}%

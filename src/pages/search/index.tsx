@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Loader2, PackageSearch, ChevronLeft, Filter, X, ChevronDown } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Loader2, PackageSearch, ChevronDown } from "lucide-react";
 import { productService, categoryService, brandService } from "@/api";
 import type { Product } from "@/types/product.type";
 import type { Category } from "@/types/category.type";
@@ -223,18 +223,9 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-50 w-full">
-      <div className="bg-white border-b border-gray-200/60 shadow-sm sticky top-0 z-10">
-        <div className="w-full px-3 sm:px-6 py-3 flex items-center">
-          <Link to="/" className="mr-4 hover:bg-gray-100 p-2 rounded-full transition-colors" aria-label="Quay lại trang chủ">
-            <ChevronLeft className="w-3 h-3 text-gray-700" />
-          </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Tìm Kiếm</h1>
-        </div>
-      </div>
-
-      <div className="w-full py-4 lg:py-6">
+      <div className="w-full">
         {error && (
-          <div className="px-3 sm:px-6 mb-4">
+          <div className="px-4 sm:px-6 mb-4 pt-4">
             <div className="rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-700 shadow-sm">
               {error}
             </div>
@@ -243,8 +234,8 @@ export default function SearchPage() {
 
         {/* Filters */}
         {queryParam && (
-          <div className="mb-4 px-3 sm:px-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="mb-4">
+            <div className="bg-white shadow-sm border-t border-b border-gray-200 p-4 w-full">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -358,7 +349,7 @@ export default function SearchPage() {
         )}
 
         {shouldShowEmptyState && (
-          <div className="px-3 sm:px-6 rounded-2xl border border-dashed border-green-100 bg-green-50/60 py-10 text-center shadow-inner">
+          <div className="px-4 sm:px-6 py-10 text-center">
             <PackageSearch className="mx-auto h-12 w-12 text-green-500" />
             <h2 className="mt-4 text-lg font-semibold text-gray-800">
               Nhập từ khóa vào thanh tìm kiếm phía trên
@@ -379,7 +370,7 @@ export default function SearchPage() {
         )}
 
         {shouldShowNoResults && (
-          <div className="px-3 sm:px-6 rounded-2xl border border-gray-200 bg-gray-50 py-10 text-center shadow-inner">
+          <div className="px-4 sm:px-6 py-10 text-center">
             <PackageSearch className="mx-auto h-12 w-12 text-gray-400" />
             <h2 className="mt-4 text-lg font-semibold text-gray-800">
               Không tìm thấy sản phẩm phù hợp
@@ -398,19 +389,9 @@ export default function SearchPage() {
         )}
 
         {!isInitialLoading && products.length > 0 && (
-          <div className="px-3 sm:px-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="relative bg-gradient-to-r from-green-50 to-white py-4 sm:py-5 border-b-2 border-green-100">
-                <div className="flex justify-center">
-                  <div className="inline-flex items-center justify-center rounded-full bg-white border-2 border-green-600 px-6 sm:px-10 py-2.5 shadow-md max-w-full">
-                    <h2 className="text-base sm:text-xl font-bold text-green-700 text-center uppercase tracking-wide max-w-full truncate px-2">
-                      {queryParam || "Kết quả tìm kiếm"}
-                    </h2>
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
+          <div>
+            <div className="bg-white shadow-sm border-b border-gray-200 overflow-hidden w-full">
+              <div className="p-4 flex flex-col gap-4">
                 <div className="text-sm text-gray-500">
                   {`Đang hiển thị ${products.length} sản phẩm${queryParam ? ` cho từ khóa "${queryParam}"` : ""}.`}
                 </div>

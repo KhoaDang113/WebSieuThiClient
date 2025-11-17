@@ -9,7 +9,7 @@ export interface Product {
   unit_price: number;
   discount_percent: number;
   final_price?: number;
-  image_primary?: string; // Ảnh chính (single string, not array)
+  image_primary?: string | string[]; // Ảnh chính (có thể là string hoặc mảng [String] từ backend)
   images?: string[]; // Mảng ảnh phụ
   quantity: number; // Số lượng trong kho (số) - optional for backward compatibility
   stock_quantity?: number; // Alias for quantity (BE compatibility)

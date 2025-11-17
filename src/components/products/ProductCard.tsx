@@ -42,8 +42,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <>
       <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:border-green-300 hover:shadow-2xl h-full">
-        {/* Badges Container */}
-        <div className="absolute left-2 top-2 z-10 flex flex-col gap-1.5">
+        {/* Badges Container - Right side */}
+        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1.5">
           {hasDiscount && product.discount_percent >= 15 && (
             <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg border-0 px-2.5 py-1 animate-pulse">
               <Flame className="mr-1 h-3.5 w-3.5 animate-bounce" />
@@ -108,7 +108,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </div>
 
             {/* Original Price with Discount Badge */}
-            {hasDiscount && (
+            {hasDiscount && product.unit_price && product.final_price && product.unit_price > product.final_price && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 line-through">
                   {formatPrice(product.unit_price)}
