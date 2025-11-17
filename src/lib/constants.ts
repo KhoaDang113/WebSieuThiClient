@@ -157,26 +157,55 @@ export const PRODUCT_PLACEHOLDER_IMAGE =
 /**
  * Helper function để lấy ảnh sản phẩm
  * Ưu tiên: image_primary > image_url > images[0] > placeholder
- * Kiểm tra cả null, undefined, string rỗng, và kiểu dữ liệu
+ * Kiểm tra cả null, undefined, string rỗng, mảng, và kiểu dữ liệu
+ * 
+ * LƯU Ý: Backend lưu image_primary là mảng [String] trong MongoDB schema,
+ * nhưng có thể trả về dưới dạng string hoặc mảng tùy cách serialize
  */
 export const getProductImage = (product: {
-  image_primary?: string | null | unknown;
-  image_url?: string | null | unknown;
+  image_primary?: string | string[] | null | unknown;
+  image_url?: string | string[] | null | unknown;
   images?: string[] | null;
 }): string => {
-  // Kiểm tra image_primary: chỉ chấp nhận string hợp lệ
-  if (product.image_primary && typeof product.image_primary === 'string') {
-    const trimmed = product.image_primary.trim();
-    if (trimmed !== '') {
-      return product.image_primary;
+  // Kiểm tra image_primary: hỗ trợ cả string và mảng
+  if (product.image_primary) {
+    // Nếu là mảng, lấy phần tử đầu tiên
+    if (Array.isArray(product.image_primary)) {
+      const firstImage = product.image_primary[0];
+      if (firstImage && typeof firstImage === 'string') {
+        const trimmed = firstImage.trim();
+        if (trimmed !== '') {
+          return firstImage;
+        }
+      }
+    }
+    // Nếu là string
+    else if (typeof product.image_primary === 'string') {
+      const trimmed = product.image_primary.trim();
+      if (trimmed !== '') {
+        return product.image_primary;
+      }
     }
   }
   
-  // Kiểm tra image_url: chỉ chấp nhận string hợp lệ
-  if (product.image_url && typeof product.image_url === 'string') {
-    const trimmed = product.image_url.trim();
-    if (trimmed !== '') {
-      return product.image_url;
+  // Kiểm tra image_url: hỗ trợ cả string và mảng
+  if (product.image_url) {
+    // Nếu là mảng, lấy phần tử đầu tiên
+    if (Array.isArray(product.image_url)) {
+      const firstImage = product.image_url[0];
+      if (firstImage && typeof firstImage === 'string') {
+        const trimmed = firstImage.trim();
+        if (trimmed !== '') {
+          return firstImage;
+        }
+      }
+    }
+    // Nếu là string
+    else if (typeof product.image_url === 'string') {
+      const trimmed = product.image_url.trim();
+      if (trimmed !== '') {
+        return product.image_url;
+      }
     }
   }
   

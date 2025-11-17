@@ -349,6 +349,7 @@ export function Navbar() {
               onClick={handleCartClick}
               className="relative cursor-pointer p-2 text-white hover:bg-white/10 rounded-full transition-colors duration-200 flex-shrink-0"
               aria-label="Giỏ hàng"
+              data-cart-icon
             >
               <ShoppingCart className="w-6 h-6" />
               {isAuthenticated && totalItems > 0 && (

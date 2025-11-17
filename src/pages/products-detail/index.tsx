@@ -89,9 +89,17 @@ export default function ProductDetail() {
   };
 
   // Get product images
+  // LƯU Ý: Backend có thể trả về image_primary là mảng [String] hoặc string
+  const getFirstImage = (img: string | string[] | undefined): string | undefined => {
+    if (!img) return undefined;
+    if (Array.isArray(img)) return img[0];
+    return img;
+  };
+
   const productImages = product
     ? [
-        product.image_primary || product.image_url,
+        getFirstImage(product.image_primary) || getFirstImage(product.image_url),
+        // Thêm các ảnh phụ từ mảng images
         ...(product.images || []),
       ].filter(Boolean) as string[]
     : [];

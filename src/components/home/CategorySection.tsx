@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { ProductCard } from "@/components/products/ProductCard";
 import Banners from "@/components/productPage/banner/Banners";
 import type { Product } from "@/types/product.type";
@@ -5,6 +6,7 @@ import type { Banner } from "@/types/banner.type";
 
 interface CategorySectionProps {
   categoryName: string;
+  categorySlug?: string; // Thêm categorySlug để dùng trong link
   products: Product[];
   banners?: Banner[];
   onAddToCart?: (product: Product) => void;
@@ -12,6 +14,7 @@ interface CategorySectionProps {
 
 export default function CategorySection({
   categoryName,
+  categorySlug,
   products,
   banners,
   onAddToCart,
@@ -32,11 +35,11 @@ export default function CategorySection({
         </div>
 
         {/* Products Grid - Inside the frame */}
-        <div className="p-4 sm:p-6">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {products.slice(0, 10).map((product) => (
+            {products.slice(0, 5).map((product) => (
               <ProductCard
-                key={product.id}
+                key={product.id || product._id}
                 product={product}
                 onAddToCart={onAddToCart}
               />
@@ -44,14 +47,13 @@ export default function CategorySection({
           </div>
         </div>
 
-        {/* View More Link - Inside frame at bottom */}
-        {products.length > 10 && (
-          <div className="px-4 sm:px-6 pb-4 sm:pb-5 pt-0 bg-gray-50 border-t border-gray-100">
-            <a
-              href={`/products?category=${categoryName
-                .toLowerCase()
-                .replace(/\s+/g, "-")}`}
-              className="inline-flex items-center text-green-700 hover:text-green-800 font-semibold text-sm sm:text-base transition-colors duration-200 group"
+        {/* View More Link - Inside frame at bottom, sát bên dưới sản phẩm */}
+        {/* Luôn hiển thị nút "Xem thêm" nếu có categorySlug */}
+        {categorySlug && (
+          <div className="px-4 sm:px-6 pb-4 sm:pb-5 pt-3 sm:pt-4 bg-gray-50 border-t border-gray-100 flex justify-center">
+            <Link
+              to={`/products?category=${categorySlug}`}
+              className="inline-flex items-center text-gray-700 hover:text-green-700 font-semibold text-sm sm:text-base transition-colors duration-200 group"
             >
               <span>Xem thêm {categoryName}</span>
               <svg 
@@ -62,7 +64,7 @@ export default function CategorySection({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
           </div>
         )}
       </div>
