@@ -148,13 +148,13 @@ export default function Banners({ banners }: { banners: Banner[] }) {
 
       <div
         ref={scrollContainerRef}
-        className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:rounded-lg snap-x snap-mandatory"
+        className="w-full max-w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:rounded-lg snap-x snap-mandatory"
       >
         <div className="flex flex-row gap-4">
           {banners.map((banner: Banner) => (
             <div
               key={banner.id}
-              className="flex-shrink-0 w-full snap-center snap-always"
+              className="flex-shrink-0 w-full max-w-full snap-center snap-always"
             >
               <BannerComponent banner={banner} />
             </div>
