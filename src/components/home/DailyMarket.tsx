@@ -88,11 +88,16 @@ export default function DailyMarket() {
     product: Product & { selectedQuantity?: number }
   ) => {
     const productId = typeof product.id === "string" ? product.id : product._id;
+    const imageUrl = product.image_url || 
+      (Array.isArray(product.image_primary) 
+        ? product.image_primary[0] 
+        : product.image_primary) || "";
+    
     addToCart({
       id: productId || product._id,
       name: product.name,
       price: product.final_price || product.unit_price,
-      image: product.image_url || product.image_primary || "",
+      image: imageUrl,
       unit: product.unit || "1 sản phẩm",
       quantity: product.selectedQuantity || 1,
     });

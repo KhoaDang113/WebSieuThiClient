@@ -114,11 +114,16 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     product: Product & { selectedQuantity?: number }
   ) => {
     const productId = typeof product.id === "string" ? product.id : product._id;
+    const imageUrl = product.image_url || 
+      (Array.isArray(product.image_primary) 
+        ? product.image_primary[0] 
+        : product.image_primary) || "";
+    
     addToCart({
       id: productId || product._id,
       name: product.name,
       price: product.final_price || product.unit_price,
-      image: product.image_url || product.image_primary || "",
+      image: imageUrl,
       unit: product.unit || "1 sản phẩm",
       quantity: product.selectedQuantity || 1,
     });
@@ -240,10 +245,10 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
             {suggestedDishes.map((combo) => (
               <div
                 key={combo._id}
-                className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
+                className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200 flex flex-col h-full"
               >
                 {/* Image */}
-                <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center p-2">
+                <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center p-2 flex-shrink-0">
                   <img
                     src={combo.image || combo.image_url}
                     alt={combo.name}
@@ -252,12 +257,12 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
                 </div>
 
                 {/* Content */}
-                <div className="p-3">
-                  <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1 line-clamp-2">
+                <div className="p-3 flex flex-col flex-1">
+                  <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1 line-clamp-2 flex-1">
                     {combo.name}
                   </h3>
 
-                  {/* Button */}
+                  {/* Button - Always at bottom */}
                   <button
                     onClick={() => handleBuyIngredients(combo)}
                     className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-medium py-2 rounded-md transition-colors"

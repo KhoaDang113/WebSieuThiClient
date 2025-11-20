@@ -69,25 +69,29 @@ export async function getIngredientsForDish(
     const model = "gemini-2.0-flash";
 
     const prompt = `
-Bạn là một trợ lý ẩm thực chuyên nghiệp. Hãy phân tích món ăn "${dishName}" và trả về danh sách nguyên liệu cần thiết.
+Bạn là một đầu bếp chuyên nghiệp Việt Nam. Hãy phân tích món ăn "${dishName}" và liệt kê CHÍNH XÁC các nguyên liệu CHÍNH cần thiết để nấu món này.
 
-QUAN TRỌNG: Bạn CHỈ ĐƯỢC chọn nguyên liệu từ danh sách sản phẩm CÓ SẴN dưới đây. KHÔNG ĐƯỢC tự ý thêm nguyên liệu không có trong danh sách.
-
-DANH SÁCH SẢN PHẨM CÓ SẴN:
+DANH SÁCH NGUYÊN LIỆU CÓ SẴN TRONG KHO:
 ${productList}
 
-YÊU CẦU:
-1. Phân tích món "${dishName}" và liệt kê các nguyên liệu cần thiết
-2. CHỈ chọn nguyên liệu từ danh sách trên
-3. Nếu không tìm thấy nguyên liệu chính xác, hãy chọn nguyên liệu tương tự nhất
-4. Gợi ý số lượng phù hợp cho 2-3 người ăn
+YÊU CẦU BẮT BUỘC:
+1. CHỈ chọn nguyên liệu TỪ DANH SÁCH TRÊN - TUYỆT ĐỐI KHÔNG tự ý thêm nguyên liệu không có
+2. Chọn CHÍNH XÁC tên sản phẩm giống trong danh sách (không thêm bớt chữ)
+3. Chỉ chọn nguyên liệu CHÍNH của món (thịt, rau, cá, trứng...), KHÔNG chọn gia vị nhỏ
+4. Gợi ý số lượng hợp lý cho 2-3 người ăn (ví dụ: 500g, 1 gói, 2 quả...)
+5. Tối đa 5-7 nguyên liệu CHÍNH, không liệt kê quá nhiều
 
-Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự đặc biệt):
+VÍ DỤ:
+- Món "Thịt kho tàu" → chọn: thịt ba chỉ, trứng, nước mắm (KHÔNG chọn đường, tiêu...)
+- Món "Canh chua cá" → chọn: cá, cà chua, dứa, rau ngổ (KHÔNG chọn muối, mắm...)
+- Món "Gà xào sả ớt" → chọn: thịt gà, ớt, sả, hành (KHÔNG chọn dầu ăn, nước mắm...)
+
+Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự đặc biệt):
 [
   {
-    "name": "Tên sản phẩm từ danh sách",
-    "quantity": "Số lượng gợi ý",
-    "note": "Ghi chú ngắn gọn"
+    "name": "Tên chính xác của sản phẩm trong danh sách",
+    "quantity": "Số lượng cụ thể",
+    "note": "Ghi chú ngắn"
   }
 ]
 `;
@@ -166,6 +170,177 @@ Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự
 }
 
 /**
+ * Kiểm tra xem sản phẩm có phải là nguyên liệu nấu ăn (thịt, trứng, cá, rau củ) hay không
+ * @param productName - Tên sản phẩm
+ * @returns boolean - true nếu là nguyên liệu nấu ăn, false nếu không
+ */
+export function isCookingIngredient(productName: string): boolean {
+  const lowerName = productName.toLowerCase().trim();
+
+  // Danh sách từ khóa của nguyên liệu nấu ăn
+  const cookingKeywords = [
+    // Thịt
+    "thịt",
+    "ba chỉ",
+    "ba rọi",
+    "sườn",
+    "nạc",
+    "vai",
+    "đùi",
+    "gà",
+    "vịt",
+    "bò",
+    "heo",
+    "lợn",
+    "dê",
+    "cừu",
+    "ngan",
+    "chim",
+    "ức gà",
+    "cánh gà",
+    "móng giò",
+    "giò heo",
+    "thăn",
+    "xương",
+    "gân",
+    "sụn",
+
+    // Cá và hải sản
+    "cá",
+    "tôm",
+    "mực",
+    "bạch tuộc",
+    "nghêu",
+    "sò",
+    "hào",
+    "cua",
+    "ghẹ",
+    "ốc",
+    "hến",
+    "ngao",
+
+    // Trứng
+    "trứng",
+
+    // Rau củ
+    "rau",
+    "cải",
+    "xà lách",
+    "cải thảo",
+    "bắp cải",
+    "su hào",
+    "củ",
+    "khoai",
+    "cà rót",
+    "cà chua",
+    "cà tím",
+    "ớt",
+    "hành",
+    "tỏi",
+    "gừng",
+    "sả",
+    "củ cải",
+    "cà rốt",
+    "bí",
+    "bầu",
+    "mướp",
+    "đậu",
+    "măng",
+    "nấm",
+    "súp lơ",
+    "súp lơ xanh",
+    "bông cải",
+    "cần",
+    "rau muống",
+    "rau dền",
+    "mồng tơi",
+    "ngọn bí",
+    "lá",
+    "rau má",
+    "rau răm",
+    "húng",
+    "ngò",
+    "mùi",
+    "kinh giới",
+    "tía tô",
+  ];
+
+  // Danh sách từ khóa KHÔNG phải nguyên liệu nấu ăn (để loại trừ)
+  const nonCookingKeywords = [
+    // Hoa quả
+    "táo",
+    "chuối",
+    "cam",
+    "quýt",
+    "bưởi",
+    "xoài",
+    "dưa",
+    "dừa",
+    "ổi",
+    "mít",
+    "sầu riêng",
+    "chôm chôm",
+    "nhãn",
+    "vải",
+    "thanh long",
+    "măng cụt",
+    "mận",
+    "lê",
+    "nho",
+    "dâu",
+    "kiwi",
+    "bơ",
+
+    // Gia vị đóng gói / sẵn
+    "nước mắm",
+    "tương",
+    "dầu ăn",
+    "nước tương",
+    "mì chính",
+    "bột",
+    "hạt nêm",
+    "dầu",
+    "giấm",
+    "đường",
+    "muối",
+    "tiêu",
+
+    // Đồ uống
+    "nước",
+    "coca",
+    "pepsi",
+    "sting",
+    "trà",
+    "cà phê",
+    "sữa",
+    "yogurt",
+    "bia",
+    "rượu",
+
+    // Đồ ăn vặt / Snack
+    "kẹo",
+    "bánh",
+    "snack",
+    "mứt",
+  ];
+
+  // Kiểm tra có từ khóa KHÔNG phải nguyên liệu nấu ăn
+  const hasNonCookingKeyword = nonCookingKeywords.some((keyword) =>
+    lowerName.includes(keyword)
+  );
+  if (hasNonCookingKeyword) {
+    return false;
+  }
+
+  // Kiểm tra có từ khóa nguyên liệu nấu ăn
+  const hasCookingKeyword = cookingKeywords.some((keyword) =>
+    lowerName.includes(keyword)
+  );
+
+  return hasCookingKeyword;
+}
+
+/**
  * Gọi Gemini API để lấy danh sách món ăn gợi ý dựa trên tên sản phẩm
  * @param productName - Tên sản phẩm (ví dụ: "Thịt ba chỉ", "Ức gà", "Cánh gà")
  * @returns Promise<MenuCombo[]> - Danh sách món ăn gợi ý từ database
@@ -174,6 +349,16 @@ export async function getSuggestedDishesForProduct(
   productName: string
 ): Promise<MenuCombo[]> {
   try {
+    // Kiểm tra xem sản phẩm có phải là nguyên liệu nấu ăn không
+    if (!isCookingIngredient(productName)) {
+      console.log(
+        `⚠️ "${productName}" không phải là nguyên liệu nấu ăn, không gợi ý món ăn`
+      );
+      return [];
+    }
+
+    console.log(`✅ "${productName}" là nguyên liệu nấu ăn, đang gợi ý món...`);
+
     // Lấy tất cả combos từ database
     const allCombos = await comboService.getCombos();
 
@@ -188,24 +373,29 @@ export async function getSuggestedDishesForProduct(
     const model = "gemini-2.0-flash";
 
     const prompt = `
-Bạn là một trợ lý ẩm thực chuyên nghiệp. Hãy gợi ý các món ăn phù hợp có thể nấu với nguyên liệu "${productName}".
+Bạn là một đầu bếp chuyên nghiệp Việt Nam với nhiều năm kinh nghiệm. Hãy gợi ý các món ăn Việt Nam phù hợp nhất có thể nấu với nguyên liệu "${productName}".
 
-QUAN TRỌNG: Bạn CHỈ ĐƯỢC chọn món ăn từ danh sách MÓN ĂN CÓ SẴN dưới đây. KHÔNG ĐƯỢC tự ý thêm món ăn không có trong danh sách.
-
-DANH SÁCH MÓN ĂN CÓ SẴN:
+DANH SÁCH MÓN ĂN CÓ SẴN TRONG HỆ THỐNG:
 ${comboNames}
 
-YÊU CẦU:
-1. Phân tích xem "${productName}" có thể dùng để nấu món gì
-2. CHỈ chọn từ danh sách món ăn trên (chọn từ 3-5 món)
-3. Chọn những món ăn PHỔ BIẾN và PHÙNG HỢP NHẤT với nguyên liệu "${productName}"
-4. Ưu tiên những món ăn mà "${productName}" là nguyên liệu CHÍNH
+YÊU CẦU BẮT BUỘC:
+1. CHỈ chọn món ăn TỪ DANH SÁCH TRÊN - KHÔNG ĐƯỢC tự ý thêm món không có trong danh sách
+2. Chọn TẤT CẢ món ăn PHÙ HỢP với nguyên liệu "${productName}"
+3. Ưu tiên những món mà "${productName}" là nguyên liệu CHÍNH hoặc QUAN TRỌNG
+4. Chọn những món ăn PHỔ BIẾN và DỄ NẤU
+5. Đảm bảo tên món CHÍNH XÁC giống trong danh sách (không thêm bớt chữ)
 
-Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự đặc biệt):
+LƯU Ý: 
+- Nếu "${productName}" là thịt → chọn món có thịt làm chính
+- Nếu "${productName}" là rau → chọn món xào rau, canh rau
+- Nếu "${productName}" là cá/hải sản → chọn món cá, hải sản
+- Nếu "${productName}" là trứng → chọn món có trứng
+
+Trả về CHÍNH XÁC định dạng JSON sau (KHÔNG thêm markdown \`\`\`json hay ký tự đặc biệt):
 [
-  "Tên món ăn 1 từ danh sách",
-  "Tên món ăn 2 từ danh sách",
-  "Tên món ăn 3 từ danh sách"
+  "Tên món ăn 1",
+  "Tên món ăn 2",
+  "Tên món ăn 3"
 ]
 `;
 
@@ -237,7 +427,7 @@ Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự
     }
 
     const suggestedDishNames: string[] = JSON.parse(jsonText);
-    console.log("🤖 AI suggested dishes:", suggestedDishNames);
+    console.log(" AI suggested dishes:", suggestedDishNames);
 
     // Tìm combo khớp với tên món ăn gợi ý
     const suggestedCombos: MenuCombo[] = [];
@@ -258,8 +448,8 @@ Trả về theo định dạng JSON như sau (KHÔNG thêm markdown hay ký tự
       }
     }
 
-    console.log("✅ Matched combos from database:", suggestedCombos.length);
-    return suggestedCombos.slice(0, 5); // Giới hạn 5 món
+    console.log(" Matched combos from database:", suggestedCombos.length);
+    return suggestedCombos; // Trả về tất cả món ăn phù hợp
   } catch (error) {
     console.error("Error calling Gemini API for dish suggestions:", error);
     // Không throw error, chỉ return empty array để không làm gián đoạn UX

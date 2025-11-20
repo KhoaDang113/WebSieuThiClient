@@ -518,7 +518,9 @@ export default function ProductDetail() {
           product={{
             ...product,
             // Compatibility fields
-            image_url: product.image_primary || product.image_url,
+            image_url: (Array.isArray(product.image_primary)
+              ? product.image_primary[0]
+              : product.image_primary) || product.image_url,
             stock_quantity: product.quantity,
             price: product.unit_price,
           }}
