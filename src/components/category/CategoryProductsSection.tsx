@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import CategorySection from "@/components/home/CategorySection";
 import Banners from "@/components/productPage/banner/Banners";
-import { productService, bannerService } from "@/api";
+import { productService, bannerService, categoryService } from "@/api";
 import type { Product } from "@/types/product.type";
 import type { Banner } from "@/types/banner.type";
 
@@ -19,7 +19,7 @@ export default function CategoryProductsSection({
   categorySlug,
   isPromotion = false,
   page = 1,
-  limit = 5, // Giới hạn hiển thị 5 sản phẩm
+  limit = 5, // Số lượng danh mục cấp 2 để lấy sản phẩm
   onAddToCart,
 }: CategoryProductsSectionProps) {
   const [loading, setLoading] = useState(true);
@@ -31,39 +31,79 @@ export default function CategoryProductsSection({
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch products
-        const data = isPromotion
-          ? await productService.getProductPromotions(categorySlug, { page, limit })
-          : await productService.getProducts(categorySlug, { page, limit });
-        if (mounted) setProducts(data);
-        
-        // Fetch banners cho category này
-        try {          
-          const banners = await bannerService.getBanners(categorySlug);
-          if (mounted) {
-            // Đảm bảo banners là array và có dữ liệu hợp lệ
-            if (Array.isArray(banners) && banners.length > 0) {
-              // Validate banners có image_url hợp lệ
-              const validBanners = banners.filter(banner => 
-                banner && (banner.image_url || banner.image)
+
+        // Fetch products - Lấy 1 sản phẩm từ mỗi danh mục cấp 2
+        try {
+          // 1. Lấy thông tin category cha
+          const parentCategory = await categoryService.getCategoryBySlug(categorySlug);
+          const categoryId = parentCategory._id || parentCategory.id;
+
+          if (!categoryId) {
+            console.warn(`[CategoryProductsSection] No category ID found for slug: "${categorySlug}"`);
+            if (mounted) setProducts([]);
+          } else {
+            // 2. Lấy danh sách danh mục cấp 2 (children)
+            const childCategories = await categoryService.getCategoryChildren(categoryId);
+
+            if (childCategories && childCategories.length > 0) {
+              // 3. Lấy 5 danh mục cấp 2 đầu tiên
+              const firstFiveChildren = childCategories.slice(0, limit);
+
+              console.info(`[CategoryProductsSection] Fetching 1 product from each of ${firstFiveChildren.length} child categories`);
+
+              // 4. Với mỗi danh mục cấp 2, lấy 1 sản phẩm (parallel)
+              const productPromises = firstFiveChildren.map(child =>
+                (isPromotion
+                  ? productService.getProductPromotions(child.slug, { page: 1, limit: 1 })
+                  : productService.getProducts(child.slug, { page: 1, limit: 1 })
+                ).catch(err => {
+                  console.warn(`[CategoryProductsSection] Failed to fetch products for child "${child.slug}": `, err);
+                  return []; // Return empty array on error
+                })
               );
-              
-              if (validBanners.length > 0) {
-                setCategoryBanners(validBanners);
-              } else {
-                console.warn(`[CategoryProductsSection] No valid banners (with image) for category: "${categorySlug}"`);
-                setCategoryBanners([]);
-              }
+
+              const productsArrays = await Promise.all(productPromises);
+
+              // 5. Gộp tất cả sản phẩm lại (mỗi child có tối đa 1 product)
+              const allProducts = productsArrays.flat();
+
+              if (mounted) setProducts(allProducts);
             } else {
-              console.warn(`[CategoryProductsSection] No banners found for category: "${categorySlug}" (received: ${banners?.length || 0} banners)`);
+              // Không có children - fallback về cách cũ
+              console.info(`[CategoryProductsSection] No child categories, using parent category products`);
+              const data = isPromotion
+                ? await productService.getProductPromotions(categorySlug, { page, limit })
+                : await productService.getProducts(categorySlug, { page, limit });
+              if (mounted) setProducts(data);
+            }
+          }
+        } catch (error) {
+          console.error("Error loading products for", categorySlug, error);
+          if (mounted) setProducts([]);
+        }
+
+        // Fetch banners cho category cấp 1 (database lưu banner theo ID danh mục cấp 1)
+        try {
+          const banners = await bannerService.getBanners(categorySlug);
+
+          if (mounted) {
+            // Validate banners có image_url hợp lệ
+            const validBanners = banners.filter(banner =>
+              banner && (banner.image_url || banner.image)
+            );
+
+            if (validBanners.length > 0) {
+              console.info(`[CategoryProductsSection] ✅ Found ${validBanners.length} banner(s) for category "${categorySlug}"`);
+              setCategoryBanners(validBanners);
+            } else {
+              console.warn(`[CategoryProductsSection] No valid banners(with image) for category: "${categorySlug}"`);
               setCategoryBanners([]);
             }
           }
         } catch (error: Error | unknown) {
-          console.error(`[CategoryProductsSection] Error fetching banners for category "${categorySlug}":`, error);
+          console.error(`[CategoryProductsSection] Error fetching banners for category "${categorySlug}": `, error);
           const axiosError = error as { message?: string; response?: { data?: unknown; status?: number } };
-          console.error(`[CategoryProductsSection] Error details:`, {
+          console.error(`[CategoryProductsSection] Error details: `, {
             message: axiosError?.message,
             response: axiosError?.response?.data,
             status: axiosError?.response?.status,
@@ -118,7 +158,7 @@ export default function CategoryProductsSection({
           <Banners banners={categoryBanners} />
         </div>
       )}
-      
+
       <CategorySection
         categoryName={title}
         categorySlug={categorySlug}

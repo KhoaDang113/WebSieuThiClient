@@ -203,5 +203,15 @@ const router: RouteObject[] = [
   },
 ];
 
-const routerBroswer = createBrowserRouter(router);
+const routerBroswer = createBrowserRouter(router, {
+  future: {
+    v7_startTransition: true,
+  },
+});
+
+// Disable browser's default scroll restoration
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 export default routerBroswer;
