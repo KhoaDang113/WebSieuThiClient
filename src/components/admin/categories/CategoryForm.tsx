@@ -244,7 +244,6 @@ export function CategoryForm({
           isSubmitting={isSubmitting}
           onInputChange={handleInputChange}
           onImageFileChange={handleImageFileChange}
-          currentImageFile={imageFile}
         />
 
         <div className="flex items-center gap-2">

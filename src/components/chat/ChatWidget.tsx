@@ -80,7 +80,7 @@ export function ChatWidget() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-slate-800 hover:bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 z-40"
+        className="fixed bottom-20 right-6 w-14 h-14 bg-slate-800 hover:bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 z-40"
         aria-label="Open chat menu"
       >
         {isOpen ? (
@@ -92,7 +92,7 @@ export function ChatWidget() {
 
       {/* Popup Menu */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 bg-white rounded-lg shadow-xl border border-border z-40 overflow-hidden">
+        <div className="fixed bottom-40 right-6 bg-white rounded-lg shadow-xl border border-border z-40 overflow-hidden">
           {content}
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon } from "lucide-react";
 
 interface CategoryMediaFieldsProps {
   formData: {
@@ -13,7 +13,6 @@ interface CategoryMediaFieldsProps {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => void;
   onImageFileChange: (file: File | null) => void;
-  currentImageFile?: File | null;
 }
 
 export function CategoryMediaFields({
@@ -21,7 +20,6 @@ export function CategoryMediaFields({
   isSubmitting,
   onInputChange,
   onImageFileChange,
-  currentImageFile,
 }: CategoryMediaFieldsProps) {
   const [imagePreview, setImagePreview] = useState<string>(formData.image || "");
 

@@ -10,11 +10,7 @@ import { Link, useParams } from "react-router-dom";
 import ProductComments from "@/components/products/ProductComments";
 import ProductRatings from "@/components/products/ProductRatings";
 import { productService, bannerService } from "@/api";
-import {
-  PRODUCT_PLACEHOLDER_IMAGE,
-  getProductId,
-  getProductImage,
-} from "@/lib/constants";
+import { PRODUCT_PLACEHOLDER_IMAGE, getProductId, getProductImage } from "@/lib/constants";
 import { useCart } from "@/components/cart/CartContext";
 import SuggestedDishes from "@/components/products/SuggestedDishes";
 
@@ -22,6 +18,7 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,10 +55,22 @@ export default function ProductDetail() {
         setProduct(productData);
         setBanners(bannersData || []);
         setImageErrors({}); // Reset image errors khi load product mới
-      } catch (error: any) {
+
+        // Load related products from same category
+        try {
+          const related = await productService.getRelatedProducts(productId, 10);
+          // Shuffle and keep all 10 products
+          const shuffled = related.sort(() => 0.5 - Math.random());
+          setRelatedProducts(shuffled);
+          console.log("✅ Related products loaded:", shuffled);
+        } catch {
+          console.log("⚠️ Could not load related products");
+        }
+      } catch (error: unknown) {
+        const err = error as { response?: { data: unknown; status: unknown } };
         console.error("❌ Error loading product:", error);
-        console.error("❌ Error response:", error.response?.data);
-        console.error("❌ Error status:", error.response?.status);
+        console.error("❌ Error response:", err.response?.data);
+        console.error("❌ Error status:", err.response?.status);
       } finally {
         setLoading(false);
       }
@@ -332,8 +341,8 @@ export default function ProductDetail() {
           </div>
 
           {/* Right Column - Product Info (Sticky) */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 p-5 space-y-4">
+          <div className="lg:sticky lg:top-2 lg:self-start space-y-4 h-fit">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 p-5 flex flex-col space-y-4">
               {/* Product Name */}
               <h1 className="text-2xl font-semibold text-gray-900">
                 {product.name}
@@ -373,16 +382,16 @@ export default function ProductDetail() {
                 disabled={
                   product.stock_status !== "in_stock" || product.quantity <= 0
                 }
-                className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed mt-0"
               >
                 {product.stock_status === "in_stock" && product.quantity > 0
                   ? "MUA"
                   : "HẾT HÀNG"}
               </Button>
 
-              {/* Special Offers */}
+              {/* Special Offers - flex-grow to push down */}
               {product.discount_percent > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-auto">
                   <h3 className="font-semibold text-gray-900 mb-1.5 text-sm">
                     🎁 ƯU ĐÃI ĐẶC BIỆT
                   </h3>
@@ -392,35 +401,55 @@ export default function ProductDetail() {
                   </ul>
                 </div>
               )}
+            </div>
 
-              {/* Shipping Info */}
-              <div className="border-t pt-3 space-y-2">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-green-600 text-xl">🚚</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">Giao hàng</p>
-                    <p className="text-sm text-gray-600">
-                      Miễn phí vận chuyển cho đơn hàng từ 300.000₫
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-600 text-xl">🏪</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">Đơn vị bán</p>
-                    <p className="text-sm text-gray-600">
-                      Công ty TNHH Thực phẩm ABC
-                    </p>
-                    <p className="text-sm text-gray-500">Hà Nội</p>
-                  </div>
+            {/* Related Products - Outside sticky container */}
+            {relatedProducts.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 p-5">
+                <div 
+                  className="space-y-2 max-h-48 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
+                >
+                  {relatedProducts.map((relProduct) => (
+                    <Link
+                      key={getProductId(relProduct)}
+                      to={`/products-detail/${getProductId(relProduct)}`}
+                      className="flex gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group block"
+                    >
+                      <img
+                        src={getProductImage(relProduct) || PRODUCT_PLACEHOLDER_IMAGE}
+                        alt={relProduct.name}
+                        className="w-16 h-16 object-cover rounded flex-shrink-0 group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = PRODUCT_PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                        <h3 className="text-sm font-medium text-gray-800 line-clamp-2">
+                          {relProduct.name}
+                        </h3>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-bold text-red-600">
+                            {formatPrice(
+                              relProduct.final_price || relProduct.unit_price
+                            )}
+                          </span>
+                          {relProduct.discount_percent > 0 && (
+                            <>
+                              <span className="text-xs text-gray-400 line-through">
+                                {formatPrice(relProduct.unit_price)}
+                              </span>
+                              <span className="text-xs bg-red-100 text-red-600 px-1.5 rounded font-semibold">
+                                -{relProduct.discount_percent}%
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

@@ -15,7 +15,8 @@ export function CategorySidebar({
   isMobile?: boolean;
   onClose?: () => void;
 }) {
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  // Thay đổi state từ mảng string[] sang string | null để chỉ giữ 1 category được mở
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [categories, setCategories] = useState<(Category & { children: Category[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -27,14 +28,14 @@ export function CategorySidebar({
         setLoading(true);
         // Lấy tất cả categories từ BE (đã có subCategories nested)
         const allCategories = await categoryService.getAllCategories();
-        
+
         // Backend đã trả về nested structure với subCategories
         // Chỉ cần chuyển subCategories -> children
         const normalizedCategories = allCategories.map((cat: Category & { subCategories?: Category[] }) => ({
           ...cat,
           children: cat.subCategories || [],
         }));
-        
+
         setCategories(normalizedCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -49,21 +50,17 @@ export function CategorySidebar({
   }, []);
 
   const toggleCategory = (categoryName: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(categoryName)
-        ? prev.filter((name) => name !== categoryName)
-        : [...prev, categoryName]
-    );
+    setExpandedCategory((prev) => (prev === categoryName ? null : categoryName));
   };
 
   const handleCategoryClick = (category: Category & { children?: Category[] }) => {
     // Nếu có children (subcategories) thì toggle, không thì navigate
     if (category.children && category.children.length > 0) {
-      // Trên mobile: luôn set category được click làm active (không toggle)
+      // Trên mobile: luôn set category được click làm active
       if (isMobile) {
-        setExpandedCategories([category.name]);
+        setExpandedCategory(category.name);
       } else {
-        // Desktop: toggle như cũ
+        // Desktop: toggle (mở cái mới sẽ tự đóng cái cũ do logic của setExpandedCategory)
         toggleCategory(category.name);
       }
     } else {
@@ -108,8 +105,8 @@ export function CategorySidebar({
 
   // Mobile Layout - Bách Hóa Xanh Style
   if (isMobile) {
-    const selectedCategory = categories.find(cat => expandedCategories.includes(cat.name));
-    
+    const selectedCategory = categories.find(cat => expandedCategory === cat.name);
+
     return (
       <aside className="fixed inset-0 w-full h-full bg-white flex flex-col z-50">
         {/* Header */}
@@ -142,7 +139,7 @@ export function CategorySidebar({
                 onClick={() => handleCategoryClick(category)}
                 className={cn(
                   "w-full p-3 text-left text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors border-b border-gray-100",
-                  expandedCategories.includes(category.name) && "bg-white text-primary font-semibold"
+                  expandedCategory === category.name && "bg-white text-primary font-semibold"
                 )}
               >
                 {category.name}
@@ -161,8 +158,8 @@ export function CategorySidebar({
                     className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:shadow-sm transition-all"
                   >
                     <div className="w-12 h-12 mb-2 mx-auto">
-                      <img 
-                        src={getCategoryImage(subCategory)} 
+                      <img
+                        src={getCategoryImage(subCategory)}
                         alt={subCategory.name}
                         className="w-full h-full object-contain"
                         onError={(e) => {
@@ -229,7 +226,7 @@ export function CategorySidebar({
                 <ChevronDown
                   className={cn(
                     "h-4 w-4 transition-transform text-gray-400",
-                    expandedCategories.includes(category.name) && "rotate-180"
+                    expandedCategory === category.name && "rotate-180"
                   )}
                 />
               )}
@@ -237,7 +234,7 @@ export function CategorySidebar({
 
             {/* Sub Categories (cấp 2) */}
             {category.children && category.children.length > 0 &&
-              expandedCategories.includes(category.name) && (
+              expandedCategory === category.name && (
                 <div className="bg-gray-50 py-1">
                   {category.children.map((subCategory) => (
                     <Link

@@ -21,10 +21,10 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const isOutOfStock = isProductOutOfStock(product);
   const navigate = useNavigate();
   const productId = getProductId(product);
-  
+
   // Lấy image URL, nếu bị lỗi thì dùng placeholder
-  const imageUrl = imageError 
-    ? PRODUCT_PLACEHOLDER_IMAGE 
+  const imageUrl = imageError
+    ? PRODUCT_PLACEHOLDER_IMAGE
     : getProductImage(product);
 
   const formatPrice = (price: number) => {
@@ -41,7 +41,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
   return (
     <>
-      <div className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:border-green-300 hover:shadow-2xl h-full">
+      <div className="group relative flex flex-col rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:border-green-300 hover:shadow-2xl h-full">
         {/* Badges Container - Right side */}
         <div className="absolute right-2 top-2 z-10 flex flex-col gap-1.5">
           {hasDiscount && product.discount_percent >= 15 && (
@@ -52,9 +52,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           )}
         </div>
 
-        {/* Product Image - Fixed Height */}
+        {/* Product Image - Aspect Square */}
         <div
-          className="relative overflow-hidden cursor-pointer w-full h-44 flex-shrink-0 bg-gray-100"
+          className="relative overflow-hidden cursor-pointer w-full aspect-square flex-shrink-0 bg-white rounded-t-xl"
           onClick={() => {
             if (productId) {
               navigate(`/products-detail/${productId}`);
@@ -64,14 +64,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           <img
             src={imageUrl}
             alt={product.name}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-contain p-4 rounded-t-xl transition-transform duration-500 group-hover:scale-110"
             onError={() => {
-              // Khi ảnh load lỗi, fallback về placeholder
               setImageError(true);
             }}
           />
           {isOutOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-t-xl">
               <span className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg">
                 Hết hàng
               </span>

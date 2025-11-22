@@ -7,15 +7,25 @@ import type {
 } from "@/types/category.type";
 import type { Product } from "@/types/product.type";
 import type { Banner } from "@/types/banner.type";
+import type { Brand } from "@/types/brand.type";
 import Banners from "@/components/productPage/banner/Banners";
 import Article from "@/components/productPage/article/Article";
 import ProductGridWithBanners from "@/components/products/ProductGridWithBanners";
-import FilterBar from "@/components/productPage/filter/FilterBar";
-import Promotion from "@/components/productPage/promotion/Promotion";
-import { bannerService, categoryService, productService } from "@/api";
+import { bannerService, categoryService, productService, brandService } from "@/api";
 import { toCategoryNav } from "@/lib/constants";
 import { useNotification } from "@/hooks/useNotification";
 import { mapProductFromApi } from "@/lib/utils/productMapper";
+import { ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,9 +41,15 @@ export default function ProductsPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const { showNotification } = useNotification();
 
-  // Lấy category từ URL query parameter
+  // Lấy parameters từ URL
   const categoryFromUrl = searchParams.get("category");
   const brandsFromUrl = searchParams.get("brands");
+  const sortParam = searchParams.get("sort") || "";
+
+  // States for advanced filters
+  const [allCategories, setAllCategories] = useState<(CategoryType & { subCategories?: CategoryType[] })[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loadingFilters, setLoadingFilters] = useState(true);
 
   // Fetch category info và products khi categoryFromUrl thay đổi
   useEffect(() => {
@@ -210,6 +226,67 @@ export default function ProductsPage() {
     }
   }, [brandsFromUrl]);
 
+  // Load all categories and brands for filters
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        setLoadingFilters(true);
+        const [categoriesData, brandsData] = await Promise.all([
+          categoryService.getAllCategories(),
+          brandService.getAllBrands(),
+        ]);
+
+        // Filter active parent categories (level 1)
+        const activeCategories = categoriesData.filter((cat) => {
+          const isActive = cat.is_active !== undefined ? cat.is_active : true;
+          const isDeleted = cat.is_deleted !== undefined ? cat.is_deleted : false;
+          const isParent = !cat.parent_id || cat.parent_id === null;
+          return isActive && !isDeleted && isParent;
+        });
+
+        // Filter active brands
+        const activeBrands = brandsData.filter(
+          (b) => (b.is_active !== undefined ? b.is_active : true) && !(b.is_deleted !== undefined ? b.is_deleted : false)
+        );
+
+        setAllCategories(activeCategories);
+        setBrands(activeBrands);
+      } catch (error) {
+        console.error("Error loading filters:", error);
+        setAllCategories([]);
+        setBrands([]);
+      } finally {
+        setLoadingFilters(false);
+      }
+    };
+    loadFilters();
+  }, []);
+
+  // Helper function to get selected category display name
+  const getSelectedCategoryName = () => {
+    if (!categoryFromUrl) return "Tất cả danh mục";
+    // Find category in nested structure
+    for (const cat of allCategories) {
+      if (cat.slug === categoryFromUrl) {
+        return cat.name;
+      }
+      const subCats = cat.subCategories || [];
+      for (const subCat of subCats) {
+        if (subCat.slug === categoryFromUrl) {
+          return subCat.name;
+        }
+      }
+    }
+    return currentCategory?.name || "Tất cả danh mục";
+  };
+
+  // Helper function to get selected brand display name
+  const getSelectedBrandName = () => {
+    if (!brandsFromUrl) return "Tất cả thương hiệu";
+    const brand = brands.find(b => b.slug === brandsFromUrl);
+    return brand?.name || "Tất cả thương hiệu";
+  };
+
   const fetchProductsByCategory = async (categorySlug: string) => {
     try {
       const apiProducts = await productService.getProducts(categorySlug);
@@ -263,6 +340,21 @@ export default function ProductsPage() {
     console.log("Add to cart:", product);
   };
 
+  // Handler for advanced filter changes
+  const handleFilterChange = (key: string, value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
+    }
+    // Keep category param if exists
+    if (categoryFromUrl && key !== "category") {
+      newParams.set("category", categoryFromUrl);
+    }
+    setSearchParams(newParams);
+  };
+
   const handleBrandSelect = (brandId: string) => {
     const newSelectedBrands = selectedBrands.includes(brandId)
       ? selectedBrands.filter((id) => id !== brandId) // Bỏ chọn nếu đã chọn
@@ -309,20 +401,120 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <div className="mt-5">
-        <FilterBar
-          onBrandSelect={handleBrandSelect}
-          selectedBrands={selectedBrands}
-        />
-      </div>
+      {/* Advanced Filters */}
+      {categoryFromUrl && (
+        <div className="mb-4">
+          <div className="bg-white shadow-sm border-t border-b border-gray-200 p-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Category Dropdown */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Danh mục
+                </label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    disabled={loadingFilters}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                  >
+                    <span className="truncate">
+                      {loadingFilters ? "Đang tải..." : getSelectedCategoryName()}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 ml-2 flex-shrink-0" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[300px] overflow-y-auto">
+                    <DropdownMenuItem
+                      onClick={() => handleFilterChange("category", "")}
+                      className={!categoryFromUrl ? "bg-green-50 text-green-700" : ""}
+                    >
+                      Tất cả danh mục
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {allCategories.length > 0 ? (
+                      allCategories.map((cat) => {
+                        const subCats = cat.subCategories || [];
+                        const hasSubCategories = subCats.length > 0;
 
-      {/* Promotion Products Section */}
-      {promotionProducts.length > 0 && (
-        <div className="mt-5">
-          <Promotion
-            products={promotionProducts}
-            onAddToCart={handleAddToCart}
-          />
+                        if (hasSubCategories) {
+                          return (
+                            <DropdownMenuSub key={cat._id || cat.id}>
+                              <DropdownMenuSubTrigger>
+                                {cat.name}
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                {subCats.map((subCat) => (
+                                  <DropdownMenuItem
+                                    key={subCat._id || subCat.id}
+                                    onClick={() => handleFilterChange("category", subCat.slug || "")}
+                                    className={categoryFromUrl === subCat.slug ? "bg-green-50 text-green-700" : ""}
+                                  >
+                                    {subCat.name}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          );
+                        } else {
+                          return (
+                            <DropdownMenuItem
+                              key={cat._id || cat.id}
+                              onClick={() => handleFilterChange("category", cat.slug || "")}
+                              className={categoryFromUrl === cat.slug ? "bg-green-50 text-green-700" : ""}
+                            >
+                              {cat.name}
+                            </DropdownMenuItem>
+                          );
+                        }
+                      })
+                    ) : (
+                      <DropdownMenuItem disabled>Không có danh mục</DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Brand Dropdown */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Thương hiệu
+                </label>
+                <select
+                  value={brandsFromUrl || ""}
+                  onChange={(e) => handleFilterChange("brand", e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  disabled={loadingFilters}
+                >
+                  <option value="">Tất cả thương hiệu</option>
+                  {brands.length > 0 ? (
+                    brands.map((brand) => (
+                      <option key={brand._id || brand.id} value={brand.slug || ""}>
+                        {brand.name || "Unnamed Brand"}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Đang tải thương hiệu...</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Sort Dropdown */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Sắp xếp
+                </label>
+                <select
+                  value={sortParam}
+                  onChange={(e) => handleFilterChange("sort", e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">Mặc định</option>
+                  <option value="price-asc">Giá tăng dần</option>
+                  <option value="price-desc">Giá giảm dần</option>
+                  <option value="hot">Khuyến mãi nhiều</option>
+                  <option value="new">Mới nhất</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

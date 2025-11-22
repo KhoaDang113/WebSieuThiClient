@@ -7,8 +7,6 @@ import type { Category } from "@/types/category.type.ts";
 import categoryService from "@/api/services/catalogService";
 import { buildCategoryTree, flattenCategories } from "./CategoryTreeUtils";
 import { CategoryTableRow } from "./CategoryTableRow";
-// import type { CategoryNav as Category } from "@/types";
-// import { CATEGORY_PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 interface CategoryTableProps {
   searchTerm: string;

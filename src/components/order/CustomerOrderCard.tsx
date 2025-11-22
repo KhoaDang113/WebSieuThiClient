@@ -42,7 +42,7 @@ export function CustomerOrderCard({
       const productIds = order.items
         .map((item) => item.product_id_string || item.product_id.toString())
         .filter((id) => id && !productsMap[id]);
-      
+
       if (productIds.length === 0) return;
 
       try {
@@ -190,19 +190,19 @@ export function CustomerOrderCard({
             // Lấy product đầy đủ từ productsMap (đã fetch từ API) hoặc dùng item data
             const productId = item.product_id_string || item.product_id.toString();
             const fullProduct = productsMap[productId];
-            
+
             // Sử dụng product đầy đủ nếu có, nếu không thì dùng item data
             const productForImage = fullProduct || {
               image_primary: item.image_primary || item.image,
               image_url: item.image_url || item.image,
               images: item.images || (item.image ? [item.image] : undefined),
             };
-            
+
             // Sử dụng getProductImage giống ProductCard để đảm bảo nhất quán
             const imageUrl = imageErrors[item.id]
               ? PRODUCT_PLACEHOLDER_IMAGE
               : getProductImage(productForImage);
-            
+
             return (
               <div key={item.id} className="relative">
                 <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-white">

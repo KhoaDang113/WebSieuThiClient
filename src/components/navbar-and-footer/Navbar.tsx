@@ -38,7 +38,7 @@ export function Navbar() {
   const location = useLocation();
   const { searchHistory, addToHistory, removeFromHistory, clearHistory } =
     useSearchHistory();
-  const { address, setAddress, getAddressString } = useAddress();
+  const { setAddress, getAddressString } = useAddress();
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const { showNotification } = useNotification();
 
@@ -342,10 +342,10 @@ export function Navbar() {
                 )}
               </form>
             </div>
-            {/* Shopping cart */}
+            {/* Shopping cart - Hidden on mobile */}
             <button
               onClick={handleCartClick}
-              className="relative cursor-pointer p-2 text-white hover:bg-white/10 rounded-full transition-colors duration-200 flex-shrink-0"
+              className="hidden md:flex relative cursor-pointer p-2 text-white hover:bg-white/10 rounded-full transition-colors duration-200 flex-shrink-0"
               aria-label="Giỏ hàng"
               data-cart-icon
             >
@@ -358,14 +358,16 @@ export function Navbar() {
                 </span>
               )}
             </button>
-            {/* Hiển thị thông báo (comment reply và order update) */}
-            <NotificationDrawer
-              filter={(n) =>
-                n.type === "comment_reply" || n.type === "order_update"
-              }
-            />
+            {/* Hiển thị thông báo (comment reply và order update) - Hidden on mobile */}
+            <div className="hidden md:block">
+              <NotificationDrawer
+                filter={(n) =>
+                  n.type === "comment_reply" || n.type === "order_update"
+                }
+              />
+            </div>
             {/* Actions */}
-            <div className="flex gap-3 items-center justify-end">
+            <div className="flex gap-3 items-center justify-end md:gap-2">
               {/* 🟢 Tooltip cho địa chỉ (Desktop) */}
               <div
                 onClick={handleAddressClick}
@@ -431,7 +433,7 @@ export function Navbar() {
                         >
                           <MapPin className="mr-2 h-4 w-4" />
                           <span>
-                            Địa chỉ nhận hàng {address ? "(1)" : "(0)"}
+                            Địa chỉ nhận hàng
                           </span>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild className="px-4">
@@ -518,40 +520,187 @@ export function Navbar() {
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  {/* Mobile Account Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="md:hidden flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900 transition-colors">
+                        <img
+                          src={
+                            currentUser?.avatar ||
+                            currentUser?.avatarUrl ||
+                            DEFAULT_AVATAR_URL
+                          }
+                          alt="Avatar"
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                        <User className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 p-0">
+                      {/* Header */}
+                      <div className="px-4 py-3 border-b bg-gray-50">
+                        <div className="font-semibold text-sm text-gray-900">
+                          {currentUser?.gender === "female" ? "Chị" : "Anh"}{" "}
+                          {currentUser?.name || "Khách hàng"}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          CHƯA CÓ HẠNG 0 điểm
+                        </div>
+                      </div>
+
+                      {/* Thông tin cá nhân */}
+                      <div className="px-2 py-2 border-b">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2 px-2">
+                          Thông tin cá nhân
+                        </div>
+                        <DropdownMenuItem asChild className="px-4">
+                          <Link to="/account" className="cursor-pointer w-full">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Thông tin cá nhân</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleAddressClick}
+                          className="cursor-pointer px-4"
+                        >
+                          <MapPin className="mr-2 h-4 w-4" />
+                          <span>Địa chỉ nhận hàng</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="px-4">
+                          <Link
+                            to="/my-orders"
+                            className="cursor-pointer w-full"
+                          >
+                            <Package className="mr-2 h-4 w-4" />
+                            <span>Đơn hàng từng mua</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </div>
+
+                      {/* Hỗ trợ khách hàng */}
+                      <div className="px-2 py-2 border-b">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2 px-2">
+                          Hỗ trợ khách hàng
+                        </div>
+                        <DropdownMenuItem
+                          asChild
+                          className="cursor-pointer px-4 text-xs"
+                        >
+                          <a
+                            href="tel:0386740043"
+                            className="flex items-center w-full"
+                          >
+                            <Phone className="mr-2 h-4 w-4 shrink-0" />
+                            <div className="flex flex-col">
+                              <span>Tư vấn: 0386.740.043</span>
+                              <span className="text-gray-500">(08:00 - 22:00)</span>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                      </div>
+
+                      {/* Đăng xuất */}
+                      <div className="px-2 py-1">
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            // Xóa cart của user hiện tại trước khi logout
+                            if (
+                              currentUser?.id &&
+                              typeof window !== "undefined"
+                            ) {
+                              localStorage.removeItem(`cart_${currentUser.id}`);
+                            }
+                            localStorage.removeItem("cart_guest");
+
+                            await authService.logout();
+                            clearAuth();
+                            // Dispatch event để notify các components khác
+                            window.dispatchEvent(new Event("auth-changed"));
+                            window.location.href = "/login";
+                          }}
+                          className="cursor-pointer text-red-600 px-4"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Đăng xuất</span>
+                        </DropdownMenuItem>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
-                <Link
-                  to="/login"
-                  className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
-                >
-                  <User className="w-5 h-5 text-white" />
-                  <span className="whitespace-nowrap text-white">
-                    Đăng nhập
-                  </span>
-                </Link>
+                <>
+                  <Link
+                    to="/login"
+                    className="hidden md:flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
+                  >
+                    <User className="w-5 h-5 text-white" />
+                    <span className="whitespace-nowrap text-white">
+                      Đăng nhập
+                    </span>
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="md:hidden flex items-center gap-2 rounded-full bg-[#008236] px-3 py-2 text-white shrink-0 cursor-pointer hover:bg-green-900"
+                  >
+                    <User className="w-4 h-4 text-white" />
+                  </Link>
+                </>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* 🟢 Tooltip cho địa chỉ (Mobile) */}
-      <div className="md:hidden px-4 py-2 bg-[#007E42] border-b border-green-700">
-        <button
-          onClick={handleAddressClick}
-          className="flex items-center justify-between w-full text-white text-sm py-2 px-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-          title={getAddressString()} // ✅ Tooltip hiển thị địa chỉ
-        >
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            <span className="font-medium">Giao đến:</span>
+      {/* 🟢 Mobile Bottom Menu */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="flex justify-around items-center h-16">
+          <Link
+            to="/"
+            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
+          >
+            <ShoppingCart className="w-5 h-5 mb-1" />
+            <span>Trang chủ</span>
+          </Link>
+          <div className="flex flex-col items-center justify-center h-full flex-1 text-gray-700">
+            <NotificationDrawer
+              mobile={true}
+              filter={(n) =>
+                n.type === "comment_reply" || n.type === "order_update"
+              }
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="truncate max-w-[150px]">{getAddressString()}</span>
-            <ChevronDown className="w-4 h-4 flex-shrink-0" />
-          </div>
-        </button>
+          <button
+            onClick={handleAddressClick}
+            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
+          >
+            <MapPin className="w-5 h-5 mb-1" />
+            <span>Địa chỉ</span>
+          </button>
+          <Link
+            to="/cart"
+            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs relative"
+          >
+            <ShoppingCart className="w-5 h-5 mb-1" />
+            {isAuthenticated && totalItems > 0 && (
+              <span className="absolute top-1 right-2 flex items-center justify-center rounded-full bg-red-500 w-4 h-4 text-white text-xs font-bold">
+                {totalItems}
+              </span>
+            )}
+            <span>Giỏ hàng</span>
+          </Link>
+          <Link
+            to="/my-orders"
+            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
+          >
+            <Package className="w-5 h-5 mb-1" />
+            <span>Đơn hàng</span>
+          </Link>
+        </div>
       </div>
+
+      {/* Adjust padding for mobile bottom menu */}
+      <div className="md:hidden h-16"></div>
 
       {/* Address List Modal - Quản lý địa chỉ và lưu vào database */}
       <AddressListModal

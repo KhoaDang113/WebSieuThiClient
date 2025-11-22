@@ -30,9 +30,11 @@ import { useNotification } from "@/hooks/useNotification";
 interface NotificationDrawerProps {
   // Optional filter to select a subset of notifications to display
   readonly filter?: (n: NotificationData) => boolean;
+  // Mobile mode for bottom menu styling
+  readonly mobile?: boolean;
 }
 
-export function NotificationDrawer({ filter }: NotificationDrawerProps) {
+export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) {
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -54,9 +56,9 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
           user?.role === "staff"
             ? await notificationService.getNotificationForStaff()
             : await notificationService.getMyNotifications({
-                page: pageNum,
-                limit: 20,
-              });
+              page: pageNum,
+              limit: 20,
+            });
         const newNotifications = response?.notifications || [];
 
         if (append) {
@@ -417,18 +419,30 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative rounded-full bg-[#008236] hover:bg-green-700 text-white transition-all duration-200 hover:scale-105"
-        >
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center shadow-lg animate-pulse px-1">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
-        </Button>
+        {mobile ? (
+          <button className="flex flex-col items-center justify-center w-full h-full text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors relative">
+            <Bell className="w-5 h-5 mb-1" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-2 flex items-center justify-center rounded-full bg-red-500 w-4 h-4 text-white text-xs font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+            <span className="text-xs">Thông báo</span>
+          </button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative rounded-full bg-[#008236] hover:bg-green-700 text-white transition-all duration-200 hover:scale-105"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center shadow-lg animate-pulse px-1">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md p-0">
         <div className="flex flex-col h-full">
@@ -530,22 +544,22 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
                         {/* Actor avatar for comment/reply notifications */}
                         {(notification.type === "comment_reply" ||
                           notification.type === "product_review") && (
-                          <img
-                            src={getActorAvatar(notification.actor_id)}
-                            alt={getActorName(notification.actor_id)}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                          />
-                        )}
+                            <img
+                              src={getActorAvatar(notification.actor_id)}
+                              alt={getActorName(notification.actor_id)}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            />
+                          )}
 
                         {/* Icon for order/system notifications */}
                         {(notification.type === "order_update" ||
                           notification.type === "system") && (
-                          <div
-                            className={`flex-shrink-0 ${styles.iconBg} rounded-full p-2.5`}
-                          >
-                            {getIcon(notification.type)}
-                          </div>
-                        )}
+                            <div
+                              className={`flex-shrink-0 ${styles.iconBg} rounded-full p-2.5`}
+                            >
+                              {getIcon(notification.type)}
+                            </div>
+                          )}
 
                         {/* Content */}
                         <div className="flex-1 min-w-0 pr-6">

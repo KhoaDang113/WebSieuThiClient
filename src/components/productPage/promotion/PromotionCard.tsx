@@ -21,10 +21,10 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
   const isOutOfStock = isProductOutOfStock(product);
   const navigate = useNavigate();
   const productId = getProductId(product);
-  
+
   // Lấy image URL, nếu bị lỗi thì dùng placeholder
-  const imageUrl = imageError 
-    ? PRODUCT_PLACEHOLDER_IMAGE 
+  const imageUrl = imageError
+    ? PRODUCT_PLACEHOLDER_IMAGE
     : getProductImage(product);
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -46,7 +46,7 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
         <div className="flex h-full flex-row rounded-lg bg-white">
           {/* Product Image - Fixed Size */}
           <div
-            className="relative w-32 h-32 flex-shrink-0 overflow-hidden cursor-pointer bg-gray-100 flex items-center justify-center p-2"
+            className="relative w-32 h-32 flex-shrink-0 overflow-hidden cursor-pointer bg-gray-50 flex items-center justify-center"
             onClick={() => {
               if (productId) {
                 navigate(`/products-detail/${productId}`);
@@ -56,7 +56,7 @@ export function HoriztionPromotion({ product, onAddToCart }: ProductCardProps) {
             <img
               src={imageUrl}
               alt={product.name}
-              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               onError={() => {
                 // Khi ảnh load lỗi, fallback về placeholder
                 setImageError(true);
