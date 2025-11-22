@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Loader2, PackageSearch } from "lucide-react";
 import { productService } from "@/api";
@@ -30,6 +30,8 @@ export default function SearchPage() {
   const [hasMore, setHasMore] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [categoryScrollState, setCategoryScrollState] = useState({ atStart: true, atEnd: false });
+  const [brandScrollState, setBrandScrollState] = useState({ atStart: true, atEnd: false });
   const { addToCart } = useCart();
 
   const debouncedQuery = useMemo(() => queryParam, [queryParam]);
@@ -106,6 +108,45 @@ export default function SearchPage() {
       isCancelled = true;
     };
   }, [debouncedQuery, skip, categoryParam, brandParam, sortParam]);
+
+  const checkScrollPosition = useCallback((
+    element: HTMLElement,
+    setState: React.Dispatch<React.SetStateAction<{ atStart: boolean; atEnd: boolean }>>
+  ) => {
+    const { scrollLeft, scrollWidth, clientWidth } = element;
+    const atStart = scrollLeft <= 1;
+    const atEnd = scrollLeft + clientWidth >= scrollWidth - 1;
+    setState({ atStart, atEnd });
+  }, []);
+
+  const handleCategoryScroll = () => {
+    const container = document.getElementById('category-scroll');
+    if (container) {
+      checkScrollPosition(container, setCategoryScrollState);
+    }
+  };
+
+  const handleBrandScroll = () => {
+    const container = document.getElementById('brand-scroll');
+    if (container) {
+      checkScrollPosition(container, setBrandScrollState);
+    }
+  };
+
+  // Check scroll position on mount and when content changes
+  useEffect(() => {
+    setTimeout(() => {
+      const categoryContainer = document.getElementById('category-scroll');
+      const brandContainer = document.getElementById('brand-scroll');
+      
+      if (categoryContainer) {
+        checkScrollPosition(categoryContainer, setCategoryScrollState);
+      }
+      if (brandContainer) {
+        checkScrollPosition(brandContainer, setBrandScrollState);
+      }
+    }, 100);
+  }, [categories, brands, checkScrollPosition]);
 
   const handleLoadMore = () => {
     if (!hasMore || loading || lastBatchSize === 0) {
@@ -186,6 +227,8 @@ export default function SearchPage() {
     setSearchParams(newParams);
   };
 
+
+
   const hasActiveFilters = categoryParam || brandParam || sortParam;
 
   const isInitialLoading = loading && skip === 0;
@@ -215,25 +258,28 @@ export default function SearchPage() {
                     Lọc theo ngành hàng:
                   </label>
                   <div className="relative group">
-                    {/* Left Arrow */}
-                    <button
-                      onClick={() => {
-                        const container = document.getElementById('category-scroll');
-                        if (container) container.scrollLeft -= 200;
-                      }}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Scroll left"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
+                    {/* Left Arrow - Only show when not at start */}
+                    {!categoryScrollState.atStart && (
+                      <button
+                        onClick={() => {
+                          const container = document.getElementById('category-scroll');
+                          if (container) container.scrollLeft -= 200;
+                        }}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Scroll left"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
 
                     {/* Categories Container */}
                     <div
                       id="category-scroll"
                       className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
                       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      onScroll={handleCategoryScroll}
                     >
                       {categories.map((cat) => {
                         const isSelected = selectedCategories.includes(cat.slug || "");
@@ -267,19 +313,21 @@ export default function SearchPage() {
                       })}
                     </div>
 
-                    {/* Right Arrow */}
-                    <button
-                      onClick={() => {
-                        const container = document.getElementById('category-scroll');
-                        if (container) container.scrollLeft += 200;
-                      }}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Scroll right"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                    {/* Right Arrow - Only show when not at end */}
+                    {!categoryScrollState.atEnd && (
+                      <button
+                        onClick={() => {
+                          const container = document.getElementById('category-scroll');
+                          if (container) container.scrollLeft += 200;
+                        }}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Scroll right"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -304,26 +352,29 @@ export default function SearchPage() {
                     {/* Brands Container with Arrows */}
 
                   {brands.length > 0 && (
-                    <div className="flex-1 relative group">
-                      {/* Left Arrow */}
-                      <button
-                        onClick={() => {
-                          const container = document.getElementById('brand-scroll');
-                          if (container) container.scrollLeft -= 200;
-                        }}
-                        className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Scroll left"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
+                    <div className="flex-1 relative group overflow-hidden min-w-0">
+                      {/* Left Arrow - Only show when not at start */}
+                      {!brandScrollState.atStart && (
+                        <button
+                          onClick={() => {
+                            const container = document.getElementById('brand-scroll');
+                            if (container) container.scrollLeft -= 200;
+                          }}
+                          className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Scroll left"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                      )}
 
                       {/* Brands */}
                       <div
                         id="brand-scroll"
-                        className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth"
+                        className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1 py-1"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        onScroll={handleBrandScroll}
                       >
                         {brands.map((brand) => {
                           const isSelected = selectedBrands.includes(brand.slug || "");
@@ -332,8 +383,8 @@ export default function SearchPage() {
                               key={brand._id || brand.id}
                               onClick={() => toggleBrand(brand.slug || "")}
                               className={`
-                                flex-shrink-0 h-14 w-20 rounded-lg transition-all
-                                border-2 flex items-center justify-center
+                                flex-shrink-0 h-14 w-20 rounded-lg transition-all overflow-hidden
+                                border-2 flex items-center justify-center p-1
                                 ${isSelected 
                                   ? "bg-green-500 border-green-600 shadow-lg scale-105" 
                                   : "bg-white border-gray-200 hover:border-green-300 hover:shadow-md"
@@ -341,11 +392,13 @@ export default function SearchPage() {
                               `}
                             >
                               {brand.image ? (
-                                <img 
-                                  src={brand.image} 
-                                  alt={brand.name}
-                                  className="max-w-full max-h-full object-contain rounded-sm"
-                                />
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <img 
+                                    src={brand.image} 
+                                    alt={brand.name}
+                                    className="max-w-full max-h-full object-contain rounded-sm"
+                                  />
+                                </div>
                               ) : (
                                 <span className={`text-xs font-medium ${isSelected ? "text-white" : "text-gray-700"}`}>
                                   {brand.name}
@@ -356,19 +409,21 @@ export default function SearchPage() {
                         })}
                       </div>
 
-                      {/* Right Arrow */}
-                      <button
-                        onClick={() => {
-                          const container = document.getElementById('brand-scroll');
-                          if (container) container.scrollLeft += 200;
-                        }}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Scroll right"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                      {/* Right Arrow - Only show when not at end */}
+                      {!brandScrollState.atEnd && (
+                        <button
+                          onClick={() => {
+                            const container = document.getElementById('brand-scroll');
+                            if (container) container.scrollLeft += 200;
+                          }}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Scroll right"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   
                     )}
