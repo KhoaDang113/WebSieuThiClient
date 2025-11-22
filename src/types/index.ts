@@ -14,4 +14,4 @@ export * from "./inventory.type";
 export * from "./menu.type";
 export * from "./brand.type";
 export type { Brand } from "./brand.type";
-export * from "./menu.type.ts";
+export * from "./user.type";

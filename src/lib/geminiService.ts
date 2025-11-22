@@ -148,8 +148,14 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
             "1",
           unit: matchedProduct.unit || "",
           price: matchedProduct.final_price || matchedProduct.unit_price,
-          image_url:
-            matchedProduct.image_url || matchedProduct.image_primary || "",
+          image_url: 
+            (Array.isArray(matchedProduct.image_url) 
+              ? matchedProduct.image_url[0] 
+              : matchedProduct.image_url) || 
+            (Array.isArray(matchedProduct.image_primary) 
+              ? matchedProduct.image_primary[0] 
+              : matchedProduct.image_primary) || 
+            "",
           available: true,
           product_id: matchedProduct._id || matchedProduct.id,
           discount_percent: matchedProduct.discount_percent || 0,
@@ -166,6 +172,125 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
     throw new Error(
       "Không thể lấy danh sách nguyên liệu. Vui lòng thử lại sau."
     );
+  }
+}
+
+/**
+ * Gọi Gemini API để lấy danh sách gia vị phù hợp cho món ăn
+ * @param dishName - Tên món ăn
+ * @returns Promise<Product[]> - Danh sách gia vị với phân loại type
+ */
+export async function getSpicesForDish(
+  dishName: string
+): Promise<(Product & { spice_type?: string })[]> {
+  try {
+    // Lấy sản phẩm từ category gia vị
+    const spiceProducts = await productService.getProducts(
+      "dau-an-nuoc-cham-gia-vi"
+    );
+
+    if (!spiceProducts || spiceProducts.length === 0) {
+      console.warn("No spice products found in database");
+      return [];
+    }
+
+    // Tạo danh sách gia vị có sẵn
+    const spiceList = spiceProducts
+      .filter((p) => p.is_active !== false && p.stock_status === "in_stock")
+      .map(
+        (p) =>
+          `- ${p.name} (${p.unit || "N/A"}) - Giá: ${
+            p.final_price || p.unit_price
+          }đ`
+      )
+      .join("\n");
+
+    const model = "gemini-2.0-flash";
+
+    const prompt = `
+Bạn là một đầu bếp chuyên nghiệp Việt Nam. Hãy liệt kê CHÍNH XÁC các gia vị THIẾT YẾU để nấu món "${dishName}".
+
+DANH SÁCH GIA VỊ CÓ SẴN TRONG KHO:
+${spiceList}
+
+YÊU CẦU BẮT BUỘC:
+1. CHỈ chọn gia vị TỪ DANH SÁCH TRÊN - KHÔNG tự ý thêm gia vị không có
+2. Chọn các gia vị THIẾT YẾU cho món này (tối đa 8-10 loại)
+3. KHÔNG chọn nguyên liệu chính (thịt, cá, rau...) - CHỈ chọn GIA VỊ
+4. Phân loại rõ ràng theo type:
+   - "oil": Dầu ăn (dầu hướng dương, dầu oliu, dầu mè...)
+   - "sauce": Nước chấm/tương (nước mắm, tương ớt, nước tương...)
+   - "dry_spice": Gia vị khô (muối, tiêu, hạt nêm, bột canh...)
+   - "other": Các loại khác
+5. Tên gia vị phải CHÍNH XÁC giống trong danh sách
+
+VÍ DỤ:
+- Món "Thịt kho tàu" → chọn: nước mắm (sauce), đường (dry_spice), tiêu (dry_spice)
+- Món "Gà xào sả ớt" → chọn: dầu ăn (oil), nước mắm (sauce), hạt nêm (dry_spice)
+
+Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự đặc biệt):
+[
+  {
+    "name": "Tên chính xác của gia vị trong danh sách",
+    "type": "oil|sauce|dry_spice|other",
+    "note": "Mục đích sử dụng ngắn gọn"
+  }
+]
+`;
+
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ];
+
+    const response = await ai.models.generateContent({
+      model,
+      contents,
+    });
+
+    // Lấy text từ response
+    let responseText = "";
+    if (response.text) {
+      responseText = response.text;
+    }
+
+    // Parse JSON từ response
+    let jsonText = responseText.trim();
+    if (jsonText.startsWith("```json")) {
+      jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?$/g, "");
+    } else if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/```\n?/g, "").replace(/```\n?$/g, "");
+    }
+
+    const suggestedSpices = JSON.parse(jsonText);
+
+    // Map với sản phẩm thực tế trong kho
+    const spices: (Product & { spice_type?: string })[] = [];
+
+    for (const suggestion of suggestedSpices) {
+      // Tìm sản phẩm khớp tên
+      const matchedProduct = spiceProducts.find(
+        (p) =>
+          p.name.toLowerCase().includes(suggestion.name.toLowerCase()) ||
+          suggestion.name.toLowerCase().includes(p.name.toLowerCase())
+      );
+
+      if (matchedProduct) {
+        spices.push({
+          ...matchedProduct,
+          spice_type: suggestion.type || "other",
+        });
+      }
+    }
+
+    console.log(`✅ Found ${spices.length} spices for "${dishName}"`);
+    return spices;
+  } catch (error) {
+    console.error("Error calling Gemini API for spices:", error);
+    // Không throw error, chỉ return empty array
+    return [];
   }
 }
 

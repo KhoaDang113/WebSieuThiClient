@@ -1,87 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2, Lock, Unlock } from "lucide-react";
-
-interface User {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  role: "admin" | "staff" | "customer";
-  status: "active" | "locked";
-  created_at: string;
-}
-
-const mockUsers: User[] = [
-  {
-    id: "1",
-    full_name: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    phone: "0912345678",
-    role: "admin",
-    status: "active",
-    created_at: "2024-01-15",
-  },
-  {
-    id: "2",
-    full_name: "Trần Thị B",
-    email: "tranthib@example.com",
-    phone: "0987654321",
-    role: "staff",
-    status: "active",
-    created_at: "2024-02-20",
-  },
-  {
-    id: "3",
-    full_name: "Lê Văn C",
-    email: "levanc@example.com",
-    phone: "0901234567",
-    role: "customer",
-    status: "locked",
-    created_at: "2024-03-10",
-  },
-  {
-    id: "4",
-    full_name: "Phạm Thị D",
-    email: "phamthid@example.com",
-    phone: "0923456789",
-    role: "customer",
-    status: "active",
-    created_at: "2024-03-25",
-  },
-  {
-    id: "5",
-    full_name: "Hoàng Văn E",
-    email: "hoangvane@example.com",
-    phone: "0934567890",
-    role: "staff",
-    status: "active",
-    created_at: "2024-04-05",
-  },
-];
+import { Edit2, Trash2, Lock, Unlock, Loader2 } from "lucide-react";
+import { userService } from "@/api";
+import type { User, UserRole } from "@/types";
 
 const roleColors = {
-  admin: "bg-red-100 text-red-800",
+  user: "bg-green-100 text-green-800",
   staff: "bg-blue-100 text-blue-800",
-  customer: "bg-green-100 text-green-800",
+  admin: "bg-red-100 text-red-800",
 };
 
 const roleLabels = {
-  admin: "Admin",
+  user: "Khách hàng",
   staff: "Nhân viên",
-  customer: "Khách hàng",
-};
-
-const statusColors = {
-  active: "bg-green-100 text-green-800",
-  locked: "bg-red-100 text-red-800",
-};
-
-const statusLabels = {
-  active: "Hoạt động",
-  locked: "Bị khóa",
+  admin: "Admin",
 };
 
 interface UserTableProps {
@@ -93,60 +27,123 @@ export function UserManagementTable({
   searchTerm,
   roleFilter,
 }: UserTableProps) {
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
-  const [toggleStatusUserId, setToggleStatusUserId] = useState<string | null>(
-    null
-  );
-
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.includes(searchTerm);
-
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
-
-    return matchesSearch && matchesRole;
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
   });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa user này?")) {
-      setUsers(users.filter((user) => user.id !== id));
-      setDeleteUserId(null);
+  // Fetch users from API
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchTerm || undefined,
+        role: roleFilter !== "all" ? (roleFilter as UserRole) : undefined,
+      };
+
+      const response = await userService.getAllUsers(params);
+      setUsers(response.users);
+      setPagination(response.pagination);
+    } catch (err: any) {
+      console.error("Error fetching users:", err);
+      setError(err.response?.data?.message || "Không thể tải danh sách user");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleToggleStatus = (id: string) => {
-    const user = users.find((u) => u.id === id);
-    if (
-      user &&
-      window.confirm(
-        `Bạn có chắc chắn muốn ${
-          user.status === "active" ? "khóa" : "mở khóa"
-        } user này?`
-      )
-    ) {
-      setUsers(
-        users.map((user) =>
-          user.id === id
-            ? {
-                ...user,
-                status: user.status === "active" ? "locked" : "active",
-              }
-            : user
-        )
+  // Fetch users when filters or pagination changes
+  useEffect(() => {
+    fetchUsers();
+  }, [searchTerm, roleFilter, pagination.page]);
+
+  // Handle toggle user status (lock/unlock)
+  const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+    const user = users.find((u) => u._id === userId);
+    if (!user) return;
+
+    const action = currentStatus ? "khóa" : "mở khóa";
+    if (!window.confirm(`Bạn có chắc chắn muốn ${action} user "${user.name}"?`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(userId);
+      
+      if (currentStatus) {
+        await userService.lockUser(userId);
+      } else {
+        await userService.unlockUser(userId);
+      }
+
+      // Refresh users list after action
+      await fetchUsers();
+    } catch (err: any) {
+      console.error("Error toggling user status:", err);
+      alert(
+        err.response?.data?.message || `Không thể ${action} user. Vui lòng thử lại.`
       );
+    } finally {
+      setActionLoading(null);
     }
   };
+
+  // Handle delete user (placeholder - need to implement backend endpoint)
+  const handleDelete = (id: string) => {
+    const user = users.find((u) => u._id === id);
+    if (!user) return;
+    
+    alert(`Chức năng xóa user "${user.name}" chưa được implement ở backend`);
+  };
+
+  // Format date
+  const formatDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString("vi-VN");
+  };
+
+  if (loading && users.length === 0) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <span>Đang tải danh sách user...</span>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={fetchUsers}>Thử lại</Button>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold">
-          Danh sách User ({filteredUsers.length})
+          Danh sách User ({pagination.total})
         </h3>
+        {loading && (
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        )}
       </div>
+      
       <div className="w-full overflow-x-auto">
         <div className="max-h-[600px] overflow-y-auto border rounded-lg">
           <table className="admin-table w-full">
@@ -163,29 +160,44 @@ export function UserManagementTable({
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td className="font-medium text-foreground">{user.id}</td>
-                  <td className="text-foreground">{user.full_name}</td>
-                  <td className="text-muted-foreground">{user.email}</td>
-                  <td className="text-muted-foreground">{user.phone}</td>
+              {users.map((user) => (
+                <tr key={user._id}>
+                  <td className="font-medium text-foreground">
+                    {user._id.slice(-6)}
+                  </td>
+                  <td className="text-foreground">{user.name}</td>
+                  <td className="text-muted-foreground">
+                    {user.email || "N/A"}
+                  </td>
+                  <td className="text-muted-foreground">
+                    {user.phone || "N/A"}
+                  </td>
                   <td>
                     <Badge className={roleColors[user.role]}>
                       {roleLabels[user.role]}
                     </Badge>
                   </td>
                   <td>
-                    <Badge className={statusColors[user.status]}>
-                      {statusLabels[user.status]}
+                    <Badge
+                      className={
+                        user.isLocked
+                          ? "bg-red-100 text-red-800"
+                          : "bg-green-100 text-green-800"
+                      }
+                    >
+                      {user.isLocked ? "Bị khóa" : "Hoạt động"}
                     </Badge>
                   </td>
-                  <td className="text-muted-foreground">{user.created_at}</td>
+                  <td className="text-muted-foreground">
+                    {formatDate(user.createdAt)}
+                  </td>
                   <td>
                     <div className="flex gap-2 whitespace-nowrap flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
                         className="gap-1 w-20 flex-shrink-0"
+                        disabled
                       >
                         <Edit2 className="w-4 h-4" />
                         Sửa
@@ -194,17 +206,20 @@ export function UserManagementTable({
                         variant="ghost"
                         size="sm"
                         className="gap-1 w-24 flex-shrink-0"
-                        onClick={() => handleToggleStatus(user.id)}
+                        onClick={() => handleToggleStatus(user._id, !user.isLocked)}
+                        disabled={actionLoading === user._id}
                       >
-                        {user.status === "active" ? (
-                          <>
-                            <Lock className="w-4 h-4" />
-                            Khóa
-                          </>
-                        ) : (
+                        {actionLoading === user._id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : user.isLocked ? (
                           <>
                             <Unlock className="w-4 h-4" />
                             Mở khóa
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4" />
+                            Khóa
                           </>
                         )}
                       </Button>
@@ -212,7 +227,8 @@ export function UserManagementTable({
                         variant="ghost"
                         size="sm"
                         className="gap-1 text-destructive hover:text-destructive w-16 flex-shrink-0"
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDelete(user._id)}
+                        disabled
                       >
                         <Trash2 className="w-4 h-4" />
                         Xóa
@@ -226,9 +242,40 @@ export function UserManagementTable({
         </div>
       </div>
 
-      {filteredUsers.length === 0 && (
+      {users.length === 0 && !loading && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">Không tìm thấy user nào</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            Trang {pagination.page} / {pagination.totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+              }
+              disabled={pagination.page === 1 || loading}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+              }
+              disabled={pagination.page === pagination.totalPages || loading}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
       )}
     </Card>
