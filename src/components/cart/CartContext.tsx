@@ -1,9 +1,8 @@
-"use client"
-
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from "react"
 import type { CartItem } from "@/types/cart.type"
 import { useAuthStore } from "@/stores/authStore"
 import { toast } from "sonner"
+import productService from "@/api/services/productService"
 
 interface CartContextType {
   cartItems: CartItem[]
@@ -74,11 +73,54 @@ function CartProviderInner({ children }: { children: ReactNode }) {
     }
   }, [user?.id, getCartKey, user])
 
+  // Sync stock từ server sau khi load cart từ localStorage
+  useEffect(() => {
+    const syncCartStock = async () => {
+      if (cartItems.length === 0) return
+      
+      try {
+        // Fetch stock cho tất cả items trong giỏ
+        const updatedItems = await Promise.all(
+          cartItems.map(async (item) => {
+            try {
+              const product = await productService.getProductById(item.id)
+              const latestStock = product.quantity || product.stock_quantity || 0
+              
+              // Chỉ update nếu stock khác với cart hiện tại
+              if (latestStock !== item.stock) {
+                return { ...item, stock: latestStock }
+              }
+              return item
+            } catch (err) {
+              console.error(`Failed to sync stock for ${item.name}:`, err)
+              return item // Giữ nguyên nếu fetch fail
+            }
+          })
+        )
+        
+        // Update cart với stock mới
+        const hasStockChange = updatedItems.some((item, idx) => item.stock !== cartItems[idx].stock)
+        if (hasStockChange) {
+          setCartItems(updatedItems)
+        }
+      } catch (err) {
+        console.error('Failed to sync cart stock:', err)
+      }
+    }
+
+    // Chỉ sync 1 lần khi cart load từ localStorage
+    if (cartItems.length > 0) {
+      syncCartStock()
+    }
+  }, []) // Empty dependency = chỉ chạy 1 lần khi mount
+
   // Lưu vào localStorage mỗi khi cart thay đổi
   useEffect(() => {
     if (typeof window !== "undefined") {
       const cartKey = getCartKey()
-      localStorage.setItem(cartKey, JSON.stringify(cartItems))
+      // Không lưu isOutOfStock vào localStorage - sẽ tính động dựa trên stock
+      const itemsToSave = cartItems.map(({ isOutOfStock, ...item }) => item)
+      localStorage.setItem(cartKey, JSON.stringify(itemsToSave))
     }
   }, [cartItems, getCartKey])
 

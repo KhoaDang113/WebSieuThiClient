@@ -21,8 +21,14 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
   const { createOrder } = useOrders()
   
+  // Tính toán động isOutOfStock dựa trên stock hiện tại (không dùng flag)
+  const itemsWithStockStatus = items.map(item => ({
+    ...item,
+    isOutOfStock: item.stock === 0
+  }))
+  
   // Kiểm tra có sản phẩm hết hàng không
-  const hasOutOfStockItems = items.some(item => item.isOutOfStock || item.stock === 0)
+  const hasOutOfStockItems = itemsWithStockStatus.some(item => item.isOutOfStock)
   
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shippingFee = subtotal >= 300000 ? 0 : 15000
@@ -76,7 +82,7 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
               
               {/* Cart Items List */}
               <div className="divide-y divide-gray-100">
-                {items.map((item, index) => {
+                {itemsWithStockStatus.map((item, index) => {
                   const normalizedImage = typeof item.image === "string" ? item.image.trim() : ""
                   const imageSrc = normalizedImage !== "" ? normalizedImage : PRODUCT_PLACEHOLDER_IMAGE
                   return (
