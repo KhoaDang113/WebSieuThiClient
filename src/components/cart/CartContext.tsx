@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from "react"
 import type { CartItem } from "@/types/cart.type"
 import { useAuthStore } from "@/stores/authStore"
+import { toast } from "sonner"
 
 interface CartContextType {
   cartItems: CartItem[]
@@ -10,6 +11,7 @@ interface CartContextType {
   updateQuantity: (id: string, quantity: number) => void
   removeItem: (id: string) => void
   clearCart: () => void
+  markItemsAsOutOfStock: (productNames: string[]) => void // Đánh dấu sản phẩm hết hàng
   totalItems: number
 }
 
@@ -84,27 +86,66 @@ function CartProviderInner({ children }: { children: ReactNode }) {
     const addedQuantity = item.quantity || 1
     const itemId = item.id
     
-    setCartItems((prev) => {
-      const existingItem = prev.find((i) => i.id === itemId)
+    // Check current state before updating
+    const existingItem = cartItems.find((i) => i.id === itemId)
+    
+    if (existingItem) {
+      // Nếu đã có trong giỏ, tăng số lượng nhưng không vượt quá tồn kho
+      const requestedQuantity = existingItem.quantity + addedQuantity
+      const newQuantity = Math.min(requestedQuantity, existingItem.stock)
       
-      if (existingItem) {
-        // Nếu đã có trong giỏ, tăng số lượng
-        const newQuantity = existingItem.quantity + addedQuantity
-        return prev.map((i) =>
+      if (requestedQuantity > existingItem.stock) {
+        toast.warning(`${item.name} chỉ còn ${existingItem.stock} sản phẩm trong kho`, {
+          duration: 4000,
+        })
+      } else {
+        toast.success(`Đã thêm ${item.name} vào giỏ hàng`, {
+          duration: 3000,
+        })
+      }
+      
+      setCartItems((prev) =>
+        prev.map((i) =>
           i.id === itemId ? { ...i, quantity: newQuantity } : i
         )
+      )
+    } else {
+      // Thêm mới vào giỏ, đảm bảo không vượt quá tồn kho
+      const limitedQuantity = Math.min(addedQuantity, item.stock)
+      
+      if (addedQuantity > item.stock) {
+        toast.warning(`${item.name} chỉ còn ${item.stock} sản phẩm trong kho`, {
+          duration: 4000,
+        })
       } else {
-        // Thêm mới vào giỏ
-        return [...prev, { ...item, quantity: addedQuantity }]
+        toast.success(`Đã thêm ${item.name} vào giỏ hàng`, {
+          duration: 3000,
+        })
       }
-    })
-  }, [])
+      
+      setCartItems((prev) => [...prev, { ...item, quantity: limitedQuantity }])
+    }
+  }, [cartItems])
   
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity < 1) return
     setCartItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          // Kiểm tra không vượt quá số lượng tồn kho
+          const newQuantity = Math.min(quantity, item.stock)
+          
+          if (quantity > item.stock) {
+            toast.warning(`${item.name} chỉ còn ${item.stock} sản phẩm trong kho`, {
+              duration: 4000,
+            })
+          }
+          
+          return { ...item, quantity: newQuantity }
+        }
+        return item
+      })
     )
   }, [])
 
@@ -114,6 +155,21 @@ function CartProviderInner({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     setCartItems([])
+  }, [])
+
+  // Đánh dấu sản phẩm hết hàng dựa trên tên
+  const markItemsAsOutOfStock = useCallback((productNames: string[]) => {
+    setCartItems((prev) =>
+      prev.map((item) => {
+        const isOutOfStock = productNames.some(
+          (name) => item.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(item.name.toLowerCase())
+        )
+        if (isOutOfStock) {
+          return { ...item, isOutOfStock: true, stock: 0 }
+        }
+        return item
+      })
+    )
   }, [])
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -126,6 +182,7 @@ function CartProviderInner({ children }: { children: ReactNode }) {
         updateQuantity,
         removeItem,
         clearCart,
+        markItemsAsOutOfStock,
         totalItems,
       }}
     >

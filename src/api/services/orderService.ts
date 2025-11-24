@@ -98,8 +98,8 @@ class OrderService {
 
   private async waitForJobCompletion(
     jobId: string,
-    timeoutMs = 20000,
-    intervalMs = 1000
+    timeoutMs = 10000, // Reduced from 20s to 10s for faster response
+    intervalMs = 500   // Reduced from 1s to 500ms for faster polling
   ): Promise<{
     jobId: string;
     orderId?: string;
@@ -129,7 +129,8 @@ class OrderService {
         }
       } catch (error) {
         console.error(`[OrderService] Error polling job ${jobId}:`, error);
-        // Nếu time out sẽ break ở điều kiện while, nên tiếp tục loop tới khi hết thời gian
+        // Re-throw the error to stop polling and let the caller handle it
+        throw error;
       }
 
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -139,7 +140,7 @@ class OrderService {
       `[OrderService] Timeout while waiting for order job ${jobId} completion`
     );
 
-    return { jobId };
+    throw new Error("Timeout: Đơn hàng đang được xử lý. Vui lòng kiểm tra lại sau.");
   }
 
   /**

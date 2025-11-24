@@ -83,12 +83,19 @@ export function CustomerOrderCard({
   // Xử lý mua lại
   const handleBuyAgain = () => {
     order.items.forEach((item) => {
+      // Note: Sử dụng số lượng lớn làm stock mặc định vì order không lưu thông tin tồn kho
+      // Trong thực tế nên fetch lại product để lấy stock hiện tại
+      const productId = item.product_id.toString();
+      const fullProduct = productsMap[productId];
+      const currentStock = fullProduct?.quantity || fullProduct?.stock_quantity || 9999;
+      
       addToCart({
-        id: item.product_id.toString(),
+        id: productId,
         name: item.name,
         price: item.price,
         image: item.image,
         unit: item.unit,
+        stock: currentStock,
         quantity: item.quantity,
       });
     });

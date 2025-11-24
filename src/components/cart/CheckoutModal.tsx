@@ -8,6 +8,7 @@ import type { CreateOrderCustomerInfo } from "@/hooks/useOrders";
 import { useAddress } from "@/components/address/AddressContext";
 import { useAuthStore } from "@/stores/authStore";
 import PaymentService from "@/api/services/paymentService";
+import { toast } from "sonner";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface CheckoutModalProps {
     customerInfo: CreateOrderCustomerInfo
   ) => Promise<string>;
   onClearCart: () => void;
+  onMarkItemsAsOutOfStock: (productNames: string[]) => void; // Thêm callback để đánh dấu sản phẩm hết hàng
 }
 
 interface CustomerInfoState {
@@ -34,6 +36,7 @@ export default function CheckoutModal({
   cartItems,
   onCreateOrder,
   onClearCart,
+  onMarkItemsAsOutOfStock,
 }: CheckoutModalProps) {
   const { address } = useAddress();
   const currentUser = useAuthStore((state) => state.user);
@@ -115,12 +118,12 @@ export default function CheckoutModal({
     e.preventDefault();
 
     if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+      toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
     if (!customerInfo.addressId) {
-      alert("Vui lòng chọn địa chỉ giao hàng hợp lệ!");
+      toast.error("Vui lòng chọn địa chỉ giao hàng hợp lệ!");
       return;
     }
 
@@ -131,13 +134,13 @@ export default function CheckoutModal({
         !invoiceInfo.taxCode ||
         !invoiceInfo.email
       ) {
-        alert("Vui lòng điền đầy đủ thông tin xuất hóa đơn công ty!");
+        toast.error("Vui lòng điền đầy đủ thông tin xuất hóa đơn công ty!");
         return;
       }
     }
 
     if (!agreedPolicy) {
-      alert(
+      toast.error(
         "Vui lòng đồng ý với chính sách xử lý dữ liệu cá nhân và chính sách đổi trả, hoàn tiền."
       );
       return;
@@ -172,7 +175,7 @@ export default function CheckoutModal({
           );
 
           if (!paymentUrl) {
-            alert("Không tạo được link thanh toán. Vui lòng thử lại.");
+            toast.error("Không tạo được link thanh toán. Vui lòng thử lại.");
             return;
           }
 
@@ -182,12 +185,41 @@ export default function CheckoutModal({
           window.location.href = paymentUrl.data as unknown as string;
         } catch (err) {
           console.error("Error creating payment:", err);
-          alert("Không tạo được giao dịch thanh toán. Vui lòng thử lại.");
+          toast.error("Không tạo được giao dịch thanh toán. Vui lòng thử lại.");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating order:", error);
-      alert("Có lỗi xảy ra khi tạo đơn hàng!");
+      
+      // Parse error message for stock issues
+      const errorMessage = error?.response?.data?.message || error?.message || "Có lỗi xảy ra khi tạo đơn hàng!";
+      
+      if (errorMessage.includes("Insufficient stock")) {
+        // Extract product names only, remove "Available X, Requested Y" details
+        const details = errorMessage.replace("Insufficient stock: ", "");
+        const items = details.split(";").map((item: string) => {
+          // Extract only the product name (before the colon)
+          const productName = item.split(":")[0]?.trim();
+          return productName;
+        }).filter(Boolean);
+        
+        // Mark those items as out of stock in the cart
+        onMarkItemsAsOutOfStock(items);
+        
+        toast.error(
+          <div>
+            <div className="font-semibold mb-2">Sản phẩm đã hết hàng:</div>
+            <ul className="text-sm space-y-1">
+              {items.map((item: string, idx: number) => (
+                <li key={idx}>• {item}</li>
+              ))}
+            </ul>
+          </div>,
+          { duration: 5000 }
+        );
+      } else {
+        toast.error(errorMessage, { duration: 4000 });
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -187,6 +187,7 @@ export default function ProductDetail() {
       price: product.final_price || product.unit_price,
       image: getProductImage(product),
       unit: product.unit || "1 sản phẩm",
+      stock: product.quantity || product.stock_quantity || 0,
       quantity: quantity,
     });
   };

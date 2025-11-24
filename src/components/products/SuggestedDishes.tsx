@@ -125,6 +125,7 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
       price: product.final_price || product.unit_price,
       image: imageUrl,
       unit: product.unit || "1 sản phẩm",
+      stock: product.quantity || product.stock_quantity || 0,
       quantity: product.selectedQuantity || 1,
     });
   };

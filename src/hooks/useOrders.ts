@@ -251,8 +251,9 @@ export function useOrders() {
           (jobId ? jobId.toString() : `JOB-${Date.now()}`);
 
         return idForReturn;
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error creating order:", err);
+        // Don't show toast here - let CheckoutModal handle it to avoid double notifications
         throw err;
       }
     },
