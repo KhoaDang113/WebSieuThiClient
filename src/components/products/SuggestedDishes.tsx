@@ -8,11 +8,11 @@ import type { Product } from "@/types";
 import {
   getSuggestedDishesForProduct,
   getIngredientsForDish,
+  getSpicesForDish,
 } from "@/lib/geminiService";
 import { useCart } from "@/components/cart/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/products/ProductCard";
-import productService from "@/api/services/productService";
 
 interface SuggestedDishesProps {
   productName: string;
@@ -28,8 +28,12 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [spices, setSpices] = useState<Product[]>([]);
+  
+  // State cho gia vị
+  const [dishSpices, setDishSpices] = useState<(Product & { spice_type?: string })[]>([]);
   const [isLoadingSpices, setIsLoadingSpices] = useState(false);
+  const [selectedSpiceTab, setSelectedSpiceTab] = useState<string>("all");
+  
   const spicesScrollRef = useRef<HTMLDivElement>(null);
   const ingredientsScrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -38,6 +42,15 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     useState(false);
   const [showIngredientsRightArrow, setShowIngredientsRightArrow] =
     useState(false);
+
+  // Danh sách các tab gia vị
+  const spiceTabs = [
+    { id: "all", name: "Tất cả", type: null },
+    { id: "oil", name: "Dầu ăn", type: "oil" },
+    { id: "sauce", name: "Nước chấm", type: "sauce" },
+    { id: "dry_spice", name: "Gia vị khô", type: "dry_spice" },
+    { id: "other", name: "Khác", type: "other" },
+  ];
 
   // Load suggested dishes khi component mount hoặc productName thay đổi
   useEffect(() => {
@@ -67,18 +80,28 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     setSelectedCombo({ ...combo, ingredients: [] });
     setIsModalOpen(true);
     setIsLoadingIngredients(true);
+    setIsLoadingSpices(true);
     setError(null);
     setIngredients([]);
+    setDishSpices([]);
+    setSelectedSpiceTab("all");
 
     try {
-      const ingredientsList = await getIngredientsForDish(combo.name);
+      // Fetch ingredients and spices in parallel
+      const [ingredientsList, spicesList] = await Promise.all([
+        getIngredientsForDish(combo.name),
+        getSpicesForDish(combo.name),
+      ]);
+      
       setIngredients(ingredientsList);
+      setDishSpices(spicesList);
       setSelectedCombo({ ...combo, ingredients: ingredientsList });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
-      console.error("Error loading ingredients:", err);
+      console.error("Error loading data:", err);
     } finally {
       setIsLoadingIngredients(false);
+      setIsLoadingSpices(false);
     }
   };
 
@@ -86,7 +109,9 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     setIsModalOpen(false);
     setSelectedCombo(null);
     setIngredients([]);
+    setDishSpices([]);
     setError(null);
+    setSelectedSpiceTab("all");
   };
 
   // Convert Ingredient to Product for ProductCard
@@ -129,27 +154,6 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
       quantity: product.selectedQuantity || 1,
     });
   };
-
-  // Load spices when modal opens
-  useEffect(() => {
-    const fetchSpices = async () => {
-      if (!isModalOpen) return;
-
-      try {
-        setIsLoadingSpices(true);
-        const spicesProducts = await productService.getProducts(
-          "dau-an-nuoc-cham-gia-vi"
-        );
-        setSpices(spicesProducts);
-      } catch (err) {
-        console.error("Error fetching spices:", err);
-      } finally {
-        setIsLoadingSpices(false);
-      }
-    };
-
-    fetchSpices();
-  }, [isModalOpen]);
 
   const checkScrollButtons = () => {
     if (spicesScrollRef.current) {
@@ -197,7 +201,7 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
       window.removeEventListener("resize", checkScrollButtons);
       window.removeEventListener("resize", checkIngredientsScrollButtons);
     };
-  }, [spices, ingredients]);
+  }, [dishSpices, ingredients]);
 
   const scrollSpices = (direction: "left" | "right") => {
     if (spicesScrollRef.current) {
@@ -390,63 +394,90 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
                       Mua thêm gia vị
                     </h4>
 
+                    {/* Spice Tabs */}
+                    <div className="flex gap-2 overflow-x-auto pb-3 px-2 no-scrollbar">
+                      {spiceTabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setSelectedSpiceTab(tab.id)}
+                          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+                            selectedSpiceTab === tab.id
+                              ? "bg-green-600 text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          {tab.name}
+                        </button>
+                      ))}
+                    </div>
+
                     {isLoadingSpices ? (
                       <div className="flex items-center justify-center w-full py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                       </div>
-                    ) : spices.length > 0 ? (
-                      <div className="relative">
-                        {/* Left Arrow */}
-                        {showLeftArrow && (
-                          <button
-                            onClick={() => scrollSpices("left")}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
-                          >
-                            <ChevronLeft className="w-4 h-4 text-gray-700" />
-                          </button>
-                        )}
+                    ) : (() => {
+                      // Filter spices based on selected tab
+                      const filteredSpices = selectedSpiceTab === "all"
+                        ? dishSpices
+                        : dishSpices.filter((spice) => spice.spice_type === selectedSpiceTab);
 
-                        {/* Scroll Container with ProductCard */}
-                        <div
-                          ref={spicesScrollRef}
-                          className="overflow-x-auto no-scrollbar scroll-smooth"
-                          style={{
-                            paddingLeft: showLeftArrow ? "40px" : "8px",
-                            paddingRight: showRightArrow ? "40px" : "8px",
-                          }}
-                        >
-                          <div className="flex gap-3 pb-2">
-                            {spices.map((spice) => (
-                              <div
-                                key={spice.id}
-                                className="flex-shrink-0 w-[180px]"
-                              >
-                                <ProductCard
-                                  product={spice}
-                                  onAddToCart={handleAddToCart}
-                                />
-                              </div>
-                            ))}
+                      return filteredSpices.length > 0 ? (
+                        <div className="relative">
+                          {/* Left Arrow */}
+                          {showLeftArrow && (
+                            <button
+                              onClick={() => scrollSpices("left")}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
+                            >
+                              <ChevronLeft className="w-4 h-4 text-gray-700" />
+                            </button>
+                          )}
+
+                          {/* Scroll Container with ProductCard */}
+                          <div
+                            ref={spicesScrollRef}
+                            className="overflow-x-auto no-scrollbar scroll-smooth"
+                            style={{
+                              paddingLeft: showLeftArrow ? "40px" : "8px",
+                              paddingRight: showRightArrow ? "40px" : "8px",
+                            }}
+                          >
+                            <div className="flex gap-3 pb-2">
+                              {filteredSpices.map((spice) => (
+                                <div
+                                  key={spice.id}
+                                  className="flex-shrink-0 w-[180px]"
+                                >
+                                  <ProductCard
+                                    product={spice}
+                                    onAddToCart={handleAddToCart}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Right Arrow */}
-                        {showRightArrow && (
-                          <button
-                            onClick={() => scrollSpices("right")}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
-                          >
-                            <ChevronRight className="w-4 h-4 text-gray-700" />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-full py-8">
-                        <p className="text-gray-500 text-sm">
-                          Không có gia vị nào
-                        </p>
-                      </div>
-                    )}
+                          {/* Right Arrow */}
+                          {showRightArrow && (
+                            <button
+                              onClick={() => scrollSpices("right")}
+                              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
+                            >
+                              <ChevronRight className="w-4 h-4 text-gray-700" />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-full py-8">
+                          <p className="text-gray-500 text-sm">
+                            {selectedSpiceTab === "all" 
+                              ? "Không có gia vị nào cho món này"
+                              : `Không có gia vị loại "${spiceTabs.find(t => t.id === selectedSpiceTab)?.name}" cho món này`
+                            }
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </>
               ) : (

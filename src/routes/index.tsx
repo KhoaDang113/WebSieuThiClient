@@ -7,6 +7,12 @@ import AdminProducts from "@/pages/admin/products";
 import AdminCategories from "@/pages/admin/categories";
 import AddProductPage from "@/pages/admin/products/add";
 import EditProductPage from "@/pages/admin/products/edit/[id]";
+import AdminBanners from "@/pages/admin/banners";
+import AddBannerPage from "@/pages/admin/banners/add";
+import EditBannerPage from "@/pages/admin/banners/edit/[id]";
+import AdminCombos from "@/pages/admin/combos";
+import AddComboPage from "@/pages/admin/combos/add";
+import EditComboPage from "@/pages/admin/combos/edit/[id]";
 import StaffMessage from "@/pages/messages";
 import ConversationDetailPage from "@/pages/messages/detail";
 import AdminInventory from "@/pages/admin/inventory";
@@ -174,6 +180,30 @@ const router: RouteObject[] = [
       {
         path: "/admin/brands",
         element: <AdminBrands />,
+      },
+      {
+        path: "/admin/banners",
+        element: <AdminBanners />,
+      },
+      {
+        path: "/admin/banners/add",
+        element: <AddBannerPage />,
+      },
+      {
+        path: "/admin/banners/edit/:id",
+        element: <EditBannerPage />,
+      },
+      {
+        path: "/admin/combos",
+        element: <AdminCombos />,
+      },
+      {
+        path: "/admin/combos/add",
+        element: <AddComboPage />,
+      },
+      {
+        path: "/admin/combos/edit/:id",
+        element: <EditComboPage />,
       },
     ],
   },
