@@ -5,7 +5,7 @@ import { CustomerOrderCard } from "@/components/order/CustomerOrderCard";
 import { useOrders } from "@/hooks/useOrders";
 
 export default function CustomerOrdersPage() {
-  const { orders, loading, error, cancelOrder, payOrder } = useOrders();
+  const { orders, loading, error, cancelOrder, payOrder, fetchOrders } = useOrders();
   const [filter, setFilter] = useState<
     "all" | "pending" | "delivered" | "cancelled"
   >("all");
@@ -146,6 +146,7 @@ export default function CustomerOrdersPage() {
                 order={order}
                 onCancelOrder={cancelOrder}
                 onPayOrder={payOrder}
+                onOrderUpdate={fetchOrders}
               />
             ))
           ) : (

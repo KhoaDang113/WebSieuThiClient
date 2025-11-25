@@ -264,6 +264,7 @@ export function useOrders() {
     orders,
     loading,
     error,
+    fetchOrders, // Export fetchOrders to allow manual refresh
     confirmOrder,
     rejectOrder,
     deliverOrder,

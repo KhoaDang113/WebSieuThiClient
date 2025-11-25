@@ -52,6 +52,7 @@ export interface BackendOrder {
   created_at?: string;
   updated_at?: string;
   is_company_invoice?: boolean;
+  is_rating?: boolean;
   invoice_info?: {
     company_name?: string;
     company_address?: string;
@@ -142,6 +143,7 @@ export function transformOrder(order: BackendOrder): Order {
     created_at: order.created_at || new Date().toISOString(),
     notes: order.notes,
     is_company_invoice: !!order.is_company_invoice,
+    is_rating: !!order.is_rating,
     invoice_info:
       order.is_company_invoice && order.invoice_info
         ? {

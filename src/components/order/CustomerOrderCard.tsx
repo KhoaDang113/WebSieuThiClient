@@ -5,22 +5,31 @@ import { useCart } from "@/components/cart/CartContext";
 import { PRODUCT_PLACEHOLDER_IMAGE, getProductImage } from "@/lib/constants";
 import { productService } from "@/api";
 import type { Product } from "@/types/product.type";
+import { OrderRatingDialog } from "./OrderRatingDialog";
+import { ViewOrderRatingDialog } from "./ViewOrderRatingDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
 
 interface CustomerOrderCardProps {
   order: Order;
   onCancelOrder?: (orderId: string) => void;
   onPayOrder?: (orderId: string) => void;
+  onOrderUpdate?: () => void; // Callback to refetch orders after rating
 }
 
 export function CustomerOrderCard({
   order,
   onCancelOrder,
   onPayOrder,
+  onOrderUpdate,
 }: CustomerOrderCardProps) {
   const { addToCart } = useCart();
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [productsMap, setProductsMap] = useState<Record<string, Product>>({});
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [showViewRatingDialog, setShowViewRatingDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -83,14 +92,12 @@ export function CustomerOrderCard({
   // Xử lý mua lại
   const handleBuyAgain = () => {
     order.items.forEach((item) => {
-      // Note: Sử dụng số lượng lớn làm stock mặc định vì order không lưu thông tin tồn kho
-      // Trong thực tế nên fetch lại product để lấy stock hiện tại
-      const productId = item.product_id.toString();
-      const fullProduct = productsMap[productId];
+      const productId = item.product_id_string;
+      const fullProduct = productsMap[productId as string];
       const currentStock = fullProduct?.quantity || fullProduct?.stock_quantity || 9999;
       
       addToCart({
-        id: productId,
+        id: productId as string,
         name: item.name,
         price: item.price,
         image: item.image,
@@ -99,14 +106,16 @@ export function CustomerOrderCard({
         quantity: item.quantity,
       });
     });
-    alert("Đã thêm tất cả sản phẩm vào giỏ hàng!");
+    toast.success("Đã thêm tất cả sản phẩm vào giỏ hàng!");
   };
 
   // Xử lý hủy đơn
   const handleCancel = () => {
-    if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
-      onCancelOrder?.(order.id);
-    }
+    setShowCancelDialog(true);
+  };
+
+  const handleConfirmCancel = () => {
+    onCancelOrder?.(order.id);
   };
 
   // Xử lý thanh toán
@@ -304,6 +313,29 @@ export function CustomerOrderCard({
               {formatPrice(order.total_amount)}đ
             </p>
           </div>
+          
+          {/* Rating button - only show for delivered orders */}
+          {order.status === "delivered" && (
+            <>
+              {!order.is_rating ? (
+                <Button
+                  onClick={() => setShowRatingDialog(true)}
+                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-6"
+                >
+                  Đánh giá
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setShowViewRatingDialog(true)}
+                  variant="outline"
+                  className="border-orange-500 text-orange-500 hover:bg-orange-50 rounded-lg px-6"
+                >
+                  Xem đánh giá
+                </Button>
+              )}
+            </>
+          )}
+          
           <Button
             onClick={handleBuyAgain}
             className="bg-[#007E42] hover:bg-[#006633] text-white rounded-lg px-6"
@@ -312,6 +344,36 @@ export function CustomerOrderCard({
           </Button>
         </div>
       </div>
+
+      {/* Rating Dialog */}
+      <OrderRatingDialog
+        open={showRatingDialog}
+        onClose={() => setShowRatingDialog(false)}
+        orderId={order.id}
+        onSuccess={() => {
+          // Refetch orders to update is_rating status
+          onOrderUpdate?.();
+        }}
+      />
+
+      {/* View Rating Dialog */}
+      <ViewOrderRatingDialog
+        open={showViewRatingDialog}
+        onClose={() => setShowViewRatingDialog(false)}
+        orderId={order.id}
+      />
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        title="Xác nhận hủy đơn hàng"
+        description="Bạn có chắc chắn muốn hủy đơn hàng này?"
+        confirmText="Hủy đơn"
+        cancelText="Không"
+        onConfirm={handleConfirmCancel}
+        variant="destructive"
+      />
     </div>
   );
 }

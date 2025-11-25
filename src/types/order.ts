@@ -38,4 +38,5 @@ export interface Order {
   notes?: string;
   is_company_invoice?: boolean;
   invoice_info?: OrderInvoiceInfo | null;
+  is_rating?: boolean; // Whether order has been rated
 }

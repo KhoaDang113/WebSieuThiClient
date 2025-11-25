@@ -20,6 +20,7 @@ export { default as ratingService } from "./services/ratingService";
 export { default as orderService } from "./services/orderService";
 export { default as brandService } from "./services/brandService";
 export { default as comboService } from "./services/comboService";
+export { default as orderRatingService } from "./services/orderRatingService";
 
 // Export types
 export type * from "./types";
