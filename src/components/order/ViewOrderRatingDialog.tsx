@@ -151,6 +151,27 @@ export function ViewOrderRatingDialog({
               </div>
             )}
 
+            {/* Images */}
+            {rating.images && rating.images.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Hình ảnh ({rating.images.length})
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {rating.images.map((image, index) => (
+                    <div key={index} className="aspect-square">
+                      <img
+                        src={image}
+                        alt={`Ảnh đánh giá ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(image, '_blank')}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Admin Response */}
             {rating.addmin_respone && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

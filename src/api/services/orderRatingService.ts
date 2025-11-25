@@ -4,9 +4,14 @@ import type { OrderRating, CreateOrderRatingDto } from "@/types/order-rating.typ
 class OrderRatingService {
   private readonly basePath = "/order-rating";
 
-  async createRating(data: CreateOrderRatingDto): Promise<OrderRating> {
+  async createRating(data: FormData | CreateOrderRatingDto): Promise<OrderRating> {
     try {
-      const response = await api.post<OrderRating>(this.basePath, data);
+      const response = await api.post<OrderRating>(this.basePath, data, {
+        headers:
+          data instanceof FormData
+            ? { "Content-Type": "multipart/form-data" }
+            : undefined,
+      });
       return response.data;
     } catch (error) {
       console.error("[OrderRatingService] Error creating rating:", error);

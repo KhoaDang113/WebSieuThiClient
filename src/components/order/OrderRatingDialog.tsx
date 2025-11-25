@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StarRating } from "@/components/ui/star-rating";
 import { orderRatingService } from "@/api";
-import type { CreateOrderRatingDto } from "@/types/order-rating.type";
 
 interface OrderRatingDialogProps {
   open: boolean;
@@ -36,6 +35,33 @@ export function OrderRatingDialog({
     shipper: 0,
   });
   const [comment, setComment] = useState("");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    if (files.length + selectedImages.length > 5) {
+      setError("Chỉ được chọn tối đa 5 ảnh");
+      return;
+    }
+
+    setSelectedImages((prev) => [...prev, ...files]);
+    
+    // Create previews
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     // Validation
@@ -48,17 +74,32 @@ export function OrderRatingDialog({
     setError(null);
 
     try {
-      const data: CreateOrderRatingDto = {
-        order_id: orderId,
-        rating_overall: ratings.overall,
-        ...(ratings.productQuality > 0 && { rating_product_quality: ratings.productQuality }),
-        ...(ratings.packaging > 0 && { rating_packaging: ratings.packaging }),
-        ...(ratings.deliveryTime > 0 && { rating_delivery_time: ratings.deliveryTime }),
-        ...(ratings.shipper > 0 && { rating_shipper: ratings.shipper }),
-        ...(comment.trim() && { comment: comment.trim() }),
-      };
+      const formData = new FormData();
+      formData.append("order_id", orderId);
+      formData.append("rating_overall", ratings.overall.toString());
+      
+      if (ratings.productQuality > 0) {
+        formData.append("rating_product_quality", ratings.productQuality.toString());
+      }
+      if (ratings.packaging > 0) {
+        formData.append("rating_packaging", ratings.packaging.toString());
+      }
+      if (ratings.deliveryTime > 0) {
+        formData.append("rating_delivery_time", ratings.deliveryTime.toString());
+      }
+      if (ratings.shipper > 0) {
+        formData.append("rating_shipper", ratings.shipper.toString());
+      }
+      if (comment.trim()) {
+        formData.append("comment", comment.trim());
+      }
 
-      await orderRatingService.createRating(data);
+      // Append images
+      selectedImages.forEach((image) => {
+        formData.append("images", image);
+      });
+
+      await orderRatingService.createRating(formData);
       
       // Success
       toast.success("Đánh giá của bạn đã được gửi thành công!");
@@ -74,6 +115,8 @@ export function OrderRatingDialog({
         shipper: 0,
       });
       setComment("");
+      setSelectedImages([]);
+      setImagePreviews([]);
     } catch (err: any) {
       console.error("Error submitting rating:", err);
       const errorMessage =
@@ -98,6 +141,8 @@ export function OrderRatingDialog({
         shipper: 0,
       });
       setComment("");
+      setSelectedImages([]);
+      setImagePreviews([]);
       setError(null);
     }
   };
@@ -180,6 +225,75 @@ export function OrderRatingDialog({
               rows={4}
               className="resize-none"
             />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hình ảnh ({selectedImages.length}/5)
+            </label>
+            
+            {/* Upload Button */}
+            <label className="inline-block cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageSelect}
+                className="hidden"
+                disabled={selectedImages.length >= 5}
+              />
+              <div className={`px-4 py-2 border-2 border-dashed rounded-lg text-center transition-colors ${
+                selectedImages.length >= 5
+                  ? "border-gray-300 text-gray-400 cursor-not-allowed"
+                  : "border-gray-400 text-gray-700 hover:border-green-500 hover:bg-green-50"
+              }`}>
+                {selectedImages.length >= 5 ? (
+                  <span>Đã đủ 5 ảnh</span>
+                ) : (
+                  <>
+                    <span className="font-medium">Chọn ảnh</span>
+                    <span className="text-sm text-gray-500 ml-2">
+                      (Tối đa 5 ảnh)
+                    </span>
+                  </>
+                )}
+              </div>
+            </label>
+
+            {/* Image Previews */}
+            {imagePreviews.length > 0 && (
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group aspect-square">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-full object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Error Message */}
