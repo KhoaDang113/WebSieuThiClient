@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import type { MenuCombo, MenuComboWithIngredients, Ingredient } from "@/types/menu.type";
 import type { Product } from "@/types";
+import type { TypeCombo } from "@/types/typeCombo.type";
 import { getIngredientsForDish, getSpicesForDish } from "@/lib/geminiService";
 import comboService from "@/api/services/comboService";
+import typeComboService from "@/api/services/typeComboService";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/products/ProductCard";
 import { useCart } from "@/components/cart/CartContext";
@@ -27,16 +29,9 @@ export default function DailyMarket() {
   const [showCombosLeftArrow, setShowCombosLeftArrow] = useState(false);
   const [showCombosRightArrow, setShowCombosRightArrow] = useState(false);
 
-  // Danh sách các tab món ăn
-  const tabs = [
-    { id: "all", name: "Món măn" },
-    { id: "appetizer", name: "Món xào, lược" },
-    { id: "fish", name: "Món canh" },
-    { id: "vegetable", name: "Rau sống, nêm" },
-    { id: "fruit", name: "Trái cây" },
-    { id: "dessert", name: "Đồ ăn nhanh" },
-    { id: "drink", name: "Tráng miệng" },
-  ];
+  // State cho danh sách loại món ăn
+  const [dishTypes, setDishTypes] = useState<TypeCombo[]>([]);
+  const [selectedType, setSelectedType] = useState<string>("all");
 
   // Danh sách các tab gia vị
   const spiceTabs = [
@@ -123,15 +118,25 @@ export default function DailyMarket() {
     });
   };
 
-  // Fetch combos từ database khi component mount
+  // Fetch combos và types từ database khi component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoadingCombos(true);
-        const combosData = await comboService.getCombos();
+        const [combosData, typesData] = await Promise.all([
+          comboService.getCombos(),
+          typeComboService.getTypeCombos()
+        ]);
+        
         setCombos(combosData);
+        
+        // Sort types by order_index
+        const sortedTypes = typesData.sort((a, b) => 
+          (a.order_index || 0) - (b.order_index || 0)
+        );
+        setDishTypes(sortedTypes);
       } catch (err) {
-        console.error("Error fetching combos:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setIsLoadingCombos(false);
       }
@@ -180,7 +185,7 @@ export default function DailyMarket() {
         window.removeEventListener("resize", checkCombosScroll);
       };
     }
-  }, [combos]);
+  }, [combos, selectedType]);
 
   const scrollSpices = (direction: "left" | "right") => {
     if (spicesScrollRef.current) {
@@ -208,8 +213,20 @@ export default function DailyMarket() {
     }
   };
 
+  // Filter combos based on selected type
+  const filteredCombos = selectedType === "all"
+    ? combos
+    : combos.filter(combo => {
+        // Handle case where type_combo_id is populated as an object
+        const typeId = typeof combo.type_combo_id === 'object' && combo.type_combo_id !== null
+          ? (combo.type_combo_id as any)._id 
+          : combo.type_combo_id;
+          
+        return typeId === selectedType || combo.type_combo?._id === selectedType;
+      });
+
   return (
-    <div className="mb-6 sm:mb-8 bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+    <div className="mb-6 sm:mb-8 bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 min-h-[350px]">
       {/* Section Header */}
       <div className="mb-4">
         <h2 className="text-lg sm:text-2xl font-bold text-green-700 uppercase mb-3">
@@ -218,15 +235,27 @@ export default function DailyMarket() {
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap text-xs sm:text-sm font-medium transition-colors ${tab.id === "all"
+          <button
+            onClick={() => setSelectedType("all")}
+            className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap text-xs sm:text-sm font-medium transition-colors ${
+              selectedType === "all"
                 ? "bg-green-600 text-white"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+            }`}
+          >
+            Tất cả
+          </button>
+          {dishTypes.map((type) => (
+            <button
+              key={type._id}
+              onClick={() => setSelectedType(type._id)}
+              className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap text-xs sm:text-sm font-medium transition-colors ${
+                selectedType === type._id
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
             >
-              {tab.name}
+              {type.name}
             </button>
           ))}
         </div>
@@ -234,11 +263,11 @@ export default function DailyMarket() {
 
       {/* Dishes Carousel */}
       {isLoadingCombos ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12 h-[240px]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
         </div>
-      ) : combos.length > 0 ? (
-        <div className="relative">
+      ) : filteredCombos.length > 0 ? (
+        <div className="relative min-h-[240px]">
           {/* Left Arrow */}
           {showCombosLeftArrow && (
             <button
@@ -259,7 +288,7 @@ export default function DailyMarket() {
             }}
           >
             <div className="flex gap-4 pb-2">
-              {combos.map((combo) => (
+              {filteredCombos.map((combo) => (
                 <div
                   key={combo._id}
                   className="flex-shrink-0 w-[200px] bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
@@ -303,7 +332,7 @@ export default function DailyMarket() {
           )}
         </div>
       ) : (
-        <div className="text-center py-12">
+        <div className="flex items-center justify-center h-[240px]">
           <p className="text-gray-600">Không có combo món ăn nào</p>
         </div>
       )}
