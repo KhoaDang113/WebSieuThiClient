@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNotification } from "@/hooks/useNotification";
-import { NotificationDrawer } from "../notification/NotificationDrawer";
+import { NotificationDrawer } from "../../notification/NotificationDrawer";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -534,7 +534,6 @@ export function Navbar() {
                           alt="Avatar"
                           className="w-6 h-6 rounded-full object-cover"
                         />
-                        <User className="w-4 h-4" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56 p-0">
@@ -699,8 +698,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Adjust padding for mobile bottom menu */}
-      <div className="md:hidden h-16"></div>
 
       {/* Address List Modal - Quản lý địa chỉ và lưu vào database */}
       <AddressListModal

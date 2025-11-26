@@ -12,7 +12,8 @@ import Banners from "@/components/productPage/banner/Banners";
 import Article from "@/components/productPage/article/Article";
 import ProductGridWithBanners from "@/components/products/ProductGridWithBanners";
 import { bannerService, categoryService, productService, brandService } from "@/api";
-import { toCategoryNav } from "@/lib/constants";
+import { toCategoryNav, getProductId, getProductImage } from "@/lib/constants";
+import { useCart } from "@/components/cart/CartContext";
 import { useNotification } from "@/hooks/useNotification";
 import { mapProductFromApi } from "@/lib/utils/productMapper";
 import { ChevronDown } from "lucide-react";
@@ -40,6 +41,7 @@ export default function ProductsPage() {
   const [promotionProducts, setPromotionProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const { showNotification } = useNotification();
+  const { addToCart } = useCart();
 
   // Lấy parameters từ URL
   const categoryFromUrl = searchParams.get("category");
@@ -335,9 +337,19 @@ export default function ProductsPage() {
     setSearchParams({ category: category.slug || category.id });
   };
 
-  const handleAddToCart = (product: Product) => {
-    // TODO: Implement add to cart logic
-    console.log("Add to cart:", product);
+  const handleAddToCart = (
+    product: Product & { selectedQuantity?: number }
+  ) => {
+    addToCart({
+      id: getProductId(product),
+      name: product.name,
+      price: product.final_price || product.unit_price,
+      image: getProductImage(product),
+      unit: product.unit || "1 sản phẩm",
+      stock: product.quantity || product.stock_quantity || 0,
+      quantity: product.selectedQuantity || 1,
+      original_price: product.unit_price,
+    });
   };
 
   // Handler for advanced filter changes

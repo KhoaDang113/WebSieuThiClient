@@ -27,6 +27,9 @@ export interface Order {
   customer_address: string;
   items: OrderItem[];
   total_amount: number;
+  subtotal?: number;
+  shipping_fee?: number;
+  discount?: number;
   status: "pending" | "confirmed" | "shipped" | "rejected" | "cancelled" | "delivered";
 
   // Payment fields (optional) - backend may supply these

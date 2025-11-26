@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Trash2, Eye, Phone, MapPin, Calendar, User, Truck } from "lucide-react";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 
 interface OrderListItemProps {

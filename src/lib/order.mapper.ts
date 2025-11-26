@@ -1,24 +1,24 @@
-import type { Order, OrderItem } from "@/types/order";
+import type { Order, OrderItem } from "@/types/order.type";
 import { PRODUCT_PLACEHOLDER_IMAGE, getProductImage } from "@/lib/constants";
 
 export interface BackendOrderItem {
   _id?: string;
   product_id:
-    | string
-    | {
-        _id?: string;
-        id?: string;
-        name?: string;
-        slug?: string;
-        image_primary?: string;
-        images?: string[];
-        image_url?: string;
-        unit_price?: number;
-        final_price?: number;
-        discount_percent?: number;
-        stock_status?: string;
-        unit?: string;
-      };
+  | string
+  | {
+    _id?: string;
+    id?: string;
+    name?: string;
+    slug?: string;
+    image_primary?: string;
+    images?: string[];
+    image_url?: string;
+    unit_price?: number;
+    final_price?: number;
+    discount_percent?: number;
+    stock_status?: string;
+    unit?: string;
+  };
   quantity: number;
   unit_price: number;
   discount_percent?: number;
@@ -30,18 +30,18 @@ export interface BackendOrder {
   id?: string;
   user_id?: string;
   address_id?:
-    | string
-    | {
-        _id?: string;
-        id?: string;
-        full_name?: string;
-        phone?: string;
-        address?: string;
-        ward?: string;
-        district?: string;
-        city?: string;
-        zip_code?: string;
-      };
+  | string
+  | {
+    _id?: string;
+    id?: string;
+    full_name?: string;
+    phone?: string;
+    address?: string;
+    ward?: string;
+    district?: string;
+    city?: string;
+    zip_code?: string;
+  };
   items: BackendOrderItem[];
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   subtotal: number;
@@ -147,11 +147,11 @@ export function transformOrder(order: BackendOrder): Order {
     invoice_info:
       order.is_company_invoice && order.invoice_info
         ? {
-            company_name: order.invoice_info.company_name || "",
-            company_address: order.invoice_info.company_address || "",
-            tax_code: order.invoice_info.tax_code || "",
-            email: order.invoice_info.email || "",
-          }
+          company_name: order.invoice_info.company_name || "",
+          company_address: order.invoice_info.company_address || "",
+          tax_code: order.invoice_info.tax_code || "",
+          email: order.invoice_info.email || "",
+        }
         : null,
   };
 }

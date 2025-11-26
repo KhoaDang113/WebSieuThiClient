@@ -281,17 +281,13 @@ export default function DailyMarket() {
           {/* Scroll Container */}
           <div
             ref={combosScrollRef}
-            className="overflow-x-auto no-scrollbar scroll-smooth"
-            style={{
-              paddingLeft: showCombosLeftArrow ? "50px" : "8px",
-              paddingRight: showCombosRightArrow ? "50px" : "8px",
-            }}
+            className="overflow-x-auto no-scrollbar scroll-smooth px-2"
           >
             <div className="flex gap-4 pb-2">
               {filteredCombos.map((combo) => (
                 <div
                   key={combo._id}
-                  className="flex-shrink-0 w-[200px] bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
+                  className="flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(33.33%-11px)] md:w-[calc(25%-12px)] xl:w-[calc(20%-13px)] bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
                 >
                   {/* Image */}
                   <div className="relative aspect-square overflow-hidden bg-white">
@@ -416,11 +412,10 @@ export default function DailyMarket() {
                         <button
                           key={tab.id}
                           onClick={() => setSelectedSpiceTab(tab.id)}
-                          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
-                            selectedSpiceTab === tab.id
-                              ? "bg-green-600 text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${selectedSpiceTab === tab.id
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            }`}
                         >
                           {tab.name}
                         </button>
@@ -486,7 +481,7 @@ export default function DailyMarket() {
                       ) : (
                         <div className="flex items-center justify-center w-full py-8">
                           <p className="text-gray-500 text-sm">
-                            {selectedSpiceTab === "all" 
+                            {selectedSpiceTab === "all"
                               ? "Không có gia vị nào cho món này"
                               : `Không có gia vị loại "${spiceTabs.find(t => t.id === selectedSpiceTab)?.name}" cho món này`
                             }

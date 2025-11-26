@@ -69,8 +69,6 @@ export default function CategoryProductsSection({
 
               if (mounted) setProducts(allProducts);
             } else {
-              // Không có children - fallback về cách cũ
-              console.info(`[CategoryProductsSection] No child categories, using parent category products`);
               const data = isPromotion
                 ? await productService.getProductPromotions(categorySlug, { page, limit })
                 : await productService.getProducts(categorySlug, { page, limit });
@@ -93,7 +91,6 @@ export default function CategoryProductsSection({
             );
 
             if (validBanners.length > 0) {
-              console.info(`[CategoryProductsSection] ✅ Found ${validBanners.length} banner(s) for category "${categorySlug}"`);
               setCategoryBanners(validBanners);
             } else {
               console.warn(`[CategoryProductsSection] No valid banners(with image) for category: "${categorySlug}"`);

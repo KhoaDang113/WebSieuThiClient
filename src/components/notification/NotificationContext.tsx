@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
 export type NotificationType = "success" | "error" | "warning" | "info";
-
 export interface Notification {
   id: string;
   type: NotificationType;
@@ -51,7 +44,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return [];
   });
 
-  // Lưu lịch sử vào localStorage mỗi khi thay đổi
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(
@@ -77,17 +69,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       const newNotification: Notification = {
         ...notification,
         id,
-        duration: notification.duration ?? 5000, // Mặc định 5 giây
+        duration: notification.duration ?? 5000,
       };
-
       setNotifications((prev) => [...prev, newNotification]);
-      // Thêm vào lịch sử (giới hạn 50 thông báo gần nhất)
       setNotificationHistory((prev) => {
         const updated = [newNotification, ...prev].slice(0, 50);
         return updated;
       });
 
-      // Tự động xóa sau duration
       if (newNotification.duration && newNotification.duration > 0) {
         setTimeout(() => {
           removeNotification(id);

@@ -29,6 +29,7 @@ import VerifyEmailPage from "@/pages/verify-email";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import AuthCallbackPage from "@/pages/auth-callback";
 import OrdersPage from "@/pages/order-management";
+import OrderDetailPage from "@/components/order/OrderDetailView";
 import CustomerOrdersPage from "@/pages/customer-orders";
 import KhuyenMaiPage from "@/pages/sale";
 import AccountPage from "@/pages/account";
@@ -220,6 +221,10 @@ const router: RouteObject[] = [
       {
         path: "/staff/orders",
         element: <OrdersPage />,
+      },
+      {
+        path: "/staff/orders/order/:id",
+        element: <OrderDetailPage />,
       },
       {
         path: "/staff/messages",

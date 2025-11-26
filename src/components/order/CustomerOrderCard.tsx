@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import { useCart } from "@/components/cart/CartContext";
 import { PRODUCT_PLACEHOLDER_IMAGE, getProductImage } from "@/lib/constants";
 import { productService } from "@/api";
@@ -95,7 +95,7 @@ export function CustomerOrderCard({
       const productId = item.product_id_string;
       const fullProduct = productsMap[productId as string];
       const currentStock = fullProduct?.quantity || fullProduct?.stock_quantity || 9999;
-      
+
       addToCart({
         id: productId as string,
         name: item.name,
@@ -313,7 +313,7 @@ export function CustomerOrderCard({
               {formatPrice(order.total_amount)}đ
             </p>
           </div>
-          
+
           {/* Rating button - only show for delivered orders */}
           {order.status === "delivered" && (
             <>
@@ -335,7 +335,7 @@ export function CustomerOrderCard({
               )}
             </>
           )}
-          
+
           <Button
             onClick={handleBuyAgain}
             className="bg-[#007E42] hover:bg-[#006633] text-white rounded-lg px-6"

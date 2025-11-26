@@ -190,10 +190,10 @@ export default function CheckoutModal({
       }
     } catch (error: any) {
       console.error("Error creating order:", error);
-      
+
       // Parse error message for stock issues
       const errorMessage = error?.response?.data?.message || error?.message || "Có lỗi xảy ra khi tạo đơn hàng!";
-      
+
       if (errorMessage.includes("Insufficient stock")) {
         // Extract product names only, remove "Available X, Requested Y" details
         const details = errorMessage.replace("Insufficient stock: ", "");
@@ -202,10 +202,10 @@ export default function CheckoutModal({
           const productName = item.split(":")[0]?.trim();
           return productName;
         }).filter(Boolean);
-        
+
         // Mark those items as out of stock in the cart
         onMarkItemsAsOutOfStock(items);
-        
+
         toast.error(
           <div>
             <div className="font-semibold mb-2">Sản phẩm đã hết hàng:</div>
@@ -297,9 +297,8 @@ export default function CheckoutModal({
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Phí vận chuyển:</span>
                     <span
-                      className={`font-semibold ${
-                        shippingFee === 0 ? "text-[#007E42]" : "text-gray-800"
-                      }`}
+                      className={`font-semibold ${shippingFee === 0 ? "text-[#007E42]" : "text-gray-800"
+                        }`}
                     >
                       {shippingFee === 0
                         ? "Miễn phí"
@@ -496,11 +495,10 @@ export default function CheckoutModal({
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("cod")}
-                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${
-                          paymentMethod === "cod"
+                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${paymentMethod === "cod"
                             ? "border-[#007E42] bg-[#007E42]/5"
                             : "border-gray-200 bg-white"
-                        }`}
+                          }`}
                       >
                         <span>Thanh toán khi nhận hàng (COD)</span>
                         {paymentMethod === "cod" && (
@@ -513,11 +511,10 @@ export default function CheckoutModal({
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("vnpay")}
-                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${
-                          paymentMethod === "vnpay"
+                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${paymentMethod === "vnpay"
                             ? "border-[#007E42] bg-[#007E42]/5"
                             : "border-gray-200 bg-white"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center">
                           <img

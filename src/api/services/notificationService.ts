@@ -4,12 +4,12 @@ export interface NotificationData {
   _id: string;
   user_id: string;
   actor_id:
-    | string
-    | {
-        _id: string;
-        name: string;
-        avatar?: string;
-      };
+  | string
+  | {
+    _id: string;
+    name: string;
+    avatar?: string;
+  };
   type: "comment_reply" | "order_update" | "product_review" | "system";
   title: string;
   message: string;

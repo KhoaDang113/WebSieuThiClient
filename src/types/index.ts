@@ -7,7 +7,7 @@ export * from "./banner.type";
 export * from "./article.type";
 export * from "./filter.type";
 export * from "./cart.type";
-export * from "./order";
+export * from "./order.type";
 export * from "./review.type";
 export * from "./chat.type";
 export * from "./inventory.type";
