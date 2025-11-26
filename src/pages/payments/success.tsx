@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Check } from "lucide-react";
 import { orderService } from "@/api";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();

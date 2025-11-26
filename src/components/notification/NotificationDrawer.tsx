@@ -1,26 +1,10 @@
 "use client";
 
-import {
-  Bell,
-  Trash2,
-  MessageCircle,
-  Package,
-  X,
-  AlertCircle,
-  Info,
-} from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Bell, Trash2, MessageCircle, Package, X, AlertCircle, Info } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
-import notificationService, {
-  type NotificationData,
-} from "@/api/services/notificationService";
+import notificationService, { type NotificationData } from "@/api/services/notificationService";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
@@ -522,13 +506,6 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
                         w-full text-left
                       `}
                     >
-                      {/* Unread indicator */}
-                      {!notification.is_read && (
-                        <div className="absolute top-4 right-4">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        </div>
-                      )}
-
                       {/* Delete button */}
                       <button
                         onClick={(e) =>
@@ -537,7 +514,7 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-200 rounded-full transition-all"
                         aria-label="Xóa thông báo"
                       >
-                        <X className="w-4 h-4 text-gray-500" />
+                        <X className="w-4 h-4 text-red-500" />
                       </button>
 
                       <div className="flex items-start gap-3">

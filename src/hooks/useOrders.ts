@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import type { CartItem } from "@/types/cart.type";
 import { orderService } from "@/api";
 import paymentService from "@/api/services/paymentService";
@@ -83,9 +83,9 @@ export function useOrders() {
       prevOrders.map((order) =>
         order.id === payload.orderId
           ? {
-              ...order,
-              status: payload.newStatus as Order["status"],
-            }
+            ...order,
+            status: payload.newStatus as Order["status"],
+          }
           : order
       )
     );
@@ -215,11 +215,11 @@ export function useOrders() {
         requestInvoice: customerInfo.requestInvoice,
         invoiceInfo: customerInfo.requestInvoice
           ? {
-              companyName: customerInfo.invoiceCompanyName || "",
-              companyAddress: customerInfo.invoiceCompanyAddress || "",
-              taxCode: customerInfo.invoiceTaxCode || "",
-              email: customerInfo.invoiceEmail || "",
-            }
+            companyName: customerInfo.invoiceCompanyName || "",
+            companyAddress: customerInfo.invoiceCompanyAddress || "",
+            taxCode: customerInfo.invoiceTaxCode || "",
+            email: customerInfo.invoiceEmail || "",
+          }
           : undefined,
       };
 

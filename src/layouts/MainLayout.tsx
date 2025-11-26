@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { CategorySidebar } from "@/components/category/CategorySideBar";
-import { Footer } from "@/components/navbar-and-footer/Footer";
-import { Navbar } from "@/components/navbar-and-footer/Navbar";
+import { Footer } from "@/components/navbar-and-footer/user/Footer";
+import { Navbar } from "@/components/navbar-and-footer/user/Navbar";
 import { ScrollToTop } from "@/components/scroll/ScrollToTop";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ export default function MainLayout() {
       <Navbar />
       <div className="flex flex-row">
         <CategorySidebar />
-        <main className="flex flex-col w-full mx-auto sm:px-3 lg:ml-62 2xl:ml-95 2xl:mr-31 overflow-hidden gap-5 mt-2">
+        <main className="flex flex-col w-full mx-auto sm:px-3 lg:ml-62 2xl:ml-95 2xl:mr-31 overflow-hidden gap-5 mt-2 pb-20 md:pb-0">
           <Outlet />
           <Footer />
         </main>

@@ -1,5 +1,5 @@
 import api from "../axiosConfig";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import { transformOrder, type BackendOrder } from "@/lib/order.mapper";
 
 interface CreateOrderPayload {
@@ -231,6 +231,25 @@ class OrderService {
       };
     } catch (error) {
       console.error(`[OrderService] Error fetching staff orders:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Staff/Admin: Lấy chi tiết đơn hàng theo ID
+   * GET /orders/admin/:id
+   */
+  async getStaffOrderById(orderId: string): Promise<Order> {
+    try {
+      const response = await api.get<BackendOrder>(
+        `${this.basePath}/admin/${orderId}`
+      );
+      return transformOrder(response.data);
+    } catch (error) {
+      console.error(
+        `[OrderService] Error fetching staff order ${orderId}:`,
+        error
+      );
       throw error;
     }
   }
