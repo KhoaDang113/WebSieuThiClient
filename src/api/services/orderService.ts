@@ -165,11 +165,13 @@ class OrderService {
    * Lấy chi tiết order theo ID
    * GET /orders/:id
    */
-  async getOrderById(orderId: string): Promise<Order> {
+  async getOrderById(orderId: string, isAdmin = false): Promise<Order> {
     try {
-      const response = await api.get<BackendOrder>(
-        `${this.basePath}/${orderId}`
-      );
+      const url = isAdmin 
+        ? `${this.basePath}/admin/${orderId}`
+        : `${this.basePath}/${orderId}`;
+        
+      const response = await api.get<BackendOrder>(url);
       return transformOrder(response.data);
     } catch (error) {
       console.error(`[OrderService] Error fetching order ${orderId}:`, error);

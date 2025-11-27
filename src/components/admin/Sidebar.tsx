@@ -9,6 +9,8 @@ import {
   Store,
   Image,
   Utensils,
+  Star,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authService } from "@/api";
@@ -55,6 +57,12 @@ const menuItems = [
     href: "/admin/brands",
     icon: Store,
   },
+  {
+    label: "Quản lý Đánh giá",
+    href: "/admin/ratings",
+    icon: Star,
+  },
+
 ];
 
 export function AdminSidebar() {
