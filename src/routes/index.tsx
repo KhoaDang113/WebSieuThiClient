@@ -13,6 +13,8 @@ import EditBannerPage from "@/pages/admin/banners/edit/[id]";
 import AdminCombos from "@/pages/admin/combos";
 import AddComboPage from "@/pages/admin/combos/add";
 import EditComboPage from "@/pages/admin/combos/edit/[id]";
+import AdminRatings from "@/pages/admin/ratings";
+import AdminComments from "@/pages/admin/comments";
 import StaffMessage from "@/pages/messages";
 import ConversationDetailPage from "@/pages/messages/detail";
 import AdminInventory from "@/pages/admin/inventory";
@@ -205,6 +207,14 @@ const router: RouteObject[] = [
       {
         path: "/admin/combos/edit/:id",
         element: <EditComboPage />,
+      },
+      {
+        path: "/admin/ratings",
+        element: <AdminRatings />,
+      },
+      {
+        path: "/admin/comments",
+        element: <AdminComments />,
       },
     ],
   },
