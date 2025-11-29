@@ -153,6 +153,10 @@ export function CustomerOrderCard({
       label: "Đã xác nhận",
       className: "bg-blue-100 text-blue-700",
     },
+    assigned: {
+      label: "Tài xế đã nhận hàng, đợi tài xế đi giao",
+      className: "bg-purple-100 text-purple-700",
+    },
     shipped: {
       label: "Đang giao hàng",
       className: "bg-cyan-100 text-cyan-700",

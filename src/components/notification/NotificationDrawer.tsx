@@ -176,29 +176,6 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
         setUnreadCount(data.count);
       };
 
-      // Listen for order status updates
-      const handleOrderStatusUpdate = (payload: {
-        orderId?: string;
-        status?: string;
-        message?: string;
-        title?: string;
-      }) => {
-        // Show popup notification
-        if (payload.title || payload.message) {
-          showNotification({
-            type: "success",
-            title: payload.title || "Cập nhật đơn hàng",
-            message:
-              payload.message ||
-              `Đơn hàng của bạn đã được cập nhật: ${payload.status || ""}`,
-            duration: 5000,
-          });
-        }
-
-        fetchNotifications(1);
-        fetchUnreadCount();
-      };
-
       const handleNewOrder = (payload: {
         notificationId?: string;
         type?: string;
@@ -209,16 +186,16 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
         metadata?: { order_id?: string; customer_name?: string };
       }) => {
         // Show popup notification
-        if (payload.title) {
-          showNotification({
-            type: "info",
-            title: payload.title,
-            message:
-              payload.message ||
-              `Đơn hàng ${payload.metadata?.order_id} từ ${payload.actor?.name} - ${payload.actor?.id}`,
-            duration: 5000,
-          });
-        }
+        // if (payload.title) {
+        //   showNotification({
+        //     type: "info",
+        //     title: payload.title,
+        //     message:
+        //       payload.message ||
+        //       `Đơn hàng ${payload.metadata?.order_id} từ ${payload.actor?.name} - ${payload.actor?.id}`,
+        //     duration: 5000,
+        //   });
+        // }
 
         fetchNotifications(1);
         fetchUnreadCount();
@@ -227,7 +204,6 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
       socket.on("notification:new", handleNewNotification);
       socket.on("notification:comment-reply", handleCommentReply);
       socket.on("notification:unread-count", handleUnreadCountUpdate);
-      socket.on("order:status-updated", handleOrderStatusUpdate);
       socket.on("staff:new-order", handleNewOrder);
 
       // Cleanup listeners
@@ -235,14 +211,13 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
         socket.off("notification:new", handleNewNotification);
         socket.off("notification:comment-reply", handleCommentReply);
         socket.off("notification:unread-count", handleUnreadCountUpdate);
-        socket.off("order:status-updated", handleOrderStatusUpdate);
         socket.off("staff:new-order", handleNewOrder);
       };
     } catch (error) {
       console.error("Failed to setup socket listeners:", error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, fetchNotifications, fetchUnreadCount]);
+  }, [isAuthenticated]);
 
   // Apply filter if provided
   const filteredNotifications = filter

@@ -6,16 +6,32 @@ import { ScrollToTop } from "@/components/scroll/ScrollToTop";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import { useOrderNotifications } from "@/hooks/useOrderNotifications";
 
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
 
+  // Listen for order notifications (centralized to avoid duplicates)
+  useOrderNotifications();
+
   useEffect(() => {
     const role = user?.role?.toLowerCase?.();
+    
+    // Redirect staff to staff page
     if (role === "staff" && !location.pathname.startsWith("/staff")) {
       navigate("/staff/orders", { replace: true });
+    }
+    
+    // Redirect shipper to shipper page
+    if (role === "shipper" && !location.pathname.startsWith("/shipper")) {
+      navigate("/shipper", { replace: true });
+    }
+    
+    // Redirect admin to admin page
+    if (role === "admin" && !location.pathname.startsWith("/admin")) {
+      navigate("/admin", { replace: true });
     }
   }, [user, navigate, location.pathname]);
 

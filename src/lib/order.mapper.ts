@@ -43,7 +43,7 @@ export interface BackendOrder {
     zip_code?: string;
   };
   items: BackendOrderItem[];
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "assigned" | "shipped" | "delivered" | "cancelled";
   subtotal: number;
   discount?: number;
   shipping_fee?: number;
@@ -53,6 +53,7 @@ export interface BackendOrder {
   updated_at?: string;
   is_company_invoice?: boolean;
   is_rating?: boolean;
+  shipper_id?: string;
   invoice_info?: {
     company_name?: string;
     company_address?: string;
@@ -102,8 +103,12 @@ export function transformOrderItem(
 }
 
 export function transformOrder(order: BackendOrder): Order {
+  if (!order) {
+    throw new Error("Order object is undefined or null");
+  }
+
   const address =
-    typeof order.address_id === "object" ? order.address_id : null;
+    typeof order.address_id === "object" && order.address_id ? order.address_id : null;
 
   // Map status từ backend sang frontend
   let frontendStatus: Order["status"];
@@ -116,6 +121,9 @@ export function transformOrder(order: BackendOrder): Order {
       break;
     case "confirmed":
       frontendStatus = "confirmed";
+      break;
+    case "assigned":
+      frontendStatus = "assigned";
       break;
     case "shipped":
       frontendStatus = "shipped";
@@ -144,6 +152,7 @@ export function transformOrder(order: BackendOrder): Order {
     notes: order.notes,
     is_company_invoice: !!order.is_company_invoice,
     is_rating: !!order.is_rating,
+    shipper_id: order.shipper_id,
     invoice_info:
       order.is_company_invoice && order.invoice_info
         ? {

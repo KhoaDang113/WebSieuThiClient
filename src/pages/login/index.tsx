@@ -80,10 +80,18 @@ export default function Login() {
           
           // Redirect theo role
           const userRole = response.user.role;
+
           if (userRole === "staff") {
             navigate("/staff/orders", { replace: true });
             return;
-          } else if (userRole === "admin") {
+          }
+          
+          else if (userRole === "shipper") {
+            navigate("/shipper", { replace: true });
+            return;
+          }
+          
+          else if (userRole === "admin") {
             navigate("/admin", { replace: true });
             return;
           }

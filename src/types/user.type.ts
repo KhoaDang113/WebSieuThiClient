@@ -7,7 +7,7 @@
 /**
  * User Role - Vai trò người dùng
  */
-export type UserRole = "user" | "staff" | "admin";
+export type UserRole = "user" | "staff" | "admin" | "shipper";
 
 /**
  * User Gender - Giới tính

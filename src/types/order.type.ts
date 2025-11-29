@@ -30,7 +30,11 @@ export interface Order {
   subtotal?: number;
   shipping_fee?: number;
   discount?: number;
-  status: "pending" | "confirmed" | "shipped" | "rejected" | "cancelled" | "delivered";
+  status: "pending" | "confirmed" | "assigned" | "shipped" | "rejected" | "cancelled" | "delivered";
+  
+  // Shipper fields
+  shipper_id?: string;
+  assigned_at?: string;
 
   // Payment fields (optional) - backend may supply these
   paid?: boolean; // true if order has been paid

@@ -91,6 +91,16 @@ export const useAuthStore = create<AuthState>()(
                 // ignore
               }
             }
+            else if (user.role === "shipper") {
+              try {
+                const shipperService = (
+                  await import("@/api/services/shipperService")
+                ).default;
+                shipperService.setOnlineStatus(true).catch(() => {});
+              } catch {
+                // ignore
+              }
+            }
           } else {
             set({ user: null, isAuthenticated: false });
           }
