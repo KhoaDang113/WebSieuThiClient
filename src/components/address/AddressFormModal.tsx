@@ -6,6 +6,7 @@ import { addressService } from "@/api";
 import type { Address, CreateAddressDto } from "@/api/types";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotification } from "@/hooks/useNotification";
+import { LocationPicker } from "./LocationPicker";
 
 interface Province {
   code: string;
@@ -48,6 +49,11 @@ const createTimeoutSignal = (timeoutMs: number): AbortSignal => {
   return controller.signal;
 };
 
+// Helper to normalize string for comparison
+const normalizeString = (str: string) => {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/thành phố|tỉnh|quận|huyện|thị xã|phường|xã|thị trấn/g, "").trim();
+};
+
 export function AddressFormModal({
   isOpen,
   onClose,
@@ -66,6 +72,9 @@ export function AddressFormModal({
   const [isDefault, setIsDefault] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Map state
+  const [mapLocation, setMapLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
 
   const fetchProvinces = useCallback(async () => {
     try {
@@ -99,7 +108,7 @@ export function AddressFormModal({
     }
   }, [showNotification]);
 
-  const fetchWards = useCallback(async (provinceCode: string) => {
+  const fetchWards = useCallback(async (provinceCode: string): Promise<Ward[]> => {
     try {
       setLoading(true);
       const response = await fetch(
@@ -111,9 +120,9 @@ export function AddressFormModal({
 
       if (response.ok) {
         const data = (await response.json()) as ProvinceDetailApiResponse;
-        
+
         const allWards: Ward[] = [];
-        
+
         if (data.wards && Array.isArray(data.wards)) {
           data.wards.forEach((ward: WardApiResponse) => {
             allWards.push({
@@ -134,11 +143,14 @@ export function AddressFormModal({
             }
           });
         }
-        
+
         setWards(allWards);
+        return allWards;
       }
+      return [];
     } catch {
       setWards([]);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -160,17 +172,21 @@ export function AddressFormModal({
       const provinceObj = provinces.find(p => p.name === editingAddress.city);
       if (provinceObj) {
         setSelectedProvince(provinceObj.code);
+        // Trigger fetch wards when province is set, handled by another effect or manual call?
+        // The effect below handles fetching wards when selectedProvince changes
       } else {
         setSelectedProvince("");
       }
-      
+
       setSelectedWard(editingAddress.ward);
+      // Note: We don't have lat/lng in Address model yet, so map might default to HCMC
     } else if (isOpen) {
       setSelectedProvince("");
       setSelectedWard("");
       setStreet("");
       setIsDefault(false);
-      
+      setMapLocation(undefined);
+
       if (currentUser) {
         setFullName(currentUser.name || "");
         setPhone(currentUser.phone || currentUser.phoneNumber || "");
@@ -185,8 +201,72 @@ export function AddressFormModal({
     if (selectedProvince && !editingAddress) {
       fetchWards(selectedProvince);
       setSelectedWard("");
+    } else if (selectedProvince && editingAddress) {
+      // If editing, we need to fetch wards but keep the selectedWard if it matches
+      // This part is a bit tricky because fetchWards is async and we need to set selectedWard after it
+      // But the current logic in original code was:
+      // useEffect(() => { if (selectedProvince && !editingAddress) ... }, [selectedProvince])
+      // It seems it relied on user interaction for new addresses.
+      // For editing, we might need to fetch wards manually if not already fetched.
+      // Let's improve this:
+      fetchWards(selectedProvince).then((fetchedWards) => {
+        const wardObj = fetchedWards.find(w => w.name === editingAddress.ward);
+        if (wardObj) {
+          setSelectedWard(wardObj.code);
+        }
+      });
     }
   }, [selectedProvince, editingAddress, fetchWards]);
+
+  const handleLocationSelect = async (location: {
+    lat: number;
+    lng: number;
+    address?: {
+      city?: string;
+      district?: string;
+      ward?: string;
+      street?: string;
+      full_address?: string;
+    };
+  }) => {
+    setMapLocation({ lat: location.lat, lng: location.lng });
+
+    if (location.address) {
+      const { city, ward, street } = location.address;
+
+      // 1. Match Province
+      if (city) {
+        const normalizedCity = normalizeString(city);
+        const provinceMatch = provinces.find(p => normalizeString(p.name) === normalizedCity || normalizeString(p.name).includes(normalizedCity) || normalizedCity.includes(normalizeString(p.name)));
+
+        if (provinceMatch) {
+          setSelectedProvince(provinceMatch.code);
+
+          // 2. Fetch Wards for this province
+          const fetchedWards = await fetchWards(provinceMatch.code);
+
+          // 3. Match Ward
+          if (ward) {
+            const normalizedWard = normalizeString(ward);
+            const wardMatch = fetchedWards.find(w => normalizeString(w.name) === normalizedWard || normalizeString(w.name).includes(normalizedWard) || normalizedWard.includes(normalizeString(w.name)));
+
+            if (wardMatch) {
+              setSelectedWard(wardMatch.code);
+            }
+          }
+        }
+      }
+
+      // 4. Set Street
+      if (street) {
+        setStreet(street);
+      } else if (location.address.full_address) {
+        // Fallback to full address if street is empty, but try to strip city/ward if possible?
+        // For now just use what we have or keep existing if user typed it?
+        // Let's just set it to street if available.
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,8 +362,8 @@ export function AddressFormModal({
       onClose();
     } catch (error) {
       console.error("Error saving address:", error);
-      const errorMessage = 
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         "Có lỗi xảy ra. Vui lòng thử lại.";
       showNotification({
         type: "error",
@@ -304,7 +384,7 @@ export function AddressFormModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -323,135 +403,148 @@ export function AddressFormModal({
 
         {/* Content - Scrollable */}
         <div className="overflow-y-auto px-6 py-6 flex-1">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Info message */}
-            <p className="text-sm text-gray-600 mb-4">
-              Thông tin vị trí giúp Bách hoá XANH giao hàng đúng giờ và tính phí giao chính xác hơn.
-            </p>
-
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Họ tên người nhận <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nhập họ tên người nhận"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                required
-                disabled={submitting}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: Map */}
+            <div className="order-2 lg:order-1">
+              <LocationPicker
+                onLocationSelect={handleLocationSelect}
+                initialLocation={mapLocation}
               />
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số điện thoại <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Nhập số điện thoại"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            {/* Province dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tỉnh/Thành phố <span className="text-red-500">*</span>
-              </label>
-              <CustomSelect
-                value={selectedProvince}
-                onChange={setSelectedProvince}
-                options={provinces.map((p) => ({ value: p.code, label: p.name }))}
-                placeholder="Chọn Tỉnh/Thành phố"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            {/* Ward dropdown - Mô hình 2 cấp: Phường/Xã trực thuộc Tỉnh */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phường/Xã <span className="text-red-500">*</span>
-                {wards.length > 0 && (
-                  <span className="text-xs text-gray-500 ml-2">({wards.length} phường/xã)</span>
-                )}
-              </label>
-              <CustomSelect
-                value={selectedWard}
-                onChange={setSelectedWard}
-                options={wards.map((w) => ({ value: w.code, label: w.name }))}
-                placeholder={wards.length === 0 ? "Vui lòng chọn Tỉnh/Thành phố trước" : "Chọn Phường/Xã"}
-                disabled={!selectedProvince || loading || submitting}
-                required
-                openUp={true}
-              />
-              {wards.length === 0 && selectedProvince && !loading && (
-                <p className="text-xs text-red-500 mt-1">
-                  ⚠️ Không tải được danh sách. Vui lòng kiểm tra console (F12)
+            {/* Right Column: Form */}
+            <div className="order-1 lg:order-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Info message */}
+                <p className="text-sm text-gray-600 mb-4">
+                  Thông tin vị trí giúp chúng tôi giao hàng đúng giờ và tính phí giao chính xác hơn.
                 </p>
-              )}
-            </div>
 
-            {/* Street address */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số nhà, tên đường <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={street}
-                onChange={(e) => setStreet(e.target.value)}
-                placeholder="Nhập số nhà, tên đường"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                required
-                disabled={submitting}
-              />
-            </div>
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Họ tên người nhận <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Nhập họ tên người nhận"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                    required
+                    disabled={submitting}
+                  />
+                </div>
 
-            {/* Set as default checkbox */}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="is_default"
-                checked={isDefault}
-                onChange={(e) => setIsDefault(e.target.checked)}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                disabled={submitting}
-              />
-              <label
-                htmlFor="is_default"
-                className="text-sm text-gray-700 cursor-pointer"
-              >
-                Đặt làm địa chỉ mặc định
-              </label>
-            </div>
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Số điện thoại <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Nhập số điện thoại"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                    required
+                    disabled={submitting}
+                  />
+                </div>
 
-            {/* Submit button */}
-            <Button
-              type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 mt-4 disabled:bg-gray-400"
-              disabled={submitting || loading}
-            >
-              {submitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Đang lưu...
-                </span>
-              ) : editingAddress ? (
-                "Cập nhật"
-              ) : (
-                "Thêm địa chỉ"
-              )}
-            </Button>
-          </form>
+                {/* Province dropdown */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tỉnh/Thành phố <span className="text-red-500">*</span>
+                  </label>
+                  <CustomSelect
+                    value={selectedProvince}
+                    onChange={setSelectedProvince}
+                    options={provinces.map((p) => ({ value: p.code, label: p.name }))}
+                    placeholder="Chọn Tỉnh/Thành phố"
+                    required
+                    disabled={submitting}
+                  />
+                </div>
+
+                {/* Ward dropdown - Mô hình 2 cấp: Phường/Xã trực thuộc Tỉnh */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phường/Xã <span className="text-red-500">*</span>
+                    {wards.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-2">({wards.length} phường/xã)</span>
+                    )}
+                  </label>
+                  <CustomSelect
+                    value={selectedWard}
+                    onChange={setSelectedWard}
+                    options={wards.map((w) => ({ value: w.code, label: w.name }))}
+                    placeholder={wards.length === 0 ? "Vui lòng chọn Tỉnh/Thành phố trước" : "Chọn Phường/Xã"}
+                    disabled={!selectedProvince || loading || submitting}
+                    required
+                    openUp={true}
+                  />
+                  {wards.length === 0 && selectedProvince && !loading && (
+                    <p className="text-xs text-red-500 mt-1">
+                      ⚠️ Không tải được danh sách. Vui lòng kiểm tra console (F12)
+                    </p>
+                  )}
+                </div>
+
+                {/* Street address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Số nhà, tên đường <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    placeholder="Nhập số nhà, tên đường"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                    required
+                    disabled={submitting}
+                  />
+                </div>
+
+                {/* Set as default checkbox */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_default"
+                    checked={isDefault}
+                    onChange={(e) => setIsDefault(e.target.checked)}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    disabled={submitting}
+                  />
+                  <label
+                    htmlFor="is_default"
+                    className="text-sm text-gray-700 cursor-pointer"
+                  >
+                    Đặt làm địa chỉ mặc định
+                  </label>
+                </div>
+
+                {/* Submit button */}
+                <Button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 mt-4 disabled:bg-gray-400"
+                  disabled={submitting || loading}
+                >
+                  {submitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Đang lưu...
+                    </span>
+                  ) : editingAddress ? (
+                    "Cập nhật"
+                  ) : (
+                    "Thêm địa chỉ"
+                  )}
+                </Button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
