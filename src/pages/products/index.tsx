@@ -1,16 +1,14 @@
 import { CategoryNav } from "@/components/category/CategoryNav";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import type {
-  CategoryNav as Category,
-  Category as CategoryType,
-} from "@/types/category.type";
+import type { CategoryNav as Category, Category as CategoryType } from "@/types/category.type";
 import type { Product } from "@/types/product.type";
 import type { Banner } from "@/types/banner.type";
 import type { Brand } from "@/types/brand.type";
 import Banners from "@/components/productPage/banner/Banners";
 import Article from "@/components/productPage/article/Article";
 import ProductGridWithBanners from "@/components/products/ProductGridWithBanners";
+import ShockingDeal from "@/components/products/ShockingDeal";
 import { bannerService, categoryService, productService, brandService } from "@/api";
 import { toCategoryNav, getProductId, getProductImage } from "@/lib/constants";
 import { useCart } from "@/components/cart/CartContext";
@@ -413,6 +411,23 @@ export default function ProductsPage() {
         </div>
       )}
 
+      {/* Shocking Deal Section - Top Priority */}
+      {promotionProducts.length > 0 && (
+        <div className="mb-4">
+          <ShockingDeal
+            products={promotionProducts}
+            onAddToCart={handleAddToCart}
+          />
+        </div>
+      )}
+
+      {/* Banners Section */}
+      {banners.length > 0 && (
+        <div className="mb-4">
+          <Banners banners={banners} />
+        </div>
+      )}
+
       {/* Advanced Filters */}
       {categoryFromUrl && (
         <div className="mb-4">
@@ -527,12 +542,6 @@ export default function ProductsPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {banners.length > 0 && (
-        <div className="mt-5">
-          <Banners banners={banners} />
         </div>
       )}
 
