@@ -53,18 +53,11 @@ export default function ShockingDeal({
 
     return (
         <>
-            <div className="w-full bg-[#d1f2e5] rounded-xl overflow-hidden shadow-sm mb-6 border border-green-100 relative group">
-                {/* Header */}
-                <div className="bg-[#008848] px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-white font-bold text-lg uppercase tracking-wide drop-shadow-sm">
-                            KHUYẾN MÃI SỐC
-                        </h2>
-                    </div>
-                </div>
-
-                {/* Content */}
+            <div className="w-full bg-gradient-to-b from-[#7EE689] to-[#5BCB74] rounded-xl overflow-hidden shadow-sm mb-6 border border-green-100 relative group">
                 <div className="p-3 relative">
+                    <h2 className="p-3 text-white font-bold text-lg uppercase tracking-wide drop-shadow-sm">
+                        Khuyến Mãi Sốc
+                    </h2>
                     {/* Navigation Buttons */}
                     {!isFirstPage && (
                         <ScrollButton

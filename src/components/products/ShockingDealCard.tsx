@@ -46,31 +46,40 @@ export default function ShockingDealCard({
                 {/* Product Info - Right Side */}
                 <div className="flex flex-col flex-grow justify-between h-full w-2/3">
 
-                    {/* Top Section: Price & Discount */}
-                    <div className="flex justify-between items-start mb-1">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <span className="text-red-600 font-bold text-lg">
-                                    {product.final_price?.toLocaleString("vi-VN")}₫
-                                </span>
-                                {discount > 0 && (
-                                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                        -{discount}%
-                                    </span>
-                                )}
-                            </div>
-                            {product.unit_price && product.unit_price > (product.final_price || 0) && (
-                                <div className="text-gray-400 text-xs line-through">
-                                    {product.unit_price.toLocaleString("vi-VN")}₫
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
                     {/* Name */}
-                    <h3 className="text-sm font-medium text-gray-700 line-clamp-2 mb-2" title={product.name}>
+                    <h3 className="text-sm font-semibold leading-snug text-gray-800 line-clamp-2 h-10 mb-2" title={product.name}>
                         {product.name}
                     </h3>
+
+                    {/* Price Section */}
+                    <div className="flex flex-col gap-1 mb-2">
+                        {/* Current Price with Unit */}
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-bold text-red-600">
+                                {product.final_price?.toLocaleString("vi-VN")}₫
+                            </span>
+                            {product.unit && (
+                                <span className="text-xs font-medium text-gray-500">
+                                    /{product.unit}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Original Price with Discount Badge */}
+                        {discount > 0 && product.unit_price && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 line-through">
+                                    {product.unit_price.toLocaleString("vi-VN")}₫
+                                    {product.unit && (
+                                        <span className="text-xs">/{product.unit}</span>
+                                    )}
+                                </span>
+                                <div className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
+                                    -{discount}%
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Buy Button */}
                     <button
