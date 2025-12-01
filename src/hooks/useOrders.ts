@@ -20,7 +20,6 @@ export interface CreateOrderCustomerInfo {
   invoiceCompanyAddress?: string;
   invoiceTaxCode?: string;
   invoiceEmail?: string;
-  shippingFee?: number;
   discount?: number;
 }
 
@@ -227,7 +226,6 @@ export function useOrders() {
           productId: String(item.id),
           quantity: item.quantity,
         })),
-        shippingFee: customerInfo.shippingFee,
         discount: customerInfo.discount,
         requestInvoice: customerInfo.requestInvoice,
         invoiceInfo: customerInfo.requestInvoice

@@ -189,7 +189,7 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                     <span className="text-sm text-gray-600">Tạm tính:</span>
                     <span className="font-semibold text-gray-800">{formatPrice(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  {/* <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <span className="text-sm text-gray-600 flex items-center gap-2">
                       <Truck className="w-4 h-4" />
                       Phí vận chuyển
@@ -197,7 +197,7 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                     <span className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : 'text-gray-800'}`}>
                       {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}
                     </span>
-                  </div>
+                  </div> */}
                   <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <span className="text-sm text-gray-600 flex items-center gap-2">
                       <Gift className="w-4 h-4" />

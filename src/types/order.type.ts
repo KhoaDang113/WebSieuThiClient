@@ -36,6 +36,10 @@ export interface Order {
   shipper_id?: string;
   assigned_at?: string;
 
+  // Delivery info
+  delivery_distance?: number; // in kilometers
+  estimated_delivery_time?: string; // ISO date string
+
   // Payment fields (optional) - backend may supply these
   paid?: boolean; // true if order has been paid
   payment_status?: "paid" | "unpaid" | "pending" | "failed";

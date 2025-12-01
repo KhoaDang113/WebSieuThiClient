@@ -8,6 +8,7 @@ import type { CreateOrderCustomerInfo } from "@/hooks/useOrders";
 import { useAddress } from "@/components/address/AddressContext";
 import { useAuthStore } from "@/stores/authStore";
 import PaymentService from "@/api/services/paymentService";
+import shippingService from "@/api/services/shippingService";
 import { toast } from "sonner";
 
 interface CheckoutModalProps {
@@ -61,13 +62,14 @@ export default function CheckoutModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [shippingFee, setShippingFee] = useState<number | null>(null);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const shippingFee = total >= 300000 ? 0 : 15000;
-  const finalTotal = total + shippingFee;
+  // Note: Shipping fee will be calculated by server based on delivery address
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN").format(price) + " ₫";
@@ -76,7 +78,6 @@ export default function CheckoutModal({
   // Tự động điền thông tin khách hàng khi mở modal
   useEffect(() => {
     if (!isOpen) return;
-
     // Ưu tiên địa chỉ mặc định từ AddressContext nếu có
     if (address) {
       const fullAddress = [
@@ -95,7 +96,7 @@ export default function CheckoutModal({
           address.phone || currentUser?.phone || currentUser?.phoneNumber || "",
         address: fullAddress,
         addressId: address.id || prev.addressId,
-      }));
+      })); 
       return;
     }
 
@@ -113,6 +114,32 @@ export default function CheckoutModal({
       }));
     }
   }, [isOpen, address, currentUser]);
+
+  // Calculate shipping fee when address changes
+  useEffect(() => {
+    async function fetchShippingFee() {
+      if (!address?.id || !total) {
+        setShippingFee(null);
+        return;
+      }
+
+      setIsLoadingShipping(true);
+      try {
+        const result = await shippingService.calculateShippingFee(
+          address?.id || "",
+          total
+        );
+        setShippingFee(result.shippingFee);
+      } catch (error: any) {
+        console.error("Error calculating shipping fee:", error);
+       setShippingFee(0);
+      } finally {
+        setIsLoadingShipping(false);
+      }
+    }
+
+    fetchShippingFee();
+  }, [customerInfo.addressId, total]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,7 +183,6 @@ export default function CheckoutModal({
         invoiceCompanyAddress: invoiceInfo.companyAddress,
         invoiceTaxCode: invoiceInfo.taxCode,
         invoiceEmail: invoiceInfo.email,
-        shippingFee,
         discount: 0,
       });
 
@@ -296,22 +322,30 @@ export default function CheckoutModal({
                   </div>
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Phí vận chuyển:</span>
-                    <span
-                      className={`font-semibold ${shippingFee === 0 ? "text-[#007E42]" : "text-gray-800"
-                        }`}
-                    >
-                      {shippingFee === 0
-                        ? "Miễn phí"
-                        : formatPrice(shippingFee)}
+                    <span className="font-semibold text-[#007E42]">
+                      {isLoadingShipping
+                        ? "Đang tính..."
+                        : shippingFee !== null
+                        ? shippingFee === 0
+                          ? "Miễn phí"
+                          : formatPrice(shippingFee)
+                        : "Chọn địa chỉ để tính"}
                     </span>
                   </div>
                   <div className="border-t border-[#007E42]/20 pt-3 mt-3">
                     <div className="flex justify-between text-lg font-bold bg-gradient-to-r from-[#007E42] to-[#00a855] bg-clip-text text-transparent">
                       <span>Tổng cộng:</span>
                       <span className="text-[#007E42]">
-                        {formatPrice(finalTotal)}
+                        {shippingFee !== null
+                          ? formatPrice(total + shippingFee)
+                          : formatPrice(total) + "+"}
                       </span>
                     </div>
+                    {shippingFee === null && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        *Phí ship sẽ được tính sau khi chọn địa chỉ
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -586,7 +620,7 @@ export default function CheckoutModal({
                           Đang xử lý...
                         </>
                       ) : (
-                        `Đặt hàng - ${formatPrice(finalTotal)}`
+                        `Đặt hàng`
                       )}
                     </span>
                   </Button>

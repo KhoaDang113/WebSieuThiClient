@@ -1,5 +1,5 @@
 import type { Order } from "@/types/order.type";
-import { X, MapPin, Phone, Package, Clock } from "lucide-react";
+import { X, MapPin, Phone, Package, Clock, Navigation } from "lucide-react";
 import { useState } from "react";
 
 interface OrderNotificationModalProps {
@@ -22,6 +22,20 @@ export function OrderNotificationModal({
       style: "currency",
       currency: "VND",
     }).format(amount).replace('₫', 'đ');
+  };
+
+  const formatDeliveryTime = (isoString?: string) => {
+    if (!isoString) return "Chưa xác định";
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 0) return "Đã quá giờ";
+    if (diffMins < 60) return `~${diffMins} phút`;
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `~${hours}h${mins > 0 ? ` ${mins}p` : ''}`;
   };
 
   const handleAccept = async () => {
@@ -93,13 +107,26 @@ export function OrderNotificationModal({
           </div>
 
           {/* Order Stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl p-4 border border-blue-500/30">
               <div className="flex items-center gap-2 text-blue-400 mb-1">
-                <Clock className="w-4 h-4" />
-                <span className="text-xs font-semibold">Thời gian dự kiến</span>
+                <Navigation className="w-4 h-4" />
+                <span className="text-xs font-semibold">Khoảng cách</span>
               </div>
-              <p className="text-lg font-bold text-white">~25 phút</p>
+              <p className="text-lg font-bold text-white">
+                {order.delivery_distance 
+                  ? `${order.delivery_distance.toFixed(1)} km`
+                  : "N/A"}
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 rounded-2xl p-4 border border-yellow-500/30">
+              <div className="flex items-center gap-2 text-yellow-400 mb-1">
+                <Clock className="w-4 h-4" />
+                <span className="text-xs font-semibold">Thời gian</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {formatDeliveryTime(order.estimated_delivery_time)}
+              </p>
             </div>
             <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-2xl p-4 border border-green-500/30">
               <div className="flex items-center gap-2 text-green-400 mb-1">

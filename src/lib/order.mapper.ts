@@ -54,6 +54,8 @@ export interface BackendOrder {
   is_company_invoice?: boolean;
   is_rating?: boolean;
   shipper_id?: string;
+  delivery_distance?: number;
+  estimated_delivery_time?: string;
   invoice_info?: {
     company_name?: string;
     company_address?: string;
@@ -143,7 +145,15 @@ export function transformOrder(order: BackendOrder): Order {
         .join(", ") || "",
     items: order.items.map((item, index) => transformOrderItem(item, index)),
     total_amount: order.total || order.subtotal || 0,
+    subtotal: order.subtotal,
+    shipping_fee: order.shipping_fee,
+    discount: order.discount,
     status: frontendStatus,
+    // Shipper fields
+    shipper_id: order.shipper_id,
+    // Delivery info
+    delivery_distance: order.delivery_distance,
+    estimated_delivery_time: order.estimated_delivery_time,
     // Map payment fields from backend
     payment_status: order.payment_status,
     paid: order.payment_status === "paid",
@@ -152,7 +162,6 @@ export function transformOrder(order: BackendOrder): Order {
     notes: order.notes,
     is_company_invoice: !!order.is_company_invoice,
     is_rating: !!order.is_rating,
-    shipper_id: order.shipper_id,
     invoice_info:
       order.is_company_invoice && order.invoice_info
         ? {

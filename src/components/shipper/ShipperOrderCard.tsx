@@ -27,6 +27,20 @@ export function ShipperOrderCard({
     });
   };
 
+  const formatDeliveryTime = (isoString?: string) => {
+    if (!isoString) return "Chưa xác định";
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 0) return "Đã quá giờ";
+    if (diffMins < 60) return `~${diffMins} phút`;
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `~${hours}h${mins > 0 ? ` ${mins}p` : ''}`;
+  };
+
   const getOrderCode = (id: string) => {
     return `ORD-${id.slice(-3).toUpperCase()}`;
   };
@@ -128,14 +142,20 @@ export function ShipperOrderCard({
             <Navigation className="w-4 h-4" />
             <span className="text-xs font-semibold">Khoảng cách</span>
           </div>
-          <p className="text-sm font-bold text-white">4.0 km</p>
+          <p className="text-sm font-bold text-white">
+            {order.delivery_distance 
+              ? `${order.delivery_distance.toFixed(1)} km`
+              : "N/A"}
+          </p>
         </div>
         <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700">
           <div className="flex items-center gap-2 text-yellow-400 mb-1">
             <Clock className="w-4 h-4" />
             <span className="text-xs font-semibold">Thời gian</span>
           </div>
-          <p className="text-sm font-bold text-white">~25 phút</p>
+          <p className="text-sm font-bold text-white">
+            {formatDeliveryTime(order.estimated_delivery_time)}
+          </p>
         </div>
         <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700">
           <div className="flex items-center gap-2 text-green-400 mb-1">

@@ -8,7 +8,6 @@ interface CreateOrderPayload {
     productId: string;
     quantity: number;
   }>;
-  shippingFee?: number;
   discount?: number;
   requestInvoice?: boolean;
   invoiceInfo?: {
@@ -48,7 +47,6 @@ class OrderService {
       address_id: string;
       items: Array<{ product_id: string; quantity: number }>;
       discount?: number;
-      shipping_fee?: number;
       is_company_invoice?: boolean;
       invoice_info?: {
         company_name: string;
@@ -66,10 +64,6 @@ class OrderService {
 
     if (typeof payload.discount === "number") {
       body.discount = payload.discount;
-    }
-
-    if (typeof payload.shippingFee === "number") {
-      body.shipping_fee = payload.shippingFee;
     }
 
     if (payload.requestInvoice) {
