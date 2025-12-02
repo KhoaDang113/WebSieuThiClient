@@ -10,7 +10,7 @@ import {
   Image,
   Utensils,
   Star,
-
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authService } from "@/api";
@@ -62,13 +62,18 @@ const menuItems = [
     href: "/admin/ratings",
     icon: Star,
   },
+  {
+    label: "Quản lý Bình luận",
+    href: "/admin/comments",
+    icon: MessageSquare,
+  },
 
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const pathname = location.pathname;
-  
+
 
   const handleLogout = async () => {
     try {

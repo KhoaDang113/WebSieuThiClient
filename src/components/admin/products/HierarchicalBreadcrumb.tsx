@@ -7,21 +7,25 @@ export interface BreadcrumbItem {
   level: "root" | "subcategory";
 }
 
+import { cn } from "@/lib/utils";
+
 interface HierarchicalBreadcrumbProps {
   breadcrumbs: BreadcrumbItem[];
   onBreadcrumbClick: (index: number) => void;
+  className?: string;
 }
 
 export function HierarchicalBreadcrumb({
   breadcrumbs,
   onBreadcrumbClick,
+  className,
 }: HierarchicalBreadcrumbProps) {
   if (breadcrumbs.length === 0) {
     return null;
   }
 
   return (
-    <div className="mb-6 pb-4 border-b flex items-center gap-2 text-sm">
+    <div className={cn("mb-6 pb-4 border-b flex items-center gap-2 text-sm", className)}>
       <Button
         variant="ghost"
         size="sm"

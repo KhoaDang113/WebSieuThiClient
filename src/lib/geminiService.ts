@@ -60,8 +60,7 @@ export async function getIngredientsForDish(
     const productList = availableProducts
       .map(
         (p) =>
-          `- ${p.name} (${p.unit || p.quantity || "N/A"}) - Giá: ${
-            p.final_price || p.unit_price
+          `- ${p.name} (${p.unit || p.quantity || "N/A"}) - Giá: ${p.final_price || p.unit_price
           }đ`
       )
       .join("\n");
@@ -148,13 +147,13 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
             "1",
           unit: matchedProduct.unit || "",
           price: matchedProduct.final_price || matchedProduct.unit_price,
-          image_url: 
-            (Array.isArray(matchedProduct.image_url) 
-              ? matchedProduct.image_url[0] 
-              : matchedProduct.image_url) || 
-            (Array.isArray(matchedProduct.image_primary) 
-              ? matchedProduct.image_primary[0] 
-              : matchedProduct.image_primary) || 
+          image_url:
+            (Array.isArray(matchedProduct.image_url)
+              ? matchedProduct.image_url[0]
+              : matchedProduct.image_url) ||
+            (Array.isArray(matchedProduct.image_primary)
+              ? matchedProduct.image_primary[0]
+              : matchedProduct.image_primary) ||
             "",
           available: true,
           product_id: matchedProduct._id || matchedProduct.id,
@@ -190,7 +189,6 @@ export async function getSpicesForDish(
     );
 
     if (!spiceProducts || spiceProducts.length === 0) {
-      console.warn("No spice products found in database");
       return [];
     }
 
@@ -199,8 +197,7 @@ export async function getSpicesForDish(
       .filter((p) => p.is_active !== false && p.stock_status === "in_stock")
       .map(
         (p) =>
-          `- ${p.name} (${p.unit || "N/A"}) - Giá: ${
-            p.final_price || p.unit_price
+          `- ${p.name} (${p.unit || "N/A"}) - Giá: ${p.final_price || p.unit_price
           }đ`
       )
       .join("\n");
@@ -285,7 +282,6 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
       }
     }
 
-    console.log(`✅ Found ${spices.length} spices for "${dishName}"`);
     return spices;
   } catch (error) {
     console.error("Error calling Gemini API for spices:", error);
@@ -476,19 +472,13 @@ export async function getSuggestedDishesForProduct(
   try {
     // Kiểm tra xem sản phẩm có phải là nguyên liệu nấu ăn không
     if (!isCookingIngredient(productName)) {
-      console.log(
-        `⚠️ "${productName}" không phải là nguyên liệu nấu ăn, không gợi ý món ăn`
-      );
       return [];
     }
-
-    console.log(`✅ "${productName}" là nguyên liệu nấu ăn, đang gợi ý món...`);
 
     // Lấy tất cả combos từ database
     const allCombos = await comboService.getCombos();
 
     if (!allCombos || allCombos.length === 0) {
-      console.warn("No combos found in database");
       return [];
     }
 
@@ -552,7 +542,6 @@ Trả về CHÍNH XÁC định dạng JSON sau (KHÔNG thêm markdown \`\`\`json
     }
 
     const suggestedDishNames: string[] = JSON.parse(jsonText);
-    console.log(" AI suggested dishes:", suggestedDishNames);
 
     // Tìm combo khớp với tên món ăn gợi ý
     const suggestedCombos: MenuCombo[] = [];
@@ -573,7 +562,6 @@ Trả về CHÍNH XÁC định dạng JSON sau (KHÔNG thêm markdown \`\`\`json
       }
     }
 
-    console.log(" Matched combos from database:", suggestedCombos.length);
     return suggestedCombos; // Trả về tất cả món ăn phù hợp
   } catch (error) {
     console.error("Error calling Gemini API for dish suggestions:", error);

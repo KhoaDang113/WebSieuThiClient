@@ -2,7 +2,22 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2, Lock, Unlock, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Edit2, Lock, Unlock, Loader2 } from "lucide-react";
 import { userService } from "@/api";
 import type { User, UserRole } from "@/types";
 
@@ -10,12 +25,14 @@ const roleColors = {
   user: "bg-green-100 text-green-800",
   staff: "bg-blue-100 text-blue-800",
   admin: "bg-red-100 text-red-800",
+  shipper: "bg-purple-100 text-purple-800",
 };
 
 const roleLabels = {
   user: "Khách hàng",
   staff: "Nhân viên",
   admin: "Admin",
+  shipper: "Shipper",
 };
 
 interface UserTableProps {
@@ -32,11 +49,14 @@ export function UserManagementTable({
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 9,
     total: 0,
     totalPages: 0,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [newRole, setNewRole] = useState<UserRole | "">("");
+  const [isUpdateLoading, setIsUpdateLoading] = useState(false);
 
   // Fetch users from API
   const fetchUsers = async () => {
@@ -72,6 +92,11 @@ export function UserManagementTable({
     const user = users.find((u) => u._id === userId);
     if (!user) return;
 
+    if (user.role === "admin") {
+      alert("Không thể khóa tài khoản Admin!");
+      return;
+    }
+
     const action = currentStatus ? "khóa" : "mở khóa";
     if (!window.confirm(`Bạn có chắc chắn muốn ${action} user "${user.name}"?`)) {
       return;
@@ -98,12 +123,35 @@ export function UserManagementTable({
     }
   };
 
-  // Handle delete user (placeholder - need to implement backend endpoint)
-  const handleDelete = (id: string) => {
-    const user = users.find((u) => u._id === id);
-    if (!user) return;
-    
-    alert(`Chức năng xóa user "${user.name}" chưa được implement ở backend`);
+
+
+  // Handle open edit dialog
+  const handleEditClick = (user: User) => {
+    setEditingUser(user);
+    setNewRole(user.role);
+  };
+
+  // Handle update user role
+  const handleUpdateRole = async () => {
+    if (!editingUser || !newRole) return;
+
+    try {
+      setIsUpdateLoading(true);
+      await userService.updateUserByAdmin(editingUser._id, {
+        role: newRole as UserRole,
+      });
+
+      // Close dialog and refresh list
+      setEditingUser(null);
+      await fetchUsers();
+    } catch (err: any) {
+      console.error("Error updating user role:", err);
+      alert(
+        err.response?.data?.message || "Không thể cập nhật vai trò user"
+      );
+    } finally {
+      setIsUpdateLoading(false);
+    }
   };
 
   // Format date
@@ -160,13 +208,13 @@ export function UserManagementTable({
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {users.filter(user => user.role !== 'admin').map((user) => (
                 <tr key={user._id}>
                   <td className="font-medium text-foreground">
                     {user._id.slice(-6)}
                   </td>
                   <td className="text-foreground">{user.name}</td>
-                  <td className="text-muted-foreground">
+                  <td className="text-muted-foreground max-w-[150px] truncate" title={user.email}>
                     {user.email || "N/A"}
                   </td>
                   <td className="text-muted-foreground">
@@ -193,46 +241,37 @@ export function UserManagementTable({
                   </td>
                   <td>
                     <div className="flex gap-2 whitespace-nowrap flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 w-20 flex-shrink-0"
-                        disabled
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Sửa
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 w-24 flex-shrink-0"
-                        onClick={() => handleToggleStatus(user._id, !user.isLocked)}
-                        disabled={actionLoading === user._id}
-                      >
-                        {actionLoading === user._id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : user.isLocked ? (
-                          <>
-                            <Unlock className="w-4 h-4" />
-                            Mở khóa
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-4 h-4" />
-                            Khóa
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 text-destructive hover:text-destructive w-16 flex-shrink-0"
-                        onClick={() => handleDelete(user._id)}
-                        disabled
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1 w-20 flex-shrink-0"
+                          onClick={() => handleEditClick(user)}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Sửa
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1 w-24 flex-shrink-0"
+                          onClick={() => handleToggleStatus(user._id, !user.isLocked)}
+                          disabled={actionLoading === user._id || user.role === "admin"}
+                        >
+                          {actionLoading === user._id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : user.isLocked ? (
+                            <>
+                              <Unlock className="w-4 h-4" />
+                              Mở khóa
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-4 h-4" />
+                              Khóa
+                            </>
+                          )}
+                        </Button>
+
                     </div>
                   </td>
                 </tr>
@@ -278,6 +317,65 @@ export function UserManagementTable({
           </div>
         </div>
       )}
+
+      {/* Edit Role Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cập nhật vai trò người dùng</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Tên người dùng</Label>
+              <div className="p-2 bg-muted rounded-md text-sm">
+                {editingUser?.name}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <div className="p-2 bg-muted rounded-md text-sm">
+                {editingUser?.email || "N/A"}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vai trò</Label>
+              <Select
+                value={newRole}
+                onValueChange={(value) => setNewRole(value as UserRole)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn vai trò" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Khách hàng</SelectItem>
+                  <SelectItem value="staff">Nhân viên</SelectItem>
+                  <SelectItem value="shipper">Shipper</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditingUser(null)}
+              disabled={isUpdateLoading}
+            >
+              Hủy
+            </Button>
+            <Button onClick={handleUpdateRole} disabled={isUpdateLoading}>
+              {isUpdateLoading && (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              )}
+              Lưu thay đổi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

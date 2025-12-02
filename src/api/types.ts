@@ -191,6 +191,44 @@ export interface UpdateCommentRequest {
   content: string;
 }
 
+// Admin Comment Types
+export interface CommentWithProduct extends Omit<Comment, 'product_id'> {
+  product_id: {
+    _id: string;
+    name: string;
+    slug: string;
+    image_primary?: string;
+  };
+}
+
+export interface AdminCommentResponse {
+  comments: CommentWithProduct[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface ProductCommentsGroup {
+  _id: string;
+  commentCount: number;
+  latestComment: string;
+  product: {
+    _id: string;
+    name: string;
+    slug: string;
+    image_primary?: string;
+  };
+}
+
+export interface ProductCommentsListResponse {
+  products: ProductCommentsGroup[];
+  total: number;
+}
+
+
 // Address Types
 export interface Address {
   _id: string;
@@ -204,8 +242,7 @@ export interface Address {
   latitude: number;
   longitude: number;
   zip_code?: string;
-  latitude?: number;
-  longitude?: number;
+
   is_default: boolean;
   is_active: boolean;
   createdAt: Date;
