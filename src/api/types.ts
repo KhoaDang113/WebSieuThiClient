@@ -202,6 +202,8 @@ export interface Address {
   district?: string; // Quận/Huyện (optional - mô hình 2 cấp: chỉ có Tỉnh và Xã)
   city: string; // Tỉnh/Thành phố
   zip_code?: string;
+  latitude?: number;
+  longitude?: number;
   is_default: boolean;
   is_active: boolean;
   createdAt: Date;
@@ -216,6 +218,8 @@ export interface CreateAddressDto {
   district?: string; // Optional - mô hình 2 cấp: chỉ có Tỉnh và Xã
   city: string;
   zip_code?: string;
+  latitude?: number;
+  longitude?: number;
   is_default?: boolean;
   is_active?: boolean;
 }
@@ -228,6 +232,8 @@ export interface UpdateAddressDto {
   district?: string;
   city?: string;
   zip_code?: string;
+  latitude?: number;
+  longitude?: number;
   is_default?: boolean;
   is_active?: boolean;
 }

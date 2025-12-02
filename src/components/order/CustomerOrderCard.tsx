@@ -178,14 +178,14 @@ export function CustomerOrderCard({
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-gray-200 bg-gray-50 gap-3">
         <div>
           <h3 className="font-semibold text-gray-900">Đơn hàng #{order.id}</h3>
           <p className="text-sm text-gray-600 mt-1">
             Giao lúc: {formatDate(order.created_at)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[order.status]?.className ?? "bg-gray-100 text-gray-700"}`}>
             {statusConfig[order.status]?.label ?? order.status}
           </span>
@@ -281,71 +281,77 @@ export function CustomerOrderCard({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center gap-4">
-          {canCancel && (
-            <button
-              onClick={handleCancel}
-              className="px-3 py-2 text-sm font-medium rounded-lg 
-               bg-gradient-to-r from-red-500 to-red-600 
-               text-white shadow-sm hover:shadow-md 
-               hover:brightness-110 active:scale-95
-               transition-all"
-            >
-              Huỷ đơn hàng
-            </button>
-          )}
-
-          {canPay && (
-            <button
-              onClick={handlePay}
-              className="px-3 py-2 text-sm font-semibold rounded-lg
-               bg-[#00A559] text-white
-               hover:bg-[#008F4C] active:bg-[#007E42]
-               shadow-sm hover:shadow-md active:scale-95
-               transition-all"
-            >
-              Thanh toán
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border-t border-gray-200 bg-gray-50 gap-4">
+        {/* Total Amount - Show first on mobile */}
+        <div className="flex items-center justify-between md:justify-start md:order-2 gap-4 w-full md:w-auto">
+          <div className="text-left md:text-right w-full md:w-auto flex justify-between md:block items-center">
             <p className="text-sm text-gray-600">Tổng đơn hàng:</p>
             <p className="text-lg font-bold text-gray-900">
               {formatPrice(order.total_amount)}đ
             </p>
           </div>
+        </div>
 
-          {/* Rating button - only show for delivered orders */}
-          {order.status === "delivered" && (
-            <>
-              {!order.is_rating ? (
-                <Button
-                  onClick={() => setShowRatingDialog(true)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-6"
-                >
-                  Đánh giá
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => setShowViewRatingDialog(true)}
-                  variant="outline"
-                  className="border-orange-500 text-orange-500 hover:bg-orange-50 rounded-lg px-6"
-                >
-                  Xem đánh giá
-                </Button>
-              )}
-            </>
-          )}
+        {/* Actions - Show second on mobile */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:order-1 w-full md:w-auto">
+          <div className="flex gap-3 w-full md:w-auto">
+            {canCancel && (
+              <button
+                onClick={handleCancel}
+                className="flex-1 md:flex-none px-3 py-2 text-sm font-medium rounded-lg 
+                bg-gradient-to-r from-red-500 to-red-600 
+                text-white shadow-sm hover:shadow-md 
+                hover:brightness-110 active:scale-95
+                transition-all whitespace-nowrap"
+              >
+                Huỷ đơn hàng
+              </button>
+            )}
 
-          <Button
-            onClick={handleBuyAgain}
-            className="bg-[#007E42] hover:bg-[#006633] text-white rounded-lg px-6"
-          >
-            Mua lại
-          </Button>
+            {canPay && (
+              <button
+                onClick={handlePay}
+                className="flex-1 md:flex-none px-3 py-2 text-sm font-semibold rounded-lg
+                bg-[#00A559] text-white
+                hover:bg-[#008F4C] active:bg-[#007E42]
+                shadow-sm hover:shadow-md active:scale-95
+                transition-all whitespace-nowrap"
+              >
+                Thanh toán
+              </button>
+            )}
+          </div>
+
+          <div className="flex gap-3 w-full md:w-auto">
+            {/* Rating button - only show for delivered orders */}
+            {order.status === "delivered" && (
+              <>
+                {!order.is_rating ? (
+                  <Button
+                    onClick={() => setShowRatingDialog(true)}
+                    className="flex-1 md:flex-none bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-6 whitespace-nowrap"
+                  >
+                    Đánh giá
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setShowViewRatingDialog(true)}
+                    variant="outline"
+                    className="flex-1 md:flex-none border-orange-500 text-orange-500 hover:bg-orange-50 rounded-lg px-6 whitespace-nowrap"
+                  >
+                    Xem đánh giá
+                  </Button>
+                )}
+              </>
+            )}
+
+            <Button
+              onClick={handleBuyAgain}
+              className="flex-1 md:flex-none bg-[#007E42] hover:bg-[#006633] text-white rounded-lg px-6 whitespace-nowrap"
+            >
+              Mua lại
+            </Button>
+          </div>
         </div>
       </div>
 

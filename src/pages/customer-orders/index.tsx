@@ -94,47 +94,45 @@ export default function CustomerOrdersPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Filter tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 p-1 mb-6 inline-flex">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-              filter === "all"
-                ? "bg-[#007E42] text-white shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Tất cả
-          </button>
-          <button
-            onClick={() => setFilter("pending")}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-              filter === "pending"
-                ? "bg-[#007E42] text-white shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Đang xử lý
-          </button>
-          <button
-            onClick={() => setFilter("delivered")}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-              filter === "delivered"
-                ? "bg-[#007E42] text-white shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Đã giao
-          </button>
-          <button
-            onClick={() => setFilter("cancelled")}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-              filter === "cancelled"
-                ? "bg-[#007E42] text-white shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Đã hủy
-          </button>
+        <div className="mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <div className="bg-white rounded-lg border border-gray-200 p-1 inline-flex min-w-max">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${filter === "all"
+                  ? "bg-[#007E42] text-white shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setFilter("pending")}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${filter === "pending"
+                  ? "bg-[#007E42] text-white shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Đang xử lý
+            </button>
+            <button
+              onClick={() => setFilter("delivered")}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${filter === "delivered"
+                  ? "bg-[#007E42] text-white shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Đã giao
+            </button>
+            <button
+              onClick={() => setFilter("cancelled")}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${filter === "cancelled"
+                  ? "bg-[#007E42] text-white shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Đã hủy
+            </button>
+          </div>
         </div>
 
         {/* Orders list */}
@@ -173,13 +171,12 @@ export default function CustomerOrdersPage() {
                 <p className="text-gray-600 mb-6">
                   {filter === "all"
                     ? "Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm ngay!"
-                    : `Bạn chưa có đơn hàng nào ở trạng thái "${
-                        filter === "pending"
-                          ? "Đang xử lý"
-                          : filter === "delivered"
-                          ? "Đã giao"
-                          : "Đã hủy"
-                      }"`}
+                    : `Bạn chưa có đơn hàng nào ở trạng thái "${filter === "pending"
+                      ? "Đang xử lý"
+                      : filter === "delivered"
+                        ? "Đã giao"
+                        : "Đã hủy"
+                    }"`}
                 </p>
                 <Link
                   to="/"

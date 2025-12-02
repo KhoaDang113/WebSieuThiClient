@@ -482,7 +482,7 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
                       `}
                     >
                       {/* Delete button */}
-                      <button
+                      <div role="button"
                         onClick={(e) =>
                           handleDeleteNotification(e, notification._id)
                         }
@@ -490,7 +490,7 @@ export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) 
                         aria-label="Xóa thông báo"
                       >
                         <X className="w-4 h-4 text-red-500" />
-                      </button>
+                      </div>
 
                       <div className="flex items-start gap-3">
                         {/* Actor avatar for comment/reply notifications */}
