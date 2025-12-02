@@ -11,13 +11,13 @@ class ShippingService {
   private readonly basePath = "/shipping";
 
   async calculateShippingFee(
-    addressId: string,
+    userAddress: string,
     orderTotal: number
   ): Promise<ShippingFeeResponse> {
     const response = await api.post<ShippingFeeResponse>(
       `${this.basePath}/calculate-fee`,
       {
-        addressId,
+        userAddress,
         orderTotal,
       }
     );

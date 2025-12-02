@@ -97,6 +97,7 @@ export default function CheckoutModal({
         address: fullAddress,
         addressId: address.id || prev.addressId,
       })); 
+
       return;
     }
 
@@ -126,7 +127,7 @@ export default function CheckoutModal({
       setIsLoadingShipping(true);
       try {
         const result = await shippingService.calculateShippingFee(
-          address?.id || "",
+          `${address?.latitude},${address?.longitude}` || "",
           total
         );
         setShippingFee(result.shippingFee);
@@ -193,8 +194,6 @@ export default function CheckoutModal({
         onClearCart();
       } else {
         try {
-          console.log(newOrderId);
-
           const paymentUrl = await PaymentService.createPayment(
             newOrderId,
             paymentMethod === "vnpay" ? "vnpay" : "momo"

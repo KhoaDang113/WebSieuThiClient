@@ -163,7 +163,7 @@ export function ShipperOrderCard({
             <span className="text-xs font-semibold">Thu nhập</span>
           </div>
           <p className="text-sm font-bold text-green-400">
-            {formatCurrency(order.total_amount)}
+            {formatCurrency(order.shipping_fee || 0)}
           </p>
         </div>
       </div>

@@ -201,6 +201,8 @@ export interface Address {
   ward: string; // Phường/Xã
   district?: string; // Quận/Huyện (optional - mô hình 2 cấp: chỉ có Tỉnh và Xã)
   city: string; // Tỉnh/Thành phố
+  latitude: number;
+  longitude: number;
   zip_code?: string;
   latitude?: number;
   longitude?: number;
