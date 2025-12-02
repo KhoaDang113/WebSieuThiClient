@@ -28,12 +28,12 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // State cho gia vị
   const [dishSpices, setDishSpices] = useState<(Product & { spice_type?: string })[]>([]);
   const [isLoadingSpices, setIsLoadingSpices] = useState(false);
   const [selectedSpiceTab, setSelectedSpiceTab] = useState<string>("all");
-  
+
   const spicesScrollRef = useRef<HTMLDivElement>(null);
   const ingredientsScrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -59,9 +59,7 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
 
       setIsLoading(true);
       try {
-        console.log(`🔍 Loading suggested dishes for: ${productName}`);
         const dishes = await getSuggestedDishesForProduct(productName);
-        console.log(`✅ Loaded ${dishes.length} suggested dishes`);
         setSuggestedDishes(dishes);
       } catch (error) {
         console.error("Error loading suggested dishes:", error);
@@ -76,7 +74,6 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
 
   // Handle click "MUA NGUYÊN LIỆU"
   const handleBuyIngredients = async (combo: MenuCombo) => {
-    console.log(`🛒 Buying ingredients for: ${combo.name}`);
     setSelectedCombo({ ...combo, ingredients: [] });
     setIsModalOpen(true);
     setIsLoadingIngredients(true);
@@ -92,7 +89,7 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
         getIngredientsForDish(combo.name),
         getSpicesForDish(combo.name),
       ]);
-      
+
       setIngredients(ingredientsList);
       setDishSpices(spicesList);
       setSelectedCombo({ ...combo, ingredients: ingredientsList });
@@ -139,11 +136,11 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     product: Product & { selectedQuantity?: number }
   ) => {
     const productId = typeof product.id === "string" ? product.id : product._id;
-    const imageUrl = product.image_url || 
-      (Array.isArray(product.image_primary) 
-        ? product.image_primary[0] 
+    const imageUrl = product.image_url ||
+      (Array.isArray(product.image_primary)
+        ? product.image_primary[0]
         : product.image_primary) || "";
-    
+
     addToCart({
       id: productId || product._id,
       name: product.name,
@@ -400,11 +397,10 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
                         <button
                           key={tab.id}
                           onClick={() => setSelectedSpiceTab(tab.id)}
-                          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
-                            selectedSpiceTab === tab.id
+                          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${selectedSpiceTab === tab.id
                               ? "bg-green-600 text-white"
                               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                            }`}
                         >
                           {tab.name}
                         </button>
@@ -470,7 +466,7 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
                       ) : (
                         <div className="flex items-center justify-center w-full py-8">
                           <p className="text-gray-500 text-sm">
-                            {selectedSpiceTab === "all" 
+                            {selectedSpiceTab === "all"
                               ? "Không có gia vị nào cho món này"
                               : `Không có gia vị loại "${spiceTabs.find(t => t.id === selectedSpiceTab)?.name}" cho món này`
                             }

@@ -96,6 +96,69 @@ class CommentService {
     });
     return response.data;
   }
+
+  /**
+   * Admin: Lấy tất cả bình luận
+   */
+  async getAllCommentsAdmin(
+    page: number = 1,
+    limit: number = 10,
+    productId?: string,
+    search?: string
+  ): Promise<any> {
+    const response = await api.get("/comments/admin/all", {
+      params: {
+        page,
+        limit,
+        product_id: productId,
+        search,
+      },
+    });
+    return response.data;
+  }
+
+  /**
+   * Admin: Lấy danh sách sản phẩm có bình luận
+   */
+  async getCommentsByProductAdmin(): Promise<any> {
+    const response = await api.get("/comments/admin/by-product");
+    return response.data;
+  }
+
+  /**
+   * Admin: Lấy sản phẩm có bình luận theo category
+   */
+  async getProductsWithCommentsByCategory(categorySlug: string): Promise<any> {
+    const response = await api.get(
+      `/comments/admin/products-by-category/${categorySlug}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Admin: Phản hồi bình luận
+   */
+  async adminReplyComment(
+    commentId: string,
+    content: string,
+    productId: string
+  ): Promise<any> {
+    const response = await api.post(`/comments/admin/reply/${commentId}`, {
+      content,
+      product_id: productId,
+    });
+    return response.data;
+  }
+
+  /**
+   * Admin: Xóa bình luận
+   */
+  async adminDeleteComment(commentId: string): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>(
+      `/comments/admin/${commentId}`
+    );
+    return response.data;
+  }
 }
 
 export default new CommentService();
