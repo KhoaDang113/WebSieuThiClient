@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation } from "lucide-react";
-
-// Fix for default marker icon in Leaflet with React
+import { Navigation } from "lucide-react";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -74,7 +72,6 @@ function LocationMarker({
 }
 
 export function LocationPicker({ onLocationSelect, initialLocation }: LocationPickerProps) {
-    // Default to Ho Chi Minh City if no initial location
     const defaultPosition = new L.LatLng(10.762622, 106.660172);
     const [position, setPosition] = useState<L.LatLng>(
         initialLocation
@@ -93,9 +90,7 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
 
             if (data && data.address) {
                 const address = data.address;
-                // Map Nominatim address fields to our format
-                // Note: Nominatim fields can vary (city, town, village, county, state, etc.)
-                const city = address.city || address.state; // Often 'Thành phố Hồ Chí Minh' is in state
+                const city = address.city || address.state;
                 const district = address.district || address.county || address.suburb;
                 const ward = address.quarter || address.neighbourhood || address.village;
                 const street = address.road ? `${address.house_number ? address.house_number + ' ' : ''}${address.road}` : '';
@@ -145,11 +140,8 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
     };
 
     return (
-        <div className="space-y-2">
+        <div className="flex flex-col h-full gap-2">
             <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium text-gray-700">
-                    Chọn vị trí trên bản đồ
-                </label>
                 <Button
                     type="button"
                     variant="outline"
@@ -167,7 +159,7 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
                 </Button>
             </div>
 
-            <div className="h-[300px] w-full rounded-md overflow-hidden border border-gray-300 relative z-0">
+            <div className="flex-1 min-h-[300px] w-full rounded-md overflow-hidden border border-gray-300 relative z-0">
                 <MapContainer
                     center={position}
                     zoom={15}

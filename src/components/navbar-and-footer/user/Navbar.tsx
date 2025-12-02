@@ -654,13 +654,6 @@ export function Navbar() {
       {/* 🟢 Mobile Bottom Menu */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
         <div className="flex justify-around items-center h-16">
-          <Link
-            to="/"
-            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
-          >
-            <ShoppingCart className="w-5 h-5 mb-1" />
-            <span>Trang chủ</span>
-          </Link>
           <div className="flex flex-col items-center justify-center h-full flex-1 text-gray-700">
             <NotificationDrawer
               mobile={true}

@@ -72,9 +72,15 @@ export function AddressFormModal({
   const [isDefault, setIsDefault] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [geocoding, setGeocoding] = useState<boolean>(false);
+  const [geocodingAttempted, setGeocodingAttempted] = useState<boolean>(false);
 
   // Map state
   const [mapLocation, setMapLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  // Coordinates state - persistent storage for lat/lng to send to backend
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  // Track if coordinates were set manually (to avoid overwriting with auto-geocode)
+  const [manualCoordinates, setManualCoordinates] = useState<boolean>(false);
 
   const fetchProvinces = useCallback(async () => {
     try {
@@ -107,6 +113,42 @@ export function AddressFormModal({
       setLoading(false);
     }
   }, [showNotification]);
+
+  // Forward geocoding: Convert address to coordinates
+  const handleForwardGeocode = useCallback(async (fullAddress: string) => {
+    try {
+      setGeocoding(true);
+      // Nominatim search API with Vietnam bias
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&countrycodes=vn&limit=1&accept-language=vi`,
+        {
+          signal: createTimeoutSignal(10000),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const result = data[0];
+          const lat = parseFloat(result.lat);
+          const lng = parseFloat(result.lon);
+
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setCoordinates({ lat, lng });
+            setMapLocation({ lat, lng });
+            setManualCoordinates(false);
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Error forward geocoding:", error);
+      return false;
+    } finally {
+      setGeocoding(false);
+    }
+  }, []);
 
   const fetchWards = useCallback(async (provinceCode: string): Promise<Ward[]> => {
     try {
@@ -179,13 +221,30 @@ export function AddressFormModal({
       }
 
       setSelectedWard(editingAddress.ward);
-      // Note: We don't have lat/lng in Address model yet, so map might default to HCMC
+
+      // Restore coordinates if available
+      if (editingAddress.latitude && editingAddress.longitude) {
+        setCoordinates({
+          lat: editingAddress.latitude,
+          lng: editingAddress.longitude,
+        });
+        setMapLocation({
+          lat: editingAddress.latitude,
+          lng: editingAddress.longitude,
+        });
+      } else {
+        setCoordinates(null);
+        setMapLocation(undefined);
+      }
     } else if (isOpen) {
       setSelectedProvince("");
       setSelectedWard("");
       setStreet("");
       setIsDefault(false);
       setMapLocation(undefined);
+      setCoordinates(null);
+      setManualCoordinates(false);
+      setGeocodingAttempted(false);
 
       if (currentUser) {
         setFullName(currentUser.name || "");
@@ -202,13 +261,7 @@ export function AddressFormModal({
       fetchWards(selectedProvince);
       setSelectedWard("");
     } else if (selectedProvince && editingAddress) {
-      // If editing, we need to fetch wards but keep the selectedWard if it matches
-      // This part is a bit tricky because fetchWards is async and we need to set selectedWard after it
-      // But the current logic in original code was:
-      // useEffect(() => { if (selectedProvince && !editingAddress) ... }, [selectedProvince])
-      // It seems it relied on user interaction for new addresses.
-      // For editing, we might need to fetch wards manually if not already fetched.
-      // Let's improve this:
+
       fetchWards(selectedProvince).then((fetchedWards) => {
         const wardObj = fetchedWards.find(w => w.name === editingAddress.ward);
         if (wardObj) {
@@ -217,6 +270,43 @@ export function AddressFormModal({
       });
     }
   }, [selectedProvince, editingAddress, fetchWards]);
+
+  // Auto-geocoding effect: Trigger when address fields change
+  useEffect(() => {
+    // Reset geocoding attempted when address changes
+    setGeocodingAttempted(false);
+
+    // Only auto-geocode for new addresses, not when editing
+    if (editingAddress) {
+      return;
+    }
+    // Don't override manual coordinates
+    if (manualCoordinates) {
+      return;
+    }
+    // Need all required fields for geocoding
+    if (!selectedProvince || !selectedWard || !street.trim()) {
+      return;
+    }
+
+    const provinceName = provinces.find((p) => p.code === selectedProvince)?.name;
+    const wardName = wards.find((w) => w.code === selectedWard)?.name;
+
+    if (!provinceName || !wardName) {
+      return;
+    }
+
+    // Build full address string
+    const fullAddress = `${street.trim()}, ${wardName}, ${provinceName}, Vietnam`;
+
+    // Debounce: Wait 1.5 seconds after user stops typing
+    const timeoutId = setTimeout(() => {
+      setGeocodingAttempted(true);
+      handleForwardGeocode(fullAddress);
+    }, 1500);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedProvince, selectedWard, street, provinces, wards, editingAddress, manualCoordinates, handleForwardGeocode]);
 
   const handleLocationSelect = async (location: {
     lat: number;
@@ -230,6 +320,10 @@ export function AddressFormModal({
     };
   }) => {
     setMapLocation({ lat: location.lat, lng: location.lng });
+    // Save coordinates for backend submission
+    setCoordinates({ lat: location.lat, lng: location.lng });
+    // Mark as manual since user clicked "Current Location" button or dragged marker
+    setManualCoordinates(true);
 
     if (location.address) {
       const { city, ward, street } = location.address;
@@ -336,6 +430,8 @@ export function AddressFormModal({
         ward: wardName,
         // Không gửi district - mô hình 2 cấp: Chỉ có Tỉnh và Xã
         city: provinceName,
+        latitude: coordinates?.lat,
+        longitude: coordinates?.lng,
         is_default: isDefault,
         is_active: true,
       };
@@ -405,21 +501,27 @@ export function AddressFormModal({
         <div className="overflow-y-auto px-6 py-6 flex-1">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column: Map */}
-            <div className="order-2 lg:order-1">
+            <div className="h-full">
               <LocationPicker
                 onLocationSelect={handleLocationSelect}
                 initialLocation={mapLocation}
               />
+              {geocoding && (
+                <div className="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  Đang tìm tọa độ...
+                </div>
+              )}
+              {coordinates && !manualCoordinates && (
+                <p className="text-xs text-green-600 mt-2">
+                  ✓ Đã tìm thấy tọa độ tự động
+                </p>
+              )}
             </div>
 
             {/* Right Column: Form */}
-            <div className="order-1 lg:order-2">
+            <div>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Info message */}
-                <p className="text-sm text-gray-600 mb-4">
-                  Thông tin vị trí giúp chúng tôi giao hàng đúng giờ và tính phí giao chính xác hơn.
-                </p>
-
                 {/* Full Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -507,6 +609,7 @@ export function AddressFormModal({
                   />
                 </div>
 
+
                 {/* Set as default checkbox */}
                 <div className="flex items-center gap-2">
                   <input
@@ -525,17 +628,56 @@ export function AddressFormModal({
                   </label>
                 </div>
 
+                {/* Coordinates required warning */}
+                {!editingAddress && !coordinates && selectedProvince && selectedWard && street.trim() && (
+                  <div className={`rounded-md p-3 mt-2 border ${geocoding
+                    ? 'bg-blue-50 border-blue-200'
+                    : geocodingAttempted
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-yellow-50 border-yellow-200'
+                    }`}>
+                    {geocoding ? (
+                      <div className="text-xs text-blue-800 flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                        Đang tìm tọa độ địa chỉ...
+                      </div>
+                    ) : geocodingAttempted ? (
+                      <>
+                        <p className="text-xs text-red-800">
+                          ❌ Không thể xác định tọa độ cho địa chỉ này. Vui lòng:
+                        </p>
+                        <ul className="text-xs text-red-700 mt-1 ml-4 list-disc">
+                          <li>Kiểm tra lại địa chỉ đã đúng chưa</li>
+                          <li>Click nút "Vị trí hiện tại" để sử dụng GPS</li>
+                          <li>Hoặc kéo marker trên bản đồ đến vị trí chính xác</li>
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="text-xs text-yellow-800">
+                        ⏳ Đang chờ xác định tọa độ địa chỉ...
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Submit button */}
                 <Button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 mt-4 disabled:bg-gray-400"
-                  disabled={submitting || loading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 mt-4 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={submitting || loading || geocoding || !coordinates}
                 >
                   {submitting ? (
                     <span className="flex items-center justify-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       Đang lưu...
                     </span>
+                  ) : geocoding ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Đang tìm tọa độ...
+                    </span>
+                  ) : !coordinates ? (
+                    "Chờ xác định tọa độ..."
                   ) : editingAddress ? (
                     "Cập nhật"
                   ) : (
