@@ -96,7 +96,7 @@ export default function CheckoutModal({
           address.phone || currentUser?.phone || currentUser?.phoneNumber || "",
         address: fullAddress,
         addressId: address.id || prev.addressId,
-      })); 
+      }));
 
       return;
     }
@@ -133,7 +133,7 @@ export default function CheckoutModal({
         setShippingFee(result.shippingFee);
       } catch (error: any) {
         console.error("Error calculating shipping fee:", error);
-       setShippingFee(0);
+        setShippingFee(0);
       } finally {
         setIsLoadingShipping(false);
       }
@@ -325,10 +325,10 @@ export default function CheckoutModal({
                       {isLoadingShipping
                         ? "Đang tính..."
                         : shippingFee !== null
-                        ? shippingFee === 0
-                          ? "Miễn phí"
-                          : formatPrice(shippingFee)
-                        : "Chọn địa chỉ để tính"}
+                          ? shippingFee === 0
+                            ? "Miễn phí"
+                            : formatPrice(shippingFee)
+                          : "Chọn địa chỉ để tính"}
                     </span>
                   </div>
                   <div className="border-t border-[#007E42]/20 pt-3 mt-3">
@@ -529,8 +529,8 @@ export default function CheckoutModal({
                         type="button"
                         onClick={() => setPaymentMethod("cod")}
                         className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${paymentMethod === "cod"
-                            ? "border-[#007E42] bg-[#007E42]/5"
-                            : "border-gray-200 bg-white"
+                          ? "border-[#007E42] bg-[#007E42]/5"
+                          : "border-gray-200 bg-white"
                           }`}
                       >
                         <span>Thanh toán khi nhận hàng (COD)</span>
@@ -545,8 +545,8 @@ export default function CheckoutModal({
                         type="button"
                         onClick={() => setPaymentMethod("vnpay")}
                         className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${paymentMethod === "vnpay"
-                            ? "border-[#007E42] bg-[#007E42]/5"
-                            : "border-gray-200 bg-white"
+                          ? "border-[#007E42] bg-[#007E42]/5"
+                          : "border-gray-200 bg-white"
                           }`}
                       >
                         <div className="flex items-center">

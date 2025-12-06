@@ -46,8 +46,6 @@ export function ConversationList({ search }: ConversationListProps) {
         const conv = await StaffService.getConversationDetail(
           data.conversation_id
         );
-        console.log(conv);
-
         if (
           search &&
           !conv.user_id.name.toLowerCase().includes(search.toLowerCase()) &&
@@ -72,8 +70,6 @@ export function ConversationList({ search }: ConversationListProps) {
     };
 
     const handleConversationClosed = (data: { conversation_id: string }) => {
-      console.log("Conversation closed event received:", data.conversation_id);
-
       setConversations((prev) => {
         const next = prev.filter((c) => {
           const id = (c as any).id ?? (c as any)._id;

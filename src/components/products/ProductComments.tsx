@@ -56,7 +56,6 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
     try {
       setLoadingReplies((prev) => ({ ...prev, [commentId]: true }));
       const response = await commentService.getReplies(commentId, 1, 50);
-      console.log("Replies loaded for comment", commentId, ":", response.comments);
       setReplies((prev) => ({
         ...prev,
         [commentId]: response.comments || [],
@@ -430,64 +429,64 @@ export default function ProductComments({ productId }: ProductCommentsProps) {
                         ) : commentReplies.length > 0 ? (
                           <div className="space-y-4">
                             {commentReplies.map((reply) => {
-                          const replyUserInfo = getUserInfo(reply.user_id);
-                          const isReplyOwner = isOwner(reply);
+                              const replyUserInfo = getUserInfo(reply.user_id);
+                              const isReplyOwner = isOwner(reply);
 
-                          return (
-                            <div key={reply._id} className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                {replyUserInfo?.avatar ? (
-                                  <img
-                                    src={replyUserInfo.avatar}
-                                    alt={replyUserInfo.name}
-                                    className="w-8 h-8 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <User className="w-4 h-4 text-green-600" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-semibold text-gray-900 text-sm">
-                                    {replyUserInfo?.name || "Người dùng"}
-                                  </h4>
-                                  {replyUserInfo?.role === "admin" && (
-                                    <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                                      QTV
-                                    </span>
-                                  )}
-                                  <span className="text-xs text-gray-500">
-                                    {formatDate(reply.created_at)}
-                                  </span>
-                                </div>
-                                <p className="text-gray-700 text-sm whitespace-pre-wrap">
-                                  {reply.content}
-                                </p>
-                                {isReplyOwner && (
-                                  <div className="flex gap-3 mt-2">
-                                    <button
-                                      onClick={() => {
-                                        setEditingId(reply._id);
-                                        setEditContent(reply.content);
-                                      }}
-                                      className="text-xs text-gray-600 hover:text-blue-600"
-                                    >
-                                      Sửa
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleDeleteComment(reply._id)
-                                      }
-                                      className="text-xs text-gray-600 hover:text-red-600"
-                                    >
-                                      Xóa
-                                    </button>
+                              return (
+                                <div key={reply._id} className="flex items-start gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    {replyUserInfo?.avatar ? (
+                                      <img
+                                        src={replyUserInfo.avatar}
+                                        alt={replyUserInfo.name}
+                                        className="w-8 h-8 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <User className="w-4 h-4 text-green-600" />
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-semibold text-gray-900 text-sm">
+                                        {replyUserInfo?.name || "Người dùng"}
+                                      </h4>
+                                      {replyUserInfo?.role === "admin" && (
+                                        <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                                          QTV
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-gray-500">
+                                        {formatDate(reply.created_at)}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                                      {reply.content}
+                                    </p>
+                                    {isReplyOwner && (
+                                      <div className="flex gap-3 mt-2">
+                                        <button
+                                          onClick={() => {
+                                            setEditingId(reply._id);
+                                            setEditContent(reply.content);
+                                          }}
+                                          className="text-xs text-gray-600 hover:text-blue-600"
+                                        >
+                                          Sửa
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteComment(reply._id)
+                                          }
+                                          className="text-xs text-gray-600 hover:text-red-600"
+                                        >
+                                          Xóa
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="text-center py-4 text-gray-500 text-sm">
