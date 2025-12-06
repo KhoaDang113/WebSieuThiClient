@@ -38,9 +38,9 @@ export function UserFilters({
           className="w-full md:w-48 px-3 py-2 border border-input bg-background rounded-md text-sm"
         >
           <option value="all">Tất cả vai trò</option>
-          <option value="admin">Admin</option>
           <option value="staff">Nhân viên</option>
-          <option value="customer">Khách hàng</option>
+          <option value="user">Khách hàng</option>
+          <option value="shipper">Shipper</option>
         </select>
       </div>
     </Card>

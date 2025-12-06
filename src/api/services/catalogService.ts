@@ -101,7 +101,7 @@ class CategoryService {
     const config = data instanceof FormData
       ? { headers: { "Content-Type": "multipart/form-data" } }
       : {};
-    
+
     const response = await api.put<Category>(`${this.basePath}/${id}`, data, config);
     return response.data;
   }
@@ -114,7 +114,7 @@ class CategoryService {
     const config = data instanceof FormData
       ? { headers: { "Content-Type": "multipart/form-data" } }
       : {};
-    
+
     const response = await api.post<Category>(this.basePath, data, config);
     return response.data;
   }

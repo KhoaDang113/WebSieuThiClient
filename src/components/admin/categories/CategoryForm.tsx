@@ -271,8 +271,8 @@ export function CategoryForm({
             {isSubmitting
               ? "Đang lưu..."
               : mode === "edit"
-              ? "Cập nhật"
-              : "Thêm mới"}
+                ? "Cập nhật"
+                : "Thêm mới"}
           </Button>
           <Button
             type="button"
