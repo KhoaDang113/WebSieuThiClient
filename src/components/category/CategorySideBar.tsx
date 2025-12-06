@@ -126,13 +126,6 @@ export function CategorySidebar({
         <div className="flex-1 flex overflow-hidden">
           {/* Left Column - Categories List (1/3) */}
           <div className="w-1/3 bg-gray-50 overflow-y-auto border-r border-gray-200">
-            {/* Nút KHUYẾN MÃI SỐC riêng */}
-            <button
-              onClick={handlePromotionClick}
-              className="w-full p-3 text-left text-xs font-medium text-red-600 hover:bg-gray-100 transition-colors border-b border-gray-100"
-            >
-              KHUYẾN MÃI SỐC
-            </button>
             {categories.map((category) => (
               <button
                 key={category.name}

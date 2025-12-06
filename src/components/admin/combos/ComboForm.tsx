@@ -72,22 +72,17 @@ export function ComboForm({ mode, comboId }: ComboFormProps) {
     try {
       setIsLoading(true);
       const combo = await comboService.getComboById(comboId!);
-      
-      console.log("Loaded combo data:", combo);
-      console.log("type_combo_id:", combo.type_combo_id);
-      console.log("type_combo:", combo.type_combo);
-      
       setFormData({
         name: combo.name,
         description: combo.description,
         type_combo_id: combo.type_combo_id || combo.type_combo?._id || "",
         is_active: combo.is_active,
       });
-      
+
       if (combo.image) {
         setCurrentImage(combo.image);
       }
-      
+
       // Lưu tên type combo hiện tại để hiển thị
       if (combo.type_combo && combo.type_combo.name) {
         setCurrentTypeComboName(combo.type_combo.name);
@@ -202,7 +197,7 @@ export function ComboForm({ mode, comboId }: ComboFormProps) {
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6 space-y-4">
             <h3 className="text-lg font-semibold">Thông tin cơ bản</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="name">Tên món ăn <span className="text-red-500">*</span></Label>
               <Input
@@ -217,11 +212,10 @@ export function ComboForm({ mode, comboId }: ComboFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="type_combo_id">Loại món ăn <span className="text-red-500">*</span></Label>
-              
+
               <Select
                 value={formData.type_combo_id}
                 onValueChange={(value) => {
-                  console.log("Selected type_combo_id:", value);
                   setFormData((prev) => ({ ...prev, type_combo_id: value }));
                   if (errors.type_combo_id) {
                     setErrors((prev) => ({ ...prev, type_combo_id: "" }));
@@ -234,7 +228,6 @@ export function ComboForm({ mode, comboId }: ComboFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {typeCombos.map((typeCombo) => {
-                    console.log("Rendering option:", typeCombo._id, typeCombo.name);
                     return (
                       <SelectItem key={typeCombo._id} value={typeCombo._id}>
                         {typeCombo.name}
@@ -244,7 +237,7 @@ export function ComboForm({ mode, comboId }: ComboFormProps) {
                 </SelectContent>
               </Select>
               {errors.type_combo_id && <p className="text-sm text-red-500">{errors.type_combo_id}</p>}
-              
+
               {mode === "edit" && currentTypeComboName && (
                 <p className="text-xs text-muted-foreground">
                   Loại hiện tại: <span className="font-medium">{currentTypeComboName}</span>

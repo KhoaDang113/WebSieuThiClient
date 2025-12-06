@@ -651,45 +651,47 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* 🟢 Mobile Bottom Menu */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="flex justify-around items-center h-16">
-          <div className="flex flex-col items-center justify-center h-full flex-1 text-gray-700">
-            <NotificationDrawer
-              mobile={true}
-              filter={(n) =>
-                n.type === "comment_reply" || n.type === "order_update"
-              }
-            />
+      {/* 🟢 Mobile Bottom Menu - Only show when authenticated */}
+      {isAuthenticated && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+          <div className="flex justify-around items-center h-16">
+            <div className="flex flex-col items-center justify-center h-full flex-1 text-gray-700">
+              <NotificationDrawer
+                mobile={true}
+                filter={(n) =>
+                  n.type === "comment_reply" || n.type === "order_update"
+                }
+              />
+            </div>
+            <button
+              onClick={handleAddressClick}
+              className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
+            >
+              <MapPin className="w-5 h-5 mb-1" />
+              <span>Địa chỉ</span>
+            </button>
+            <Link
+              to="/cart"
+              className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs relative"
+            >
+              <ShoppingCart className="w-5 h-5 mb-1" />
+              {totalItems > 0 && (
+                <span className="absolute top-1 right-2 flex items-center justify-center rounded-full bg-red-500 w-4 h-4 text-white text-xs font-bold">
+                  {totalItems}
+                </span>
+              )}
+              <span>Giỏ hàng</span>
+            </Link>
+            <Link
+              to="/my-orders"
+              className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
+            >
+              <Package className="w-5 h-5 mb-1" />
+              <span>Đơn hàng</span>
+            </Link>
           </div>
-          <button
-            onClick={handleAddressClick}
-            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
-          >
-            <MapPin className="w-5 h-5 mb-1" />
-            <span>Địa chỉ</span>
-          </button>
-          <Link
-            to="/cart"
-            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs relative"
-          >
-            <ShoppingCart className="w-5 h-5 mb-1" />
-            {isAuthenticated && totalItems > 0 && (
-              <span className="absolute top-1 right-2 flex items-center justify-center rounded-full bg-red-500 w-4 h-4 text-white text-xs font-bold">
-                {totalItems}
-              </span>
-            )}
-            <span>Giỏ hàng</span>
-          </Link>
-          <Link
-            to="/my-orders"
-            className="flex flex-col items-center justify-center h-full flex-1 text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors text-xs"
-          >
-            <Package className="w-5 h-5 mb-1" />
-            <span>Đơn hàng</span>
-          </Link>
         </div>
-      </div>
+      )}
 
 
       {/* Address List Modal - Quản lý địa chỉ và lưu vào database */}

@@ -57,7 +57,7 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
 
   // Auto scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,36 +103,40 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
   };
 
   return (
-    <div className="w-80 h-[450px] flex flex-col bg-white">
-      <div className="px-4 py-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100">
-        <div>
-          <h3 className="font-semibold text-foreground">
-            Chat với Quản trị viên
-          </h3>
-          <p className="text-xs text-muted-foreground">Hỗ trợ từ đội ngũ</p>
+    <div className="w-full h-full md:w-96 md:h-[550px] flex flex-col bg-white md:rounded-lg shadow-2xl border border-gray-200 overflow-hidden">
+      <div className="px-3 py-3 border-b border-gray-200 flex items-center bg-gradient-to-r from-green-500 to-green-600 rounded-t-lg relative">
+        <div className="flex items-center gap-2 flex-1 min-w-0 pr-10">
+          <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-white text-sm truncate">
+              Chat Admin
+            </h3>
+            <p className="text-xs text-green-100 truncate">Hỗ trợ trực tuyến</p>
+          </div>
         </div>
         <button
           onClick={onBack}
-          className="p-1 hover:bg-green-200 rounded transition-colors"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-green-700 rounded-full transition-colors"
+          aria-label="Đóng chat"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.map((msg) => (
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        {messages.map((msg, index) => (
           <div
-            key={msg.id}
+            key={msg.id || index}
             className={`flex ${msg.sender_type === "USER" ? "justify-end" : "justify-start"
               }`}
           >
-            <div className="max-w-[240px]">
+            <div className="max-w-[230px] md:max-w-[270px]">
               {/* Text message */}
               {msg.text && (
                 <div
-                  className={`px-4 py-2 rounded-lg text-sm ${msg.sender_type === "USER"
+                  className={`px-4 py-2.5 rounded-lg text-sm shadow-sm ${msg.sender_type === "USER"
                     ? "bg-green-500 text-white rounded-br-none"
-                    : "bg-slate-100 text-foreground rounded-bl-none"
+                    : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
                     }`}
                 >
                   {msg.text}
@@ -154,7 +158,7 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
                           <img
                             src={attachment.url}
                             alt={attachment.name || "Image"}
-                            className="max-w-[240px] rounded-lg border border-border hover:opacity-90 transition-opacity cursor-pointer"
+                            className="max-w-[230px] md:max-w-[270px] rounded-lg border border-border hover:opacity-90 transition-opacity cursor-pointer"
                           />
                         </a>
                       ) : (
@@ -193,7 +197,7 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="px-3 py-3 border-t border-border relative">
+      <div className="px-3 py-3 border-t border-gray-200 bg-white relative">
         {/* File preview */}
         {selectedFiles.length > 0 && (
           <div className="mb-3 flex gap-2 flex-wrap">
@@ -232,7 +236,7 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
 
         {/* Emoji Picker */}
         {showEmojiPicker && (
-          <div className="absolute bottom-16 left-4 z-50">
+          <div className="absolute bottom-20 md:bottom-24 left-4 z-50">
             <EmojiPicker onEmojiClick={handleEmojiClick} />
           </div>
         )}
@@ -249,17 +253,17 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={selectedFiles.length >= 5}
-            className="p-1.5 hover:bg-green-50 rounded border border-input transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 hover:bg-green-50 rounded-lg border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Gửi file hoặc ảnh"
           >
-            <Upload className="w-4 h-4 text-green-500" />
+            <Upload className="w-4 h-4 text-green-600" />
           </button>
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-1.5 hover:bg-green-50 rounded border border-input transition-colors"
+            className="p-2 hover:bg-green-50 rounded-lg border border-gray-300 transition-colors"
             title="Chọn emoji"
           >
-            <Smile className="w-4 h-4 text-green-500" />
+            <Smile className="w-4 h-4 text-green-600" />
           </button>
           <input
             ref={inputRef}
@@ -268,12 +272,12 @@ export function AdminChat({ conversationId, onBack }: AdminChatProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSend()}
             placeholder="Nhập tin nhắn..."
-            className="flex-1 px-2 py-1.5 rounded border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() && selectedFiles.length === 0}
-            className="px-2 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
           >
             Gửi
           </button>

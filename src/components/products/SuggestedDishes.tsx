@@ -72,7 +72,6 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     loadSuggestedDishes();
   }, [productName]);
 
-  // Handle click "MUA NGUYÊN LIỆU"
   const handleBuyIngredients = async (combo: MenuCombo) => {
     setSelectedCombo({ ...combo, ingredients: [] });
     setIsModalOpen(true);
