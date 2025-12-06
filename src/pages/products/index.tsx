@@ -8,23 +8,13 @@ import type { Brand } from "@/types/brand.type";
 import Banners from "@/components/productPage/banner/Banners";
 import Article from "@/components/productPage/article/Article";
 import ProductGridWithBanners from "@/components/products/ProductGridWithBanners";
+import BrandFilter from "@/components/products/BrandFilter";
 import ShockingDeal from "@/components/products/ShockingDeal";
-import { bannerService, categoryService, productService, brandService } from "@/api";
+import { bannerService, categoryService, productService } from "@/api";
 import { toCategoryNav, getProductId, getProductImage } from "@/lib/constants";
 import { useCart } from "@/components/cart/CartContext";
 import { useNotification } from "@/hooks/useNotification";
 import { mapProductFromApi } from "@/lib/utils/productMapper";
-import { ChevronDown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,7 +33,7 @@ export default function ProductsPage() {
 
   // Lấy parameters từ URL
   const categoryFromUrl = searchParams.get("category");
-  const brandsFromUrl = searchParams.get("brands");
+  const brandsFromUrl = searchParams.get("brand"); // Đổi từ "brands" sang "brand"
   const sortParam = searchParams.get("sort") || "";
 
   // States for advanced filters
@@ -211,14 +201,19 @@ export default function ProductsPage() {
       }
     };
 
-    loadCategoryData();
-  }, [categoryFromUrl, showNotification]);
+    // Debounce: Đợi 1s sau khi brand thay đổi để user có thể chọn nhiều brands
+    const timeoutId = setTimeout(() => {
+      loadCategoryData();
+    }, brandsFromUrl ? 1000 : 0); // 1s debounce cho brand filter, instant cho category/sort
 
-  // Đồng bộ selectedBrands với URL
+    return () => clearTimeout(timeoutId);
+  }, [categoryFromUrl, brandsFromUrl, sortParam, showNotification]);
+
+  // Đồng bộ selectedBrands với URL (space-separated)
   useEffect(() => {
     if (brandsFromUrl) {
       const brandsArray = brandsFromUrl
-        .split(",")
+        .split(" ") // Đổi từ "," sang " " (space)
         .filter((brand) => brand.trim() !== "");
       setSelectedBrands(brandsArray);
     } else {
@@ -226,15 +221,12 @@ export default function ProductsPage() {
     }
   }, [brandsFromUrl]);
 
-  // Load all categories and brands for filters
+  // Load all categories for filters (brands sẽ được load từ getCategoryProducts API)
   useEffect(() => {
     const loadFilters = async () => {
       try {
         setLoadingFilters(true);
-        const [categoriesData, brandsData] = await Promise.all([
-          categoryService.getAllCategories(),
-          brandService.getAllBrands(),
-        ]);
+        const categoriesData = await categoryService.getAllCategories();
 
         // Filter active parent categories (level 1)
         const activeCategories = categoriesData.filter((cat) => {
@@ -244,17 +236,10 @@ export default function ProductsPage() {
           return isActive && !isDeleted && isParent;
         });
 
-        // Filter active brands
-        const activeBrands = brandsData.filter(
-          (b) => (b.is_active !== undefined ? b.is_active : true) && !(b.is_deleted !== undefined ? b.is_deleted : false)
-        );
-
         setAllCategories(activeCategories);
-        setBrands(activeBrands);
       } catch (error) {
         console.error("Error loading filters:", error);
         setAllCategories([]);
-        setBrands([]);
       } finally {
         setLoadingFilters(false);
       }
@@ -262,40 +247,26 @@ export default function ProductsPage() {
     loadFilters();
   }, []);
 
-  // Helper function to get selected category display name
-  const getSelectedCategoryName = () => {
-    if (!categoryFromUrl) return "Tất cả danh mục";
-    // Find category in nested structure
-    for (const cat of allCategories) {
-      if (cat.slug === categoryFromUrl) {
-        return cat.name;
-      }
-      const subCats = cat.subCategories || [];
-      for (const subCat of subCats) {
-        if (subCat.slug === categoryFromUrl) {
-          return subCat.name;
-        }
-      }
-    }
-    return currentCategory?.name || "Tất cả danh mục";
-  };
 
-  // Helper function to get selected brand display name
-  const getSelectedBrandName = () => {
-    if (!brandsFromUrl) return "Tất cả thương hiệu";
-    const brand = brands.find(b => b.slug === brandsFromUrl);
-    return brand?.name || "Tất cả thương hiệu";
-  };
-
+  // Sử dụng API mới getCategoryProducts - trả về cả products VÀ brands
   const fetchProductsByCategory = async (categorySlug: string) => {
     try {
-      const apiProducts = await productService.getProducts(categorySlug);
+      const result = await productService.getCategoryProducts(categorySlug, {
+        brand: brandsFromUrl || undefined,
+        sortOrder: sortParam || undefined,
+        skip: 0
+      });
+      
       // Map products từ API format sang frontend format
-      const mappedProducts = apiProducts.map(mapProductFromApi);
+      const mappedProducts = result.products.map(mapProductFromApi);
       setProducts(mappedProducts);
+      
+      // Set brands từ API response - chỉ brands có sản phẩm trong category này
+      setBrands(result.brands);
     } catch (error) {
       console.error("Error fetching products:", error);
       setProducts([]);
+      setBrands([]);
     }
   };
 
@@ -365,19 +336,19 @@ export default function ProductsPage() {
     setSearchParams(newParams);
   };
 
-  const handleBrandSelect = (brandId: string) => {
-    const newSelectedBrands = selectedBrands.includes(brandId)
-      ? selectedBrands.filter((id) => id !== brandId) // Bỏ chọn nếu đã chọn
-      : [...selectedBrands, brandId]; // Thêm vào nếu chưa chọn
+  const handleBrandToggle = (brandSlug: string) => {
+    const newSelectedBrands = selectedBrands.includes(brandSlug)
+      ? selectedBrands.filter((slug) => slug !== brandSlug) // Bỏ chọn nếu đã chọn
+      : [...selectedBrands, brandSlug]; // Thêm vào nếu chưa chọn
 
     setSelectedBrands(newSelectedBrands);
 
-    // Cập nhật URL với brands mới
+    // Cập nhật URL với brands mới (space-separated)
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSelectedBrands.length > 0) {
-      newSearchParams.set("brands", newSelectedBrands.join(","));
+      newSearchParams.set("brand", newSelectedBrands.join(" ")); // Đổi từ "brands" thành "brand" và dấu space
     } else {
-      newSearchParams.delete("brands");
+      newSearchParams.delete("brand");
     }
 
     setSearchParams(newSearchParams);
@@ -411,127 +382,68 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Shocking Deal Section - Top Priority */}
-      {promotionProducts.length > 0 && (
-        <div className="mb-4">
-          <ShockingDeal
-            products={promotionProducts}
-            onAddToCart={handleAddToCart}
-          />
-        </div>
-      )}
-
-      {/* Banners Section */}
-      {banners.length > 0 && (
-        <div className="mb-4">
-          <Banners banners={banners} />
-        </div>
-      )}
-
-      {/* Advanced Filters */}
+      {/* Filter Section - Sticky Horizontal Layout */}
       {categoryFromUrl && (
-        <div className="mb-4">
-          <div className="bg-white shadow-sm border-t border-b border-gray-200 p-4 w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Category Dropdown */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Danh mục
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    disabled={loadingFilters}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
-                  >
-                    <span className="truncate">
-                      {loadingFilters ? "Đang tải..." : getSelectedCategoryName()}
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-50 ml-2 flex-shrink-0" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[300px] overflow-y-auto">
-                    <DropdownMenuItem
-                      onClick={() => handleFilterChange("category", "")}
-                      className={!categoryFromUrl ? "bg-green-50 text-green-700" : ""}
-                    >
-                      Tất cả danh mục
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {allCategories.length > 0 ? (
-                      allCategories.map((cat) => {
-                        const subCats = cat.subCategories || [];
-                        const hasSubCategories = subCats.length > 0;
-
-                        if (hasSubCategories) {
-                          return (
-                            <DropdownMenuSub key={cat._id || cat.id}>
-                              <DropdownMenuSubTrigger>
-                                {cat.name}
-                              </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent>
-                                {subCats.map((subCat) => (
-                                  <DropdownMenuItem
-                                    key={subCat._id || subCat.id}
-                                    onClick={() => handleFilterChange("category", subCat.slug || "")}
-                                    className={categoryFromUrl === subCat.slug ? "bg-green-50 text-green-700" : ""}
-                                  >
-                                    {subCat.name}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                          );
-                        } else {
-                          return (
-                            <DropdownMenuItem
-                              key={cat._id || cat.id}
-                              onClick={() => handleFilterChange("category", cat.slug || "")}
-                              className={categoryFromUrl === cat.slug ? "bg-green-50 text-green-700" : ""}
-                            >
-                              {cat.name}
-                            </DropdownMenuItem>
-                          );
-                        }
-                      })
-                    ) : (
-                      <DropdownMenuItem disabled>Không có danh mục</DropdownMenuItem>
+        <div className="sticky top-22 bg-white shadow-md border-b border-gray-200 mb-4">
+          <div className="max-w-screen-2xl mx-auto">
+            <div className="flex items-center gap-4">
+              {/* Brand Filter - Compact Horizontal */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <h3 className="text-sm font-bold text-gray-800 pl-2">Thương hiệu</h3>
+                    {selectedBrands.length > 0 && (
+                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                        {selectedBrands.length}
+                      </span>
                     )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                  </div>
+                  
+                  {/* Brands - Inline */}
+                  <div className="flex-1 min-w-0">
+                    <BrandFilter
+                      brands={brands}
+                      selectedBrands={selectedBrands}
+                      onBrandToggle={handleBrandToggle}
+                      loading={loadingFilters}
+                    />
+                  </div>
 
-              {/* Brand Dropdown */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Thương hiệu
-                </label>
-                <select
-                  value={brandsFromUrl || ""}
-                  onChange={(e) => handleFilterChange("brand", e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  disabled={loadingFilters}
-                >
-                  <option value="">Tất cả thương hiệu</option>
-                  {brands.length > 0 ? (
-                    brands.map((brand) => (
-                      <option key={brand._id || brand.id} value={brand.slug || ""}>
-                        {brand.name || "Unnamed Brand"}
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>Đang tải thương hiệu...</option>
+                  {/* Clear Button */}
+                  {selectedBrands.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setSelectedBrands([]);
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.delete("brand");
+                        setSearchParams(newParams);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors font-medium flex-shrink-0"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Xóa bộ lọc
+                    </button>
                   )}
-                </select>
+                </div>
               </div>
 
-              {/* Sort Dropdown */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+              {/* Separator */}
+              <div className="w-px h-8 bg-gray-200"></div>
+
+              {/* Sort Dropdown - Compact */}
+              <div className="flex items-center gap-2 flex-shrink-0 pr-2">
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                </svg>
+                <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
                   Sắp xếp
                 </label>
                 <select
                   value={sortParam}
                   onChange={(e) => handleFilterChange("sort", e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-gray-300 transition-colors"
                 >
                   <option value="">Mặc định</option>
                   <option value="price-asc">Giá tăng dần</option>
@@ -542,6 +454,23 @@ export default function ProductsPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Shocking Deal Section - Top Priority */}
+      {promotionProducts.length > 0 && (
+        <div className="mb-4">
+          <ShockingDeal
+            products={promotionProducts}
+            onAddToCart={handleAddToCart}
+          />
+        </div>
+      )}
+      
+      {/* Banners Section */}
+      {banners.length > 0 && (
+        <div className="mb-4">
+          <Banners banners={banners} />
         </div>
       )}
 

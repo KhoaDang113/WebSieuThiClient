@@ -173,6 +173,40 @@ class ProductService {
 
     return response.data;
   }
+
+  /**
+   * Lấy sản phẩm theo category với brands filter và sort
+   * GET /products/category?category=slug&brand=slug1%20slug2&sortOrder=price-asc&skip=0
+   */
+  async getCategoryProducts(
+    categorySlug: string,
+    params?: {
+      skip?: number;
+      brand?: string;
+      sortOrder?: string;
+    }
+  ): Promise<{
+    total: number;
+    skip: number;
+    actualLimit: number;
+    products: Product[];
+    brands: Brand[];
+  }> {
+    const response = await api.get<{
+      total: number;
+      skip: number;
+      actualLimit: number;
+      products: Product[];
+      brands: Brand[];
+    }>(`${this.basePath}/category`, {
+      params: {
+        category: categorySlug,
+        ...params,
+      },
+    });
+
+    return response.data;
+  }
 }
 
 export default new ProductService();
