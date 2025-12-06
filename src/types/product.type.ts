@@ -1,8 +1,16 @@
 export interface Product {
   _id: string; // MongoDB ObjectId (required for admin)
   id?: string; // Alias cho _id để tương thích
-  category_id?: string;
-  brand_id?: string;
+  category_id?: string | {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+  brand_id?: string | {
+    _id: string;
+    name: string;
+    slug: string;
+  };
   name: string;
   slug: string;
   unit?: string; // Đơn vị: "pack", "bottle", "kg", etc.
@@ -20,7 +28,7 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
 
-  // Populated fields (when retrieved with populate)
+  // Populated fields (when retrieved with populate) - legacy support
   category?: {
     _id: string;
     name: string;

@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Grid3x3, List } from "lucide-react";
 import { InventoryTable } from "@/components/admin/inventory/InventoryTable";
 import { InventoryFilters } from "@/components/admin/inventory/InventoryFilters";
+import { InventoryHierarchicalView } from "@/components/admin/inventory/InventoryHierarchicalView";
 import { AdjustStockDialog } from "@/components/admin/inventory/AdjustStockDialog";
 import { ImportStockDialog } from "@/components/admin/inventory/ImportStockDialog";
 import { ExportStockDialog } from "@/components/admin/inventory/ExportStockDialog";
 import { ProductHistoryDialog } from "@/components/admin/inventory/ProductHistoryDialog";
 
+type ViewMode = "table" | "hierarchical";
+
 export default function InventoryPage() {
+  const [viewMode, setViewMode] = useState<ViewMode>("hierarchical");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -37,7 +41,7 @@ export default function InventoryPage() {
     setExportOpen(true);
   };
 
-  const handleAdjustClick = (id: string) => {
+  const handleAdjustClick = (id: string, _quantity?: number) => {
     setSelectedProductId(id);
     setAdjustOpen(true);
   };
@@ -57,31 +61,66 @@ export default function InventoryPage() {
             Quản lý tồn kho, nhập/xuất sản phẩm
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Kiểm kê Kho
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center border rounded-lg">
+            <Button
+              variant={viewMode === "hierarchical" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("hierarchical")}
+              className="gap-2 rounded-r-none"
+            >
+              <Grid3x3 className="w-4 h-4" />
+              Menu phân cấp
+            </Button>
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="gap-2 rounded-l-none"
+            >
+              <List className="w-4 h-4" />
+              Bảng
+            </Button>
+          </div>
+          <Button className="gap-2">
+            <Plus className="w-4 h-4" />
+            Kiểm kê Kho
+          </Button>
+        </div>
       </div>
 
-      <InventoryFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        categoryFilter={categoryFilter}
-        onCategoryChange={setCategoryFilter}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-      />
+      {viewMode === "table" && (
+        <>
+          <InventoryFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            categoryFilter={categoryFilter}
+            onCategoryChange={setCategoryFilter}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
 
-      <InventoryTable
-        searchTerm={searchTerm}
-        categoryFilter={categoryFilter}
-        statusFilter={statusFilter}
-        onImportClick={handleImportClick}
-        onExportClick={handleExportClick}
-        onAdjustClick={handleAdjustClick}
-        onHistoryClick={handleHistoryClick}
-        refreshTrigger={refreshTrigger}
-      />
+          <InventoryTable
+            searchTerm={searchTerm}
+            categoryFilter={categoryFilter}
+            statusFilter={statusFilter}
+            onImportClick={handleImportClick}
+            onExportClick={handleExportClick}
+            onAdjustClick={handleAdjustClick}
+            onHistoryClick={handleHistoryClick}
+            refreshTrigger={refreshTrigger}
+          />
+        </>
+      )}
+
+      {viewMode === "hierarchical" && (
+        <InventoryHierarchicalView
+          onImportClick={handleImportClick}
+          onExportClick={handleExportClick}
+          onAdjustClick={handleAdjustClick}
+          onHistoryClick={handleHistoryClick}
+        />
+      )}
 
       {/* Dialogs */}
       <ImportStockDialog
@@ -114,3 +153,4 @@ export default function InventoryPage() {
     </div>
   );
 }
+

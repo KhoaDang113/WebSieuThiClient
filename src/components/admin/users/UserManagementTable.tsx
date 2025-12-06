@@ -63,7 +63,7 @@ export function UserManagementTable({
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = {
         page: pagination.page,
         limit: pagination.limit,
@@ -104,7 +104,7 @@ export function UserManagementTable({
 
     try {
       setActionLoading(userId);
-      
+
       if (currentStatus) {
         await userService.lockUser(userId);
       } else {
@@ -191,7 +191,7 @@ export function UserManagementTable({
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
         )}
       </div>
-      
+
       <div className="w-full overflow-x-auto">
         <div className="max-h-[600px] overflow-y-auto border rounded-lg">
           <table className="admin-table w-full">
@@ -241,36 +241,36 @@ export function UserManagementTable({
                   </td>
                   <td>
                     <div className="flex gap-2 whitespace-nowrap flex-shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 w-20 flex-shrink-0"
-                          onClick={() => handleEditClick(user)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                          Sửa
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 w-24 flex-shrink-0"
-                          onClick={() => handleToggleStatus(user._id, !user.isLocked)}
-                          disabled={actionLoading === user._id || user.role === "admin"}
-                        >
-                          {actionLoading === user._id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : user.isLocked ? (
-                            <>
-                              <Unlock className="w-4 h-4" />
-                              Mở khóa
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="w-4 h-4" />
-                              Khóa
-                            </>
-                          )}
-                        </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 w-20 flex-shrink-0"
+                        onClick={() => handleEditClick(user)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Sửa
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 w-24 flex-shrink-0"
+                        onClick={() => handleToggleStatus(user._id, !user.isLocked)}
+                        disabled={actionLoading === user._id || user.role === "admin"}
+                      >
+                        {actionLoading === user._id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : user.isLocked ? (
+                          <>
+                            <Unlock className="w-4 h-4" />
+                            Mở khóa
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4" />
+                            Khóa
+                          </>
+                        )}
+                      </Button>
 
                     </div>
                   </td>
@@ -324,7 +324,7 @@ export function UserManagementTable({
           <DialogHeader>
             <DialogTitle>Cập nhật vai trò người dùng</DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4 space-y-4">
             <div className="space-y-2">
               <Label>Tên người dùng</Label>
@@ -332,7 +332,7 @@ export function UserManagementTable({
                 {editingUser?.name}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Email</Label>
               <div className="p-2 bg-muted rounded-md text-sm">

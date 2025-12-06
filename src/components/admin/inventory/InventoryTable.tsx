@@ -55,10 +55,10 @@ export function InventoryTable({
 
     const matchesCategory =
       categoryFilter === "all" ||
-      (item.category &&
-        typeof item.category === "object" &&
-        "name" in item.category &&
-        item.category.name === categoryFilter);
+      (item.category_id &&
+        typeof item.category_id === "object" &&
+        "name" in item.category_id &&
+        item.category_id.name === categoryFilter);
 
     const reorderLevel = 20; // Default reorder level
     const matchesStatus =
@@ -109,17 +109,21 @@ export function InventoryTable({
               {filteredItems.map((item) => {
                 const reorderLevel = 20;
                 const isLowStock = (item.quantity || 0) <= reorderLevel;
+
+                // Extract category name from populated category_id
                 const categoryName =
-                  item.category &&
-                  typeof item.category === "object" &&
-                  "name" in item.category
-                    ? item.category.name
+                  item.category_id &&
+                    typeof item.category_id === "object" &&
+                    "name" in item.category_id
+                    ? item.category_id.name
                     : "N/A";
+
+                // Extract brand name from populated brand_id
                 const brandName =
-                  item.brand &&
-                  typeof item.brand === "object" &&
-                  "name" in item.brand
-                    ? item.brand.name
+                  item.brand_id &&
+                    typeof item.brand_id === "object" &&
+                    "name" in item.brand_id
+                    ? item.brand_id.name
                     : "N/A";
 
                 return (
@@ -144,12 +148,12 @@ export function InventoryTable({
                     <td className="text-muted-foreground text-sm">
                       {item.updated_at
                         ? new Date(item.updated_at).toLocaleString("vi-VN", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
                         : "N/A"}
                     </td>
                     <td>

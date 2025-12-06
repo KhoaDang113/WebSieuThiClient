@@ -131,7 +131,7 @@ class ProductService {
     const response = await api.put<Product>(`${this.basePath}/${id}`, data);
     return response.data;
   }
-   
+
   async getRelatedProducts(id: string, limit: number = 5): Promise<Product[]> {
     const response = await api.get<Product[]>(
       `${this.basePath}/${id}/related`,
