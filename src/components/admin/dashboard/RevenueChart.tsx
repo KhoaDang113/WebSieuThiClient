@@ -69,10 +69,10 @@ export function RevenueChart({ data = [], loading }: RevenueChartProps) {
             <YAxis tickFormatter={formatCurrency} />
             <Tooltip
               formatter={(value: number, name: string) => [
-                name === "doanhthu"
+                name === "Doanh thu"
                   ? value.toLocaleString("vi-VN") + "₫"
-                  : value + " VND",
-                name === "doanhthu" ? "Doanh thu" : "Đơn hàng"
+                  : value + " đơn",
+                name === "Doanh thu" ? "Doanh thu" : "Đơn hàng"
               ]}
             />
             <Legend />
