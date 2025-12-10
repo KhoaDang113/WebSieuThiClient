@@ -10,17 +10,41 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { name: "Thứ 2", doanhthu: 4000, donhang: 24 },
-  { name: "Thứ 3", doanhthu: 3000, donhang: 13 },
-  { name: "Thứ 4", doanhthu: 2000, donhang: 9 },
-  { name: "Thứ 5", doanhthu: 2780, donhang: 39 },
-  { name: "Thứ 6", doanhthu: 1890, donhang: 23 },
-  { name: "Thứ 7", doanhthu: 2390, donhang: 34 },
-  { name: "Chủ nhật", doanhthu: 3490, donhang: 43 },
-];
+interface WeeklyRevenueItem {
+  date: string;
+  revenue: number;
+  orders: number;
+}
 
-export function RevenueChart() {
+interface RevenueChartProps {
+  data?: WeeklyRevenueItem[];
+  loading?: boolean;
+}
+
+function formatDayName(dateStr: string): string {
+  const date = new Date(dateStr);
+  const dayOfWeek = date.getDay();
+  const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+  return dayNames[dayOfWeek];
+}
+
+function formatCurrency(value: number): string {
+  if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + "M";
+  }
+  if (value >= 1000) {
+    return (value / 1000).toFixed(0) + "K";
+  }
+  return value.toString();
+}
+
+export function RevenueChart({ data = [], loading }: RevenueChartProps) {
+  const chartData = data.map((item) => ({
+    name: formatDayName(item.date),
+    doanhthu: item.revenue,
+    donhang: item.orders,
+  }));
+
   return (
     <Card className="p-6">
       <div className="mb-4">
@@ -29,28 +53,44 @@ export function RevenueChart() {
           Biểu đồ doanh thu 7 ngày gần nhất
         </p>
       </div>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="doanhthu"
-            stroke="#3b82f6"
-            name="Doanh thu"
-          />
-          <Line
-            type="monotone"
-            dataKey="donhang"
-            stroke="#10b981"
-            name="Đơn hàng"
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      {loading ? (
+        <div className="h-[300px] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          Chưa có dữ liệu doanh thu
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis tickFormatter={formatCurrency} />
+            <Tooltip
+              formatter={(value: number, name: string) => [
+                name === "doanhthu"
+                  ? value.toLocaleString("vi-VN") + "₫"
+                  : value + " VND",
+                name === "doanhthu" ? "Doanh thu" : "Đơn hàng"
+              ]}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="doanhthu"
+              stroke="#3b82f6"
+              name="Doanh thu"
+            />
+            <Line
+              type="monotone"
+              dataKey="donhang"
+              stroke="#10b981"
+              name="Đơn hàng"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </Card>
   );
 }
-
