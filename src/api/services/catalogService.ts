@@ -80,6 +80,18 @@ class CategoryService {
   }
 
   /**
+   * Kiểm tra slug đã tồn tại hay chưa
+   * GET /categories/check-slug?slug=xxx&excludeId=xxx
+   */
+  async checkSlug(slug: string, excludeId?: string): Promise<boolean> {
+    const response = await api.get<{ exists: boolean }>(
+      `${this.basePath}/check-slug`,
+      { params: { slug, excludeId } }
+    );
+    return response.data.exists;
+  }
+
+  /**
    * Xóa danh mục (soft delete)
    * DELETE /categories/:id
    */

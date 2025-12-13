@@ -49,6 +49,7 @@ export function CategoryForm({
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [parentCategory, setParentCategory] = useState<Category | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
 
   useEffect(() => {
     const loadCategoryData = async () => {
@@ -93,11 +94,62 @@ export function CategoryForm({
     loadCategoryData();
   }, [mode, categoryId, parentId, allCategories]);
 
+  // Kiểm tra slug trùng lặp
+  const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
+    if (!slug.trim()) return true;
+
+    try {
+      setIsCheckingSlug(true);
+      const exists = await categoryService.checkSlug(
+        slug.trim(),
+        mode === "edit" ? categoryId : undefined
+      );
+      return !exists;
+    } catch (error) {
+      console.error("Error checking slug:", error);
+      return true; // Cho phép submit nếu check lỗi, backend sẽ xử lý
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
+
+  // Xử lý sự kiện blur trên slug field
+  const handleSlugBlur = async () => {
+    if (formData.slug.trim()) {
+      const isUnique = await checkSlugUniqueness(formData.slug);
+      if (!isUnique) {
+        setErrors((prev) => ({
+          ...prev,
+          slug: "Đã có slug này, vui lòng đổi slug khác",
+        }));
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          if (newErrors.slug === "Đã có slug này, vui lòng đổi slug khác") {
+            delete newErrors.slug;
+          }
+          return newErrors;
+        });
+      }
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) newErrors.name = "Tên danh mục là bắt buộc";
     if (!formData.slug.trim()) newErrors.slug = "Slug là bắt buộc";
+
+    // Kiểm tra các trường bắt buộc khi tạo mới
+    if (mode === "add") {
+      if (!formData.description.trim()) newErrors.description = "Mô tả là bắt buộc";
+      if (!imageFile && !formData.image) newErrors.image = "Ảnh danh mục là bắt buộc";
+    }
+
+    // Giữ lại lỗi slug trùng nếu có
+    if (errors.slug === "Đã có slug này, vui lòng đổi slug khác") {
+      newErrors.slug = errors.slug;
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -209,7 +261,9 @@ export function CategoryForm({
           formData={formData}
           errors={errors}
           isSubmitting={isSubmitting}
+          isCheckingSlug={isCheckingSlug}
           onInputChange={handleInputChange}
+          onSlugBlur={handleSlugBlur}
         />
 
         {/* Hiển thị parent category */}
@@ -241,7 +295,9 @@ export function CategoryForm({
 
         <CategoryMediaFields
           formData={formData}
+          errors={errors}
           isSubmitting={isSubmitting}
+          mode={mode}
           onInputChange={handleInputChange}
           onImageFileChange={handleImageFileChange}
         />

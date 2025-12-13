@@ -65,7 +65,7 @@ export async function getIngredientsForDish(
       )
       .join("\n");
 
-    const model = "gemini-2.0-flash";
+    const model = "gemini-2.5-flash";
 
     const prompt = `
 Bạn là một đầu bếp chuyên nghiệp Việt Nam. Hãy phân tích món ăn "${dishName}" và liệt kê CHÍNH XÁC các nguyên liệu CHÍNH cần thiết để nấu món này.
@@ -105,6 +105,9 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
     const response = await ai.models.generateContent({
       model,
       contents,
+      config: {
+        responseMimeType: "application/json",
+      },
     });
 
     // Lấy text từ response
@@ -122,7 +125,24 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
       jsonText = jsonText.replace(/```\n?/g, "").replace(/```\n?$/g, "");
     }
 
-    const suggestedIngredients = JSON.parse(jsonText);
+    // Thử tìm JSON array trong response nếu có văn bản lẫn
+    if (!jsonText.startsWith("[")) {
+      const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      } else {
+        console.error("Response không chứa JSON hợp lệ:", responseText);
+        return [];
+      }
+    }
+
+    let suggestedIngredients;
+    try {
+      suggestedIngredients = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error("Lỗi parse JSON:", parseError, "Response:", responseText);
+      return [];
+    }
 
     // Map với sản phẩm thực tế trong kho
     const ingredients: Ingredient[] = [];
@@ -202,7 +222,7 @@ export async function getSpicesForDish(
       )
       .join("\n");
 
-    const model = "gemini-2.0-flash";
+    const model = "gemini-2.5-flash";
 
     const prompt = `
 Bạn là một đầu bếp chuyên nghiệp Việt Nam. Hãy liệt kê CHÍNH XÁC các gia vị THIẾT YẾU để nấu món "${dishName}".
@@ -245,6 +265,9 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
     const response = await ai.models.generateContent({
       model,
       contents,
+      config: {
+        responseMimeType: "application/json",
+      },
     });
 
     // Lấy text từ response
@@ -261,7 +284,24 @@ Trả về CHÍNH XÁC định dạng JSON (KHÔNG thêm \`\`\`json hay ký tự
       jsonText = jsonText.replace(/```\n?/g, "").replace(/```\n?$/g, "");
     }
 
-    const suggestedSpices = JSON.parse(jsonText);
+    // Thử tìm JSON array trong response nếu có văn bản lẫn
+    if (!jsonText.startsWith("[")) {
+      const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      } else {
+        console.error("Response gia vị không chứa JSON hợp lệ:", responseText);
+        return [];
+      }
+    }
+
+    let suggestedSpices;
+    try {
+      suggestedSpices = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error("Lỗi parse JSON gia vị:", parseError, "Response:", responseText);
+      return [];
+    }
 
     // Map với sản phẩm thực tế trong kho
     const spices: (Product & { spice_type?: string })[] = [];
@@ -485,7 +525,7 @@ export async function getSuggestedDishesForProduct(
     // Tạo danh sách tên món ăn có trong database
     const comboNames = allCombos.map((c) => c.name).join("\n");
 
-    const model = "gemini-2.0-flash";
+    const model = "gemini-2.5-flash";
 
     const prompt = `
 Bạn là một đầu bếp chuyên nghiệp Việt Nam với nhiều năm kinh nghiệm. Hãy gợi ý các món ăn Việt Nam phù hợp nhất có thể nấu với nguyên liệu "${productName}".
@@ -524,6 +564,9 @@ Trả về CHÍNH XÁC định dạng JSON sau (KHÔNG thêm markdown \`\`\`json
     const response = await ai.models.generateContent({
       model,
       contents,
+      config: {
+        responseMimeType: "application/json",
+      },
     });
 
     // Lấy text từ response
@@ -541,7 +584,24 @@ Trả về CHÍNH XÁC định dạng JSON sau (KHÔNG thêm markdown \`\`\`json
       jsonText = jsonText.replace(/```\n?/g, "").replace(/```\n?$/g, "");
     }
 
-    const suggestedDishNames: string[] = JSON.parse(jsonText);
+    // Thử tìm JSON array trong response nếu có văn bản lẫn
+    if (!jsonText.startsWith("[")) {
+      const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      } else {
+        console.error("Response gợi ý món ăn không chứa JSON hợp lệ:", responseText);
+        return [];
+      }
+    }
+
+    let suggestedDishNames: string[];
+    try {
+      suggestedDishNames = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error("Lỗi parse JSON gợi ý món ăn:", parseError, "Response:", responseText);
+      return [];
+    }
 
     // Tìm combo khớp với tên món ăn gợi ý
     const suggestedCombos: MenuCombo[] = [];
