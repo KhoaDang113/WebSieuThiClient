@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 
 interface CategoryBasicFieldsProps {
   formData: {
@@ -7,16 +8,20 @@ interface CategoryBasicFieldsProps {
   };
   errors: Record<string, string>;
   isSubmitting: boolean;
+  isCheckingSlug?: boolean;
   onInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => void;
+  onSlugBlur?: () => void;
 }
 
 export function CategoryBasicFields({
   formData,
   errors,
   isSubmitting,
+  isCheckingSlug = false,
   onInputChange,
+  onSlugBlur,
 }: CategoryBasicFieldsProps) {
   return (
     <>
@@ -42,15 +47,23 @@ export function CategoryBasicFields({
         <label htmlFor="slug" className="block text-sm font-medium mb-1">
           Slug *
         </label>
-        <Input
-          id="slug"
-          name="slug"
-          value={formData.slug}
-          onChange={onInputChange}
-          placeholder="ten-danh-muc"
-          className={errors.slug ? "border-destructive" : ""}
-          disabled={isSubmitting}
-        />
+        <div className="relative">
+          <Input
+            id="slug"
+            name="slug"
+            value={formData.slug}
+            onChange={onInputChange}
+            onBlur={onSlugBlur}
+            placeholder="ten-danh-muc"
+            className={errors.slug ? "border-destructive pr-10" : ""}
+            disabled={isSubmitting}
+          />
+          {isCheckingSlug && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </div>
         {errors.slug && (
           <p className="text-sm text-destructive mt-1">{errors.slug}</p>
         )}
@@ -61,4 +74,3 @@ export function CategoryBasicFields({
     </>
   );
 }
-
