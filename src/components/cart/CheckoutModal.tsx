@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, User, Phone, MapPin, StickyNote, ShoppingBag, CheckCircle, Building2, Mail } from "lucide-react";
+import { X, User, Phone, MapPin, StickyNote, ShoppingBag, CheckCircle, Building2, Mail, ChevronRight } from "lucide-react";
 import type { CartItem } from "@/types/cart.type";
 import type { CreateOrderCustomerInfo } from "@/hooks/useOrders";
+import type { Address } from "@/api/types";
 import { useAddress } from "@/components/address/AddressContext";
 import { useAuthStore } from "@/stores/authStore";
+import { AddressListModal } from "@/components/address/AddressListModal";
 import PaymentService from "@/api/services/paymentService";
 import shippingService from "@/api/services/shippingService";
 import { toast } from "sonner";
@@ -64,6 +66,7 @@ export default function CheckoutModal({
   const [orderId, setOrderId] = useState("");
   const [shippingFee, setShippingFee] = useState<number | null>(null);
   const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -271,6 +274,25 @@ export default function CheckoutModal({
     onClose();
   };
 
+  const handleSelectAddress = (selectedAddr: Address) => {
+    const fullAddress = [
+      selectedAddr.address,
+      selectedAddr.ward,
+      selectedAddr.city,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setCustomerInfo((prev) => ({
+      ...prev,
+      name: selectedAddr.full_name || prev.name,
+      phone: selectedAddr.phone || prev.phone,
+      address: fullAddress,
+      addressId: selectedAddr._id || "",
+    }));
+    setIsAddressModalOpen(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -397,19 +419,21 @@ export default function CheckoutModal({
                       <MapPin className="w-4 h-4 text-[#007E42]" />
                       Địa chỉ giao hàng *
                     </label>
-                    <textarea
-                      value={customerInfo.address}
-                      onChange={(e) =>
-                        setCustomerInfo((prev) => ({
-                          ...prev,
-                          address: e.target.value,
-                        }))
-                      }
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#007E42] focus:border-[#007E42] transition-all resize-none outline-none"
-                      placeholder="Nhập địa chỉ giao hàng chi tiết"
-                      rows={3}
-                      required
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsAddressModalOpen(true)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl hover:border-[#007E42] focus:ring-2 focus:ring-[#007E42] focus:border-[#007E42] transition-all outline-none text-left bg-white flex items-center justify-between group"
+                    >
+                      <span className={customerInfo.address ? "text-gray-900" : "text-gray-400"}>
+                        {customerInfo.address || "Nhấn để chọn địa chỉ giao hàng"}
+                      </span>
+                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#007E42] transition-colors" />
+                    </button>
+                    {!customerInfo.addressId && customerInfo.address && (
+                      <p className="text-xs text-orange-500 mt-1">
+                        ⚠️ Vui lòng chọn lại địa chỉ từ danh sách
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -663,6 +687,14 @@ export default function CheckoutModal({
           </div>
         )}
       </div>
+
+      {/* Address Selection Modal */}
+      <AddressListModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSelectAddress={handleSelectAddress}
+        showSelection={true}
+      />
     </div>
   );
 }
