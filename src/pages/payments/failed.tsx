@@ -72,7 +72,7 @@ export default function PaymentFailedPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Lỗi</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <Link
-            to="/customer-orders"
+            to="/my-orders"
             className="inline-block bg-[#007E42] hover:bg-[#006633] text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Quay lại đơn hàng
@@ -177,7 +177,7 @@ export default function PaymentFailedPage() {
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
-              to="/customer-orders"
+              to="/my-orders"
               className="flex-1 bg-[#007E42] hover:bg-[#006633] text-white px-6 py-3 rounded-lg font-medium transition-colors text-center"
             >
               Quay lại đơn hàng
