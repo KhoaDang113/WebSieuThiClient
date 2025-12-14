@@ -90,10 +90,39 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
 
             if (data && data.address) {
                 const address = data.address;
-                const city = address.city || address.state;
-                const district = address.district || address.county || address.suburb;
-                const ward = address.quarter || address.neighbourhood || address.village;
-                const street = address.road ? `${address.house_number ? address.house_number + ' ' : ''}${address.road}` : '';
+                // Mở rộng fallback cho city/province - Nominatim trả về key khác nhau tùy vùng
+                const city = address.city || address.state || address.province || address.county || address.town || address.municipality;
+                const district = address.district || address.county || address.suburb || address.city_district;
+                // Mở rộng fallback cho ward - nhiều vùng nông thôn dùng key khác
+                const ward = address.quarter || address.neighbourhood || address.village || address.suburb || address.hamlet || address.town || address.residential;
+                
+                // Debug log để kiểm tra dữ liệu từ Nominatim
+                console.log('[LocationPicker] Nominatim response:', {
+                    raw: address,
+                    parsed: { city, district, ward }
+                });
+
+                // Tạo thông tin đường với nhiều fallback options
+                let street = '';
+
+                // Ưu tiên: road, pedestrian, cycleway, path, footway
+                const roadName = address.road || address.pedestrian || address.cycleway || address.path || address.footway;
+
+                if (roadName) {
+                    // Nếu có số nhà, thêm vào
+                    street = address.house_number ? `${address.house_number} ${roadName}` : roadName;
+                } else {
+                    // Fallback: Sử dụng thông tin khác nếu không có tên đường
+                    // Ưu tiên: hamlet, suburb, neighbourhood
+                    const fallbackLocation = address.hamlet || address.suburb || address.neighbourhood;
+                    if (fallbackLocation) {
+                        street = fallbackLocation;
+                    } else if (data.display_name) {
+                        // Nếu vẫn không có, sử dụng phần đầu của display_name
+                        const parts = data.display_name.split(',');
+                        street = parts[0] || '';
+                    }
+                }
 
                 onLocationSelect({
                     lat,
@@ -102,7 +131,7 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
                         city,
                         district,
                         ward,
-                        street,
+                        street: street.trim(),
                         full_address: data.display_name,
                     },
                 });

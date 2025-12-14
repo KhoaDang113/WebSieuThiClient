@@ -49,9 +49,83 @@ const createTimeoutSignal = (timeoutMs: number): AbortSignal => {
   return controller.signal;
 };
 
-// Helper to normalize string for comparison
-const normalizeString = (str: string) => {
-  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/thành phố|tỉnh|quận|huyện|thị xã|phường|xã|thị trấn/g, "").trim();
+// Helper to normalize string for comparison - xử lý tốt hơn cho tiếng Việt
+const normalizeString = (str: string): string => {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/thành phố|thanh pho|tp\.|tp /gi, "")
+    .replace(/tỉnh|tinh /gi, "")
+    .replace(/quận|quan |q\.|q /gi, "")
+    .replace(/huyện|huyen |h\.|h /gi, "")
+    .replace(/thị xã|thi xa|tx\.|tx /gi, "")
+    .replace(/phường|phuong |p\.|p /gi, "")
+    .replace(/xã|xa /gi, "")
+    .replace(/thị trấn|thi tran|tt\.|tt /gi, "")
+    .replace(/\s+/g, " ") // Collapse multiple spaces
+    .trim();
+};
+
+// Advanced matching function for Vietnamese place names
+const matchPlaceName = (searchTerm: string, candidateName: string): number => {
+  const normSearch = normalizeString(searchTerm);
+  const normCandidate = normalizeString(candidateName);
+
+  // Exact match after normalization
+  if (normSearch === normCandidate) return 100;
+
+  // One contains the other completely
+  if (normCandidate.includes(normSearch)) return 90;
+  if (normSearch.includes(normCandidate)) return 85;
+
+  // Check if all words from search appear in candidate
+  const searchWords = normSearch.split(" ").filter(w => w.length > 1);
+  const candidateWords = normCandidate.split(" ");
+  const matchedWords = searchWords.filter(sw =>
+    candidateWords.some(cw => cw.includes(sw) || sw.includes(cw))
+  );
+
+  if (matchedWords.length === searchWords.length && searchWords.length > 0) {
+    return 80;
+  }
+
+  // Partial word match
+  if (matchedWords.length > 0) {
+    return 50 + (matchedWords.length / searchWords.length) * 30;
+  }
+
+  return 0;
+};
+
+// Find best matching item from list
+const findBestMatch = <T extends { name: string }>(
+  searchTerm: string | undefined,
+  candidates: T[],
+  minScore: number = 50
+): T | undefined => {
+  if (!searchTerm || candidates.length === 0) return undefined;
+
+  let bestMatch: T | undefined;
+  let bestScore = 0;
+
+  for (const candidate of candidates) {
+    const score = matchPlaceName(searchTerm, candidate.name);
+    if (score > bestScore && score >= minScore) {
+      bestScore = score;
+      bestMatch = candidate;
+    }
+  }
+
+  if (bestMatch) {
+    console.log(`[AddressFormModal] Matched "${searchTerm}" → "${bestMatch.name}" (score: ${bestScore})`);
+  } else {
+    console.log(`[AddressFormModal] No match found for "${searchTerm}" (best score: ${bestScore})`);
+  }
+
+  return bestMatch;
 };
 
 export function AddressFormModal({
@@ -326,38 +400,36 @@ export function AddressFormModal({
     setManualCoordinates(true);
 
     if (location.address) {
-      const { city, ward, street } = location.address;
+      const { city, district, ward, street } = location.address;
 
-      // 1. Match Province
-      if (city) {
-        const normalizedCity = normalizeString(city);
-        const provinceMatch = provinces.find(p => normalizeString(p.name) === normalizedCity || normalizeString(p.name).includes(normalizedCity) || normalizedCity.includes(normalizeString(p.name)));
+      console.log('[AddressFormModal] Processing location address:', { city, district, ward, street });
 
-        if (provinceMatch) {
-          setSelectedProvince(provinceMatch.code);
+      // 1. Match Province - thử với city trước, sau đó thử district nếu không tìm thấy
+      const provinceMatch = findBestMatch(city, provinces) || findBestMatch(district, provinces);
 
-          // 2. Fetch Wards for this province
-          const fetchedWards = await fetchWards(provinceMatch.code);
+      if (provinceMatch) {
+        setSelectedProvince(provinceMatch.code);
 
-          // 3. Match Ward
-          if (ward) {
-            const normalizedWard = normalizeString(ward);
-            const wardMatch = fetchedWards.find(w => normalizeString(w.name) === normalizedWard || normalizeString(w.name).includes(normalizedWard) || normalizedWard.includes(normalizeString(w.name)));
+        // 2. Fetch Wards for this province
+        const fetchedWards = await fetchWards(provinceMatch.code);
 
-            if (wardMatch) {
-              setSelectedWard(wardMatch.code);
-            }
+        // 3. Match Ward - thử với ward trước, sau đó thử district nếu không tìm thấy
+        if (ward || district) {
+          const wardMatch = findBestMatch(ward, fetchedWards) || findBestMatch(district, fetchedWards);
+
+          if (wardMatch) {
+            setSelectedWard(wardMatch.code);
+          } else {
+            console.log('[AddressFormModal] Ward not matched. Available wards:', fetchedWards.slice(0, 5).map(w => w.name));
           }
         }
+      } else {
+        console.log('[AddressFormModal] Province not matched. Available provinces:', provinces.slice(0, 5).map(p => p.name));
       }
 
-      // 4. Set Street
-      if (street) {
+      // 4. Set Street - Luôn cập nhật nếu có thông tin
+      if (street !== undefined) {
         setStreet(street);
-      } else if (location.address.full_address) {
-        // Fallback to full address if street is empty, but try to strip city/ward if possible?
-        // For now just use what we have or keep existing if user typed it?
-        // Let's just set it to street if available.
       }
     }
   };

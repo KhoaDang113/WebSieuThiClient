@@ -153,15 +153,35 @@ export default function CartWithItems({ items, onUpdateQuantity, onRemoveItem, o
                           >
                             <Minus className="w-3.5 h-3.5 text-[#007E42] group-hover:text-white group-disabled:text-gray-400" />
                           </button>
-                          <span className="px-4 py-1.5 text-sm font-bold text-gray-800 min-w-[40px] text-center bg-white min-h-[36px] flex items-center justify-center">
-                            {item.quantity}
-                          </span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={item.quantity}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, '');
+                              if (val === '') {
+                                onUpdateQuantity(item.id, 1);
+                              } else {
+                                const num = parseInt(val, 10);
+                                if (num >= 1) {
+                                  onUpdateQuantity(item.id, num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const num = parseInt(e.target.value, 10);
+                              if (isNaN(num) || num < 1) {
+                                onUpdateQuantity(item.id, 1);
+                              }
+                            }}
+                            className="w-12 py-1.5 text-sm font-bold text-gray-800 text-center bg-white min-h-[36px] border-0 focus:ring-0 focus:outline-none"
+                          />
                           <button
                             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            className="flex items-center justify-center px-3 py-1.5 min-h-[36px] hover:bg-[#007E42] hover:text-white transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                            disabled={item.quantity >= item.stock}
+                            className="flex items-center justify-center px-3 py-1.5 min-h-[36px] hover:bg-[#007E42] hover:text-white transition-all duration-200 group"
                           >
-                            <Plus className="w-3.5 h-3.5 text-[#007E42] group-hover:text-white group-disabled:text-gray-400" />
+                            <Plus className="w-3.5 h-3.5 text-[#007E42] group-hover:text-white" />
                           </button>
                         </div>
                       </div>
