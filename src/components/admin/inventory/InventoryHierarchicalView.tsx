@@ -19,6 +19,7 @@ interface InventoryHierarchicalViewProps {
     onExportClick: (id: string) => void;
     onAdjustClick: (id: string, quantity: number) => void;
     onHistoryClick: (id: string, name: string) => void;
+    refreshTrigger?: number;
 }
 
 export function InventoryHierarchicalView({
@@ -26,6 +27,7 @@ export function InventoryHierarchicalView({
     onExportClick,
     onAdjustClick,
     onHistoryClick,
+    refreshTrigger,
 }: InventoryHierarchicalViewProps) {
     const [currentLevel, setCurrentLevel] = useState<ViewLevel>("root");
     const [allCategories, setAllCategories] = useState<Category[]>([]);
@@ -35,10 +37,26 @@ export function InventoryHierarchicalView({
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentCategorySlug, setCurrentCategorySlug] = useState<string | null>(null);
 
     useEffect(() => {
         fetchAllCategories();
     }, []);
+
+    // Re-fetch products when refreshTrigger changes (after import/export)
+    useEffect(() => {
+        if (refreshTrigger && currentLevel === "products" && currentCategorySlug) {
+            const refetchProducts = async () => {
+                try {
+                    const productsData = await productService.getProducts(currentCategorySlug);
+                    setProducts(productsData);
+                } catch (err) {
+                    console.error("Error refreshing products:", err);
+                }
+            };
+            refetchProducts();
+        }
+    }, [refreshTrigger, currentLevel, currentCategorySlug]);
 
     const fetchAllCategories = async () => {
         try {
@@ -78,6 +96,7 @@ export function InventoryHierarchicalView({
             } else {
                 const productsData = await productService.getProducts(category.slug);
                 setProducts(productsData);
+                setCurrentCategorySlug(category.slug);
                 setCurrentLevel("products");
                 setBreadcrumbs([
                     {
@@ -102,6 +121,7 @@ export function InventoryHierarchicalView({
 
             const productsData = await productService.getProducts(category.slug);
             setProducts(productsData);
+            setCurrentCategorySlug(category.slug);
             setCurrentLevel("products");
             setBreadcrumbs([
                 ...breadcrumbs,
