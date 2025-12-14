@@ -103,6 +103,28 @@ class CategoryService {
   }
 
   /**
+   * Đếm số sản phẩm trong danh mục
+   * GET /categories/:id/product-count
+   */
+  async getProductCount(id: string): Promise<{ count: number }> {
+    const response = await api.get<{ count: number }>(
+      `${this.basePath}/${id}/product-count`
+    );
+    return response.data;
+  }
+
+  /**
+   * Xóa danh mục và tất cả sản phẩm trong đó
+   * DELETE /categories/:id/with-products
+   */
+  async deleteCategoryWithProducts(id: string): Promise<{ message: string; deletedProductsCount: number }> {
+    const response = await api.delete<{ message: string; deletedProductsCount: number }>(
+      `${this.basePath}/${id}/with-products`
+    );
+    return response.data;
+  }
+
+  /**
    * Cập nhật danh mục với upload ảnh
    * PUT /categories/:id
    */

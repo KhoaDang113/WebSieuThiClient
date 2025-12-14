@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Save, X } from "lucide-react";
+import { toast } from "sonner";
 import type { Category } from "@/types";
 import categoryService from "@/api/services/catalogService";
 import { CategoryBasicFields } from "./forms/CategoryBasicFields";
@@ -77,7 +78,7 @@ export function CategoryForm({
           }
         } catch (error) {
           console.error("Error loading category:", error);
-          alert("Không thể tải dữ liệu danh mục");
+          toast.error("Không thể tải dữ liệu danh mục");
         } finally {
           setIsLoading(false);
         }
@@ -223,10 +224,10 @@ export function CategoryForm({
 
       if (mode === "edit" && categoryId) {
         await categoryService.updateCategory(categoryId, formDataToSend);
-        alert("Cập nhật danh mục thành công!");
+        toast.success("Cập nhật danh mục thành công!");
       } else {
         await categoryService.createCategory(formDataToSend);
-        alert("Thêm danh mục mới thành công!");
+        toast.success("Thêm danh mục mới thành công!");
       }
 
       onSuccess();
@@ -236,7 +237,7 @@ export function CategoryForm({
         error instanceof Error
           ? error.message
           : "Không thể lưu danh mục. Vui lòng thử lại sau.";
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

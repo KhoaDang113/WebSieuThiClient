@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { CategoryForm } from "@/components/admin/categories/CategoryForm";
 import type { Category } from "@/types/category.type.ts";
 import categoryService from "@/api/services/catalogService";
@@ -53,16 +54,32 @@ export function CategoryTable({
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      try {
-        await categoryService.deleteCategory(id);
-        setLocalCategories(localCategories.filter((cat) => cat._id !== id));
-        if (onRefresh) onRefresh();
-        alert("Xóa danh mục thành công!");
-      } catch (error) {
-        console.error("Error deleting category:", error);
-        alert("Không thể xóa danh mục. Vui lòng thử lại sau.");
+    try {
+      // Kiểm tra số lượng sản phẩm trong danh mục
+      const { count } = await categoryService.getProductCount(id);
+
+      if (count > 0) {
+        // Nếu có sản phẩm, hỏi admin có muốn xóa cả sản phẩm không
+        const confirmMessage = `Danh mục này có ${count} sản phẩm. Nếu xóa sẽ xóa luôn tất cả sản phẩm trong danh mục.\n\nBạn có chắc chắn muốn xóa?`;
+        if (window.confirm(confirmMessage)) {
+          const result = await categoryService.deleteCategoryWithProducts(id);
+          setLocalCategories(localCategories.filter((cat) => cat._id !== id));
+          if (onRefresh) onRefresh();
+          toast.success(`Xóa danh mục thành công! Đã xóa ${result.deletedProductsCount} sản phẩm.`);
+        }
+      } else {
+        // Nếu không có sản phẩm, xóa bình thường
+        if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
+          await categoryService.deleteCategory(id);
+          setLocalCategories(localCategories.filter((cat) => cat._id !== id));
+          if (onRefresh) onRefresh();
+          toast.success("Xóa danh mục thành công!");
+        }
       }
+    } catch (error: unknown) {
+      console.error("Error deleting category:", error);
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Không thể xóa danh mục. Vui lòng thử lại sau.");
     }
   };
 
@@ -146,8 +163,8 @@ export function CategoryTable({
               {editId
                 ? "Chỉnh sửa danh mục"
                 : parentIdForNewChild
-                ? "Thêm danh mục con"
-                : "Thêm danh mục mới"}
+                  ? "Thêm danh mục con"
+                  : "Thêm danh mục mới"}
             </h3>
             <CategoryForm
               mode={editId ? "edit" : "add"}

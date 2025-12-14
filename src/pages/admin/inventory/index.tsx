@@ -119,6 +119,7 @@ export default function InventoryPage() {
           onExportClick={handleExportClick}
           onAdjustClick={handleAdjustClick}
           onHistoryClick={handleHistoryClick}
+          refreshTrigger={refreshTrigger}
         />
       )}
 
