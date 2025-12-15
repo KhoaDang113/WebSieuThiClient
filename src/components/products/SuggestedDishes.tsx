@@ -84,8 +84,9 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
 
     try {
       // Fetch ingredients and spices in parallel
+      // Truyền productName (sản phẩm gốc) để đảm bảo nó được ưu tiên trong danh sách nguyên liệu
       const [ingredientsList, spicesList] = await Promise.all([
-        getIngredientsForDish(combo.name),
+        getIngredientsForDish(combo.name, productName),
         getSpicesForDish(combo.name),
       ]);
 
@@ -397,8 +398,8 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
                           key={tab.id}
                           onClick={() => setSelectedSpiceTab(tab.id)}
                           className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${selectedSpiceTab === tab.id
-                              ? "bg-green-600 text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                             }`}
                         >
                           {tab.name}
