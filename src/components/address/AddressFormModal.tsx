@@ -77,26 +77,6 @@ const matchPlaceName = (searchTerm: string, candidateName: string): number => {
   // Exact match after normalization
   if (normSearch === normCandidate) return 100;
 
-  // One contains the other completely
-  if (normCandidate.includes(normSearch)) return 90;
-  if (normSearch.includes(normCandidate)) return 85;
-
-  // Check if all words from search appear in candidate
-  const searchWords = normSearch.split(" ").filter(w => w.length > 1);
-  const candidateWords = normCandidate.split(" ");
-  const matchedWords = searchWords.filter(sw =>
-    candidateWords.some(cw => cw.includes(sw) || sw.includes(cw))
-  );
-
-  if (matchedWords.length === searchWords.length && searchWords.length > 0) {
-    return 80;
-  }
-
-  // Partial word match
-  if (matchedWords.length > 0) {
-    return 50 + (matchedWords.length / searchWords.length) * 30;
-  }
-
   return 0;
 };
 
@@ -104,7 +84,7 @@ const matchPlaceName = (searchTerm: string, candidateName: string): number => {
 const findBestMatch = <T extends { name: string }>(
   searchTerm: string | undefined,
   candidates: T[],
-  minScore: number = 50
+  minScore: number = 100
 ): T | undefined => {
   if (!searchTerm || candidates.length === 0) return undefined;
 
@@ -386,6 +366,7 @@ export function AddressFormModal({
     lat: number;
     lng: number;
     address?: {
+      province?: string;
       city?: string;
       district?: string;
       ward?: string;
@@ -400,12 +381,29 @@ export function AddressFormModal({
     setManualCoordinates(true);
 
     if (location.address) {
-      const { city, district, ward, street } = location.address;
+      const { province, city, district, ward, street } = location.address;
 
-      console.log('[AddressFormModal] Processing location address:', { city, district, ward, street });
+      console.log('[AddressFormModal] Processing location address:', { province, city, district, ward, street });
 
-      // 1. Match Province - thử với city trước, sau đó thử district nếu không tìm thấy
-      const provinceMatch = findBestMatch(city, provinces) || findBestMatch(district, provinces);
+      // 1. Match Province
+      let provinceMatch = undefined;
+
+      // Strict matching logic:
+      // - If 'province' (state) is provided, ONLY try to match it.
+      // - If 'province' is MISSING/EMPTY, only then fallback to 'city'.
+      if (province && province.trim()) {
+        provinceMatch = findBestMatch(province, provinces);
+      } else {
+        if (city && city.trim()) {
+          provinceMatch = findBestMatch(city, provinces);
+        }
+
+        if (!provinceMatch && district && district.trim()) {
+          provinceMatch = findBestMatch(district, provinces);
+        }
+      }
+
+
 
       if (provinceMatch) {
         setSelectedProvince(provinceMatch.code);
@@ -413,22 +411,24 @@ export function AddressFormModal({
         // 2. Fetch Wards for this province
         const fetchedWards = await fetchWards(provinceMatch.code);
 
-        // 3. Match Ward - thử với ward trước, sau đó thử district nếu không tìm thấy
-        if (ward || district) {
-          const wardMatch = findBestMatch(ward, fetchedWards) || findBestMatch(district, fetchedWards);
-
+        // 3. Match Ward
+        if (ward && ward.trim()) {
+          const wardMatch = findBestMatch(ward, fetchedWards);
           if (wardMatch) {
             setSelectedWard(wardMatch.code);
-          } else {
-            console.log('[AddressFormModal] Ward not matched. Available wards:', fetchedWards.slice(0, 5).map(w => w.name));
           }
         }
-      } else {
-        console.log('[AddressFormModal] Province not matched. Available provinces:', provinces.slice(0, 5).map(p => p.name));
+        // Fallback to district if ward is missing or no match (sometimes district acts as ward in data)
+        else if (district && district.trim()) {
+          const wardMatch = findBestMatch(district, fetchedWards);
+          if (wardMatch) {
+            setSelectedWard(wardMatch.code);
+          }
+        }
       }
 
-      // 4. Set Street - Luôn cập nhật nếu có thông tin
-      if (street !== undefined) {
+      // 4. Set Street - Chỉ cập nhật nếu có thông tin thực sự
+      if (street && street.trim()) {
         setStreet(street);
       }
     }

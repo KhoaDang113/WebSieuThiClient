@@ -21,6 +21,7 @@ interface LocationPickerProps {
         lat: number;
         lng: number;
         address?: {
+            province?: string;
             city?: string;
             district?: string;
             ward?: string;
@@ -90,16 +91,21 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
 
             if (data && data.address) {
                 const address = data.address;
-                // Mở rộng fallback cho city/province - Nominatim trả về key khác nhau tùy vùng
-                const city = address.city || address.state || address.province || address.county || address.town || address.municipality;
-                const district = address.district || address.county || address.suburb || address.city_district;
+                // Nominatim mapping for Vietnam:
+                // state -> Province / Thành phố trực thuộc trung ương (Level 1)
+                // city, town, county -> District / Quận / Huyện / Thành phố thuộc tỉnh (Level 2)
+
+                const province = address.state;
+                const city = address.city || address.town || address.county || address.municipality;
+                const district = address.district || address.suburb || address.city_district;
+
                 // Mở rộng fallback cho ward - nhiều vùng nông thôn dùng key khác
-                const ward = address.quarter || address.neighbourhood || address.village || address.suburb || address.hamlet || address.town || address.residential;
-                
+                const ward = address.quarter || address.neighbourhood || address.village || address.hamlet || address.residential;
+
                 // Debug log để kiểm tra dữ liệu từ Nominatim
                 console.log('[LocationPicker] Nominatim response:', {
                     raw: address,
-                    parsed: { city, district, ward }
+                    parsed: { province, city, district, ward }
                 });
 
                 // Tạo thông tin đường với nhiều fallback options
@@ -113,8 +119,9 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
                     street = address.house_number ? `${address.house_number} ${roadName}` : roadName;
                 } else {
                     // Fallback: Sử dụng thông tin khác nếu không có tên đường
-                    // Ưu tiên: hamlet, suburb, neighbourhood
-                    const fallbackLocation = address.hamlet || address.suburb || address.neighbourhood;
+                    // Ưu tiên: hamlet, suburb, neighbourhood nếu chưa dùng cho ward/district
+                    const fallbackLocation = (!ward) ? (address.hamlet || address.suburb || address.neighbourhood) : undefined;
+
                     if (fallbackLocation) {
                         street = fallbackLocation;
                     } else if (data.display_name) {
@@ -128,6 +135,7 @@ export function LocationPicker({ onLocationSelect, initialLocation }: LocationPi
                     lat,
                     lng,
                     address: {
+                        province,
                         city,
                         district,
                         ward,
