@@ -31,6 +31,14 @@ interface CustomerInfoState {
   address: string;
   notes: string;
   addressId?: string;
+  addressForShip?: {
+    street: string;
+    ward: string;
+    district: string;
+    province: string;
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export default function CheckoutModal({
@@ -66,6 +74,8 @@ export default function CheckoutModal({
   const [orderId, setOrderId] = useState("");
   const [shippingFee, setShippingFee] = useState<number | null>(null);
   const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+
+  const [selectedAddress, setSelectedAddress] = useState<Address | any>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
   const total = cartItems.reduce(
@@ -98,8 +108,17 @@ export default function CheckoutModal({
         phone:
           address.phone || currentUser?.phone || currentUser?.phoneNumber || "",
         address: fullAddress,
+        addressForShip: {
+          street: address.street,
+          ward: address.ward,
+          district: address.district,
+          province: address.province,
+          latitude: address.latitude,
+          longitude: address.longitude,
+        },
         addressId: address.id || prev.addressId,
       }));
+      setSelectedAddress(address);
 
       return;
     }
@@ -120,9 +139,14 @@ export default function CheckoutModal({
   }, [isOpen, address, currentUser]);
 
   // Calculate shipping fee when address changes
-  useEffect(() => {
+  useEffect(() => { 
     async function fetchShippingFee() {
-      if (!address?.id || !total) {
+      // Use selectedAddress if available, otherwise fall back to global address
+      // But only if we have a valid address ID selected
+      const currentLat = selectedAddress?.latitude || customerInfo.addressForShip?.latitude;
+      const currentLng = selectedAddress?.longitude || customerInfo.addressForShip?.longitude;
+
+      if (!total || currentLat === undefined || currentLng === undefined) {
         setShippingFee(null);
         return;
       }
@@ -130,7 +154,7 @@ export default function CheckoutModal({
       setIsLoadingShipping(true);
       try {
         const result = await shippingService.calculateShippingFee(
-          `${address?.latitude},${address?.longitude}` || "",
+          `${currentLat},${currentLng}`,
           total
         );
         setShippingFee(result.shippingFee);
@@ -143,7 +167,7 @@ export default function CheckoutModal({
     }
 
     fetchShippingFee();
-  }, [customerInfo.addressId, total]);
+  }, [customerInfo.addressId, total, selectedAddress, address]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,6 +314,7 @@ export default function CheckoutModal({
       address: fullAddress,
       addressId: selectedAddr._id || "",
     }));
+    setSelectedAddress(selectedAddr);
     setIsAddressModalOpen(false);
   };
 

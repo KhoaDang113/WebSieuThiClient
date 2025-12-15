@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Grid3x3, List } from "lucide-react";
 import { InventoryTable } from "@/components/admin/inventory/InventoryTable";
@@ -8,6 +8,7 @@ import { AdjustStockDialog } from "@/components/admin/inventory/AdjustStockDialo
 import { ImportStockDialog } from "@/components/admin/inventory/ImportStockDialog";
 import { ExportStockDialog } from "@/components/admin/inventory/ExportStockDialog";
 import { ProductHistoryDialog } from "@/components/admin/inventory/ProductHistoryDialog";
+import { getSocket } from "@/lib/socket";
 
 type ViewMode = "table" | "hierarchical";
 
@@ -26,6 +27,21 @@ export default function InventoryPage() {
 
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedProductName, setSelectedProductName] = useState("");
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    const onInventoryUpdate = (data: any) => {
+      console.log("Received inventory update:", data);
+      handleRefresh();
+    };
+
+    socket.on("inventory:updated", onInventoryUpdate);
+
+    return () => {
+      socket.off("inventory:updated", onInventoryUpdate);
+    };
+  }, []);
 
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
