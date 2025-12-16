@@ -38,8 +38,8 @@ export function ComboHierarchicalView() {
     try {
       setLoading(true);
       setError(null);
-      const data = await typeComboService.getTypeCombos();
-      setTypeCombos(data);
+      const data = await typeComboService.getTypeCombosAdmin(1, 100);
+      setTypeCombos(data.typeCombos);
       setCurrentLevel("root");
       setBreadcrumbs([]);
     } catch (err) {

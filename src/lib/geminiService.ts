@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_API_GEMINI,
 });
 
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 /**
  * Helper function để parse JSON response từ Gemini API
@@ -107,6 +107,36 @@ async function getAllAvailableProducts(): Promise<Product[]> {
  * @param originalProductName - Tên sản phẩm gốc mà người dùng đang xem (để ưu tiên)
  * @returns Promise<Ingredient[]> - Danh sách nguyên liệu
  */
+// Danh sách từ khóa để loại bỏ khỏi nguyên liệu chính (gia vị, đồ uống, combo...)
+const EXCLUDED_KEYWORDS = [
+  // Dầu ăn
+  "dầu", "dầu ăn", "dầu nành", "dầu hào", "dầu mè", "dầu oliu",
+  // Nước mắm, mắm các loại
+  "nước mắm", "mắm ruốc", "mắm tôm", "mắm cá", "mắm nêm", "mắm",
+  // Nước tương, tương các loại
+  "nước tương", "tương ớt", "tương cà", "tương", "xì dầu",
+  // Gia vị cơ bản
+  "muối", "đường", "tiêu", "bột ngọt", "hạt nêm", "bột canh",
+  // Gia vị khác
+  "giấm", "mì chính", "bột chiên", "bột năng", "bột mì",
+  "sa tế", "sốt", "mayonnaise", "ketchup", "chao",
+  // Đồ uống
+  "nước ép", "nước uống", "nước ngọt", "nước suối", "sữa", "trà", "cà phê",
+  "coca", "pepsi", "sting", "redbull", "bia", "rượu",
+  // Combo/Set (thường là sản phẩm kết hợp, không phải nguyên liệu riêng)
+  "combo nước", "combo ép",
+  // Bánh kẹo, snack
+  "bánh", "kẹo", "snack", "mứt"
+];
+
+/**
+ * Kiểm tra xem sản phẩm có phải là gia vị/đồ uống/không phải nguyên liệu không
+ */
+function isExcludedProduct(productName: string): boolean {
+  const lowerName = productName.toLowerCase();
+  return EXCLUDED_KEYWORDS.some(keyword => lowerName.includes(keyword));
+}
+
 export async function getIngredientsForDish(
   dishName: string,
   originalProductName?: string
@@ -114,8 +144,13 @@ export async function getIngredientsForDish(
   try {
     const availableProducts = await getAllAvailableProducts();
 
+    // Lọc bỏ các sản phẩm không phải nguyên liệu (gia vị, đồ uống, combo...)
+    const mainIngredientProducts = availableProducts.filter(
+      (p) => !isExcludedProduct(p.name)
+    );
+
     // Tạo danh sách sản phẩm có sẵn để gửi cho Gemini
-    const productList = availableProducts
+    const productList = mainIngredientProducts
       .map(
         (p) =>
           `- ${p.name} (${p.unit || p.quantity || "N/A"}) - Giá: ${p.final_price || p.unit_price
@@ -125,20 +160,41 @@ export async function getIngredientsForDish(
 
     // Thêm thông tin về sản phẩm gốc vào prompt nếu có
     const originalProductHint = originalProductName
-      ? `\n- SẢN PHẨM GỐC: "${originalProductName}" - Đây là nguyên liệu mà khách hàng đang xem, BẮT BUỘC phải bao gồm trong danh sách nếu phù hợp với món ăn`
+      ? `\n\nSẢN PHẨM KHÁCH ĐANG XEM: "${originalProductName}" - Nếu phù hợp với món ăn, BẮT BUỘC đưa vào danh sách.`
       : '';
 
-    const prompt = `Liệt kê nguyên liệu CHÍNH (tối đa 5-7) để nấu món "${dishName}".
+    const prompt = `Bạn là chuyên gia ẩm thực Việt Nam. Chọn nguyên liệu CHÍNH để nấu món "${dishName}".
 
-NGUYÊN LIỆU CÓ SẴN:
+DANH SÁCH SẢN PHẨM CÓ SẴN (CHỈ chọn từ đây, tên CHÍNH XÁC):
 ${productList}
+${originalProductHint}
 
-QUY TẮC:
-- CHỈ chọn từ danh sách trên, tên CHÍNH XÁC
-- Chọn nguyên liệu CHÍNH (thịt, cá, rau, trứng...), KHÔNG chọn gia vị
-- Số lượng cho 2-3 người${originalProductHint}
+QUY TẮC QUAN TRỌNG:
+1. PHÂN TÍCH TÊN MÓN để xác định TẤT CẢ nguyên liệu chính:
+   - "Nui giò heo" → nui + giò heo + rau củ (cà rốt, hành tây...)
+   - "Bún bò" → bún + thịt bò + rau thơm
+   - "Phở gà" → phở + gà + giá đỗ/hành
+   - "Canh cải" → rau cải + (thịt nếu có)
+   - "Thịt xào" → thịt + rau củ xào cùng
 
-JSON format: [{"name": "tên chính xác", "quantity": "số lượng", "note": "ghi chú"}]`;
+2. THÊM RAU CỦ PHÙ HỢP với món:
+   - Món nấu/hầm: cà rốt, khoai tây, hành tây, củ cải
+   - Món xào: hành tây, ớt chuông, cà rốt, nấm
+   - Món canh: rau xanh, cà chua, nấm
+   - Món nướng/chiên: có thể không cần rau
+
+3. KHÔNG chọn gia vị (dầu, nước mắm, mắm, tương, muối, đường, tiêu, hạt nêm...)
+
+4. Chọn loại thịt PHÙ HỢP:
+   - "Thịt kho" → thịt ba chỉ/thịt heo, KHÔNG chọn chân giò
+   - "Giò heo" → chân giò heo
+   - "Sườn" → sườn non/sườn que
+
+5. Tối đa 5-7 nguyên liệu cho 2-3 người
+
+6. Nếu không tìm thấy nguyên liệu, trả về []
+
+JSON: [{"name": "tên chính xác", "quantity": "số lượng", "note": "ghi chú"}]`;
 
     const responseText = await callGeminiAPI(prompt);
     const suggestedIngredients = parseGeminiJsonResponse<Array<{ name: string; quantity: string; note: string }>>(responseText);
@@ -183,9 +239,9 @@ JSON format: [{"name": "tên chính xác", "quantity": "số lượng", "note": 
       });
     };
 
-    // Ưu tiên thêm sản phẩm gốc đầu tiên nếu có
-    if (originalProductName) {
-      const originalProduct = availableProducts.find(
+    // Ưu tiên thêm sản phẩm gốc đầu tiên nếu có (và không phải gia vị/đồ uống)
+    if (originalProductName && !isExcludedProduct(originalProductName)) {
+      const originalProduct = mainIngredientProducts.find(
         (p) =>
           p.name.toLowerCase().includes(originalProductName.toLowerCase()) ||
           originalProductName.toLowerCase().includes(p.name.toLowerCase())
@@ -195,10 +251,10 @@ JSON format: [{"name": "tên chính xác", "quantity": "số lượng", "note": 
       }
     }
 
-    // Thêm các nguyên liệu từ AI
+    // Thêm các nguyên liệu từ AI (chỉ từ mainIngredientProducts, không bao gồm gia vị)
     for (const suggestion of suggestedIngredients) {
-      // Tìm sản phẩm khớp tên
-      const matchedProduct = availableProducts.find(
+      // Tìm sản phẩm khớp tên trong danh sách nguyên liệu chính
+      const matchedProduct = mainIngredientProducts.find(
         (p) =>
           p.name.toLowerCase().includes(suggestion.name.toLowerCase()) ||
           suggestion.name.toLowerCase().includes(p.name.toLowerCase())
@@ -251,11 +307,20 @@ export async function getSpicesForDish(
 GIA VỊ CÓ SẴN:
 ${spiceList}
 
-QUY TẮC:
-- CHỈ chọn từ danh sách, tên CHÍNH XÁC
-- Phân loại: oil (dầu ăn), sauce (nước chấm/tương), dry_spice (gia vị khô), other
+PHÂN LOẠI GIA VỊ (QUAN TRỌNG - phải phân loại ĐÚNG):
+- oil: DẦU ĂN các loại (dầu nành, dầu hào, dầu mè, dầu oliu...)
+- sauce: NƯỚC CHẤM dùng để chấm/ướp (nước mắm, nước tương, xì dầu, tương ớt...)
+- dry_spice: GIA VỊ KHÔ (muối, đường, tiêu, bột ngọt, hạt nêm, bột canh, ớt bột, nghệ...)
+- other: KHÁC (giấm, tương cà/ketchup, mayonnaise, sa tế, chao, mắm ruốc, mắm tôm...)
 
-JSON format: [{"name": "tên chính xác", "type": "oil|sauce|dry_spice|other", "note": "ghi chú"}]`;
+VÍ DỤ PHÂN LOẠI:
+- "Dầu đậu nành Simply" → oil
+- "Nước mắm Nam Ngư" → sauce
+- "Hạt nêm Knorr" → dry_spice
+- "Giấm ăn" → other (KHÔNG phải sauce)
+- "Tương cà Cholimex" → sauce
+
+JSON: [{"name": "tên chính xác", "type": "oil|sauce|dry_spice|other", "note": "ghi chú"}]`;
 
     const responseText = await callGeminiAPI(prompt);
     const suggestedSpices = parseGeminiJsonResponse<Array<{ name: string; type: string; note: string }>>(responseText);
