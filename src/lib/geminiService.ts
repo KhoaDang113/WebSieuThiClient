@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_API_GEMINI,
 });
 
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 /**
  * Helper function để parse JSON response từ Gemini API
@@ -104,10 +104,12 @@ async function getAllAvailableProducts(): Promise<Product[]> {
 /**
  * Gọi Gemini API để lấy danh sách nguyên liệu cho món ăn
  * @param dishName - Tên món ăn
+ * @param originalProductName - Tên sản phẩm gốc mà người dùng đang xem (để ưu tiên)
  * @returns Promise<Ingredient[]> - Danh sách nguyên liệu
  */
 export async function getIngredientsForDish(
-  dishName: string
+  dishName: string,
+  originalProductName?: string
 ): Promise<Ingredient[]> {
   try {
     const availableProducts = await getAllAvailableProducts();
@@ -121,6 +123,11 @@ export async function getIngredientsForDish(
       )
       .join("\n");
 
+    // Thêm thông tin về sản phẩm gốc vào prompt nếu có
+    const originalProductHint = originalProductName
+      ? `\n- SẢN PHẨM GỐC: "${originalProductName}" - Đây là nguyên liệu mà khách hàng đang xem, BẮT BUỘC phải bao gồm trong danh sách nếu phù hợp với món ăn`
+      : '';
+
     const prompt = `Liệt kê nguyên liệu CHÍNH (tối đa 5-7) để nấu món "${dishName}".
 
 NGUYÊN LIỆU CÓ SẴN:
@@ -129,7 +136,7 @@ ${productList}
 QUY TẮC:
 - CHỈ chọn từ danh sách trên, tên CHÍNH XÁC
 - Chọn nguyên liệu CHÍNH (thịt, cá, rau, trứng...), KHÔNG chọn gia vị
-- Số lượng cho 2-3 người
+- Số lượng cho 2-3 người${originalProductHint}
 
 JSON format: [{"name": "tên chính xác", "quantity": "số lượng", "note": "ghi chú"}]`;
 
@@ -141,7 +148,54 @@ JSON format: [{"name": "tên chính xác", "quantity": "số lượng", "note": 
     // Map với sản phẩm thực tế trong kho
     const ingredients: Ingredient[] = [];
     let ingredientId = 1;
+    const addedProductIds = new Set<string>();
 
+    // Helper function để thêm sản phẩm vào danh sách ingredients
+    const addIngredient = (product: Product, quantity?: string) => {
+      const productId = String(product._id || product.id || '');
+      if (!productId || addedProductIds.has(productId)) return; // Tránh trùng lặp
+
+      addedProductIds.add(productId);
+      ingredients.push({
+        id: ingredientId++,
+        name: product.name,
+        quantity:
+          quantity ||
+          product.unit ||
+          String(product.quantity) ||
+          "1",
+        unit: product.unit || "",
+        price: product.final_price || product.unit_price,
+        image_url:
+          (Array.isArray(product.image_url)
+            ? product.image_url[0]
+            : product.image_url) ||
+          (Array.isArray(product.image_primary)
+            ? product.image_primary[0]
+            : product.image_primary) ||
+          "",
+        available: true,
+        product_id: productId,
+        discount_percent: product.discount_percent || 0,
+        unit_price: product.unit_price,
+        stock_quantity:
+          product.stock_quantity || product.quantity,
+      });
+    };
+
+    // Ưu tiên thêm sản phẩm gốc đầu tiên nếu có
+    if (originalProductName) {
+      const originalProduct = availableProducts.find(
+        (p) =>
+          p.name.toLowerCase().includes(originalProductName.toLowerCase()) ||
+          originalProductName.toLowerCase().includes(p.name.toLowerCase())
+      );
+      if (originalProduct) {
+        addIngredient(originalProduct);
+      }
+    }
+
+    // Thêm các nguyên liệu từ AI
     for (const suggestion of suggestedIngredients) {
       // Tìm sản phẩm khớp tên
       const matchedProduct = availableProducts.find(
@@ -151,31 +205,7 @@ JSON format: [{"name": "tên chính xác", "quantity": "số lượng", "note": 
       );
 
       if (matchedProduct) {
-        ingredients.push({
-          id: ingredientId++,
-          name: matchedProduct.name,
-          quantity:
-            suggestion.quantity ||
-            matchedProduct.unit ||
-            String(matchedProduct.quantity) ||
-            "1",
-          unit: matchedProduct.unit || "",
-          price: matchedProduct.final_price || matchedProduct.unit_price,
-          image_url:
-            (Array.isArray(matchedProduct.image_url)
-              ? matchedProduct.image_url[0]
-              : matchedProduct.image_url) ||
-            (Array.isArray(matchedProduct.image_primary)
-              ? matchedProduct.image_primary[0]
-              : matchedProduct.image_primary) ||
-            "",
-          available: true,
-          product_id: matchedProduct._id || matchedProduct.id,
-          discount_percent: matchedProduct.discount_percent || 0,
-          unit_price: matchedProduct.unit_price,
-          stock_quantity:
-            matchedProduct.stock_quantity || matchedProduct.quantity,
-        });
+        addIngredient(matchedProduct, suggestion.quantity);
       }
     }
 
@@ -454,15 +484,17 @@ export async function getSuggestedDishesForProduct(
     // Tạo danh sách tên món ăn có trong database
     const comboNames = allCombos.map((c) => c.name).join("\n");
 
-    const prompt = `Gợi ý món ăn có thể nấu với "${productName}".
+    const prompt = `Tìm những món ăn mà "${productName}" là NGUYÊN LIỆU CHÍNH (chiếm phần lớn hoặc là thành phần cốt lõi của món).
 
-MÓN ĂN CÓ SẴN:
+DANH SÁCH MÓN ĂN CÓ SẴN:
 ${comboNames}
 
-QUY TẮC:
+QUY TẮC NGHIÊM NGẶT:
 - CHỈ chọn từ danh sách trên, tên CHÍNH XÁC
-- Ưu tiên món mà "${productName}" là nguyên liệu CHÍNH
-- Chọn món PHỔ BIẾN, DỄ NẤU
+- CHỈ chọn món mà "${productName}" là NGUYÊN LIỆU CHÍNH, KHÔNG chọn món chỉ dùng làm phụ gia hoặc có thể thay thế bằng nguyên liệu khác
+- Ví dụ: "Sườn cốt lết" → chỉ chọn "Thịt cốt lết chiên", KHÔNG chọn "Sườn nướng" (vì sườn nướng dùng sườn que)
+- Ví dụ: "Thịt ba chỉ" → chọn "Thịt kho tàu", "Thịt luộc", KHÔNG chọn "Canh rau"
+- Nếu không có món nào phù hợp, trả về mảng rỗng []
 
 JSON format: ["Tên món 1", "Tên món 2", ...]`;
 
