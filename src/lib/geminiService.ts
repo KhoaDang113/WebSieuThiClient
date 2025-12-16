@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_API_GEMINI,
 });
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 /**
  * Helper function để parse JSON response từ Gemini API

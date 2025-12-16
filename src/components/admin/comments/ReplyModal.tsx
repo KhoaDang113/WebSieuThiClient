@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CommentWithProduct } from "@/api/types";
 import commentService from "@/api/services/commentService";
+import { toast } from "sonner";
 
 interface ReplyModalProps {
     isOpen: boolean;
@@ -29,7 +30,7 @@ export function ReplyModal({
 
     const handleSubmit = async () => {
         if (!replyContent.trim()) {
-            alert("Vui lòng nhập nội dung phản hồi");
+            toast.error("Vui lòng nhập nội dung phản hồi");
             return;
         }
 
@@ -44,12 +45,12 @@ export function ReplyModal({
                 replyContent,
                 productId
             );
-            alert("Phản hồi thành công!");
+            toast.success("Phản hồi thành công!");
             setReplyContent("");
             onSuccess(newReply);
         } catch (error) {
             console.error("Error replying to comment:", error);
-            alert("Không thể gửi phản hồi. Vui lòng thử lại sau.");
+            toast.error("Không thể gửi phản hồi. Vui lòng thử lại sau.");
         } finally {
             setIsSubmitting(false);
         }

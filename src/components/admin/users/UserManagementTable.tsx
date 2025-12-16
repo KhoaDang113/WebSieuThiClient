@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Edit2, Lock, Unlock, Loader2 } from "lucide-react";
 import { userService } from "@/api";
 import type { User, UserRole } from "@/types";
+import { toast } from "sonner";
 
 const roleColors = {
   user: "bg-green-100 text-green-800",
@@ -93,7 +94,7 @@ export function UserManagementTable({
     if (!user) return;
 
     if (user.role === "admin") {
-      alert("Không thể khóa tài khoản Admin!");
+      toast.error("Không thể khóa tài khoản Admin!");
       return;
     }
 
@@ -115,7 +116,7 @@ export function UserManagementTable({
       await fetchUsers();
     } catch (err: any) {
       console.error("Error toggling user status:", err);
-      alert(
+      toast.error(
         err.response?.data?.message || `Không thể ${action} user. Vui lòng thử lại.`
       );
     } finally {
@@ -146,7 +147,7 @@ export function UserManagementTable({
       await fetchUsers();
     } catch (err: any) {
       console.error("Error updating user role:", err);
-      alert(
+      toast.error(
         err.response?.data?.message || "Không thể cập nhật vai trò user"
       );
     } finally {

@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import type { Category } from "@/types";
 import categoryService from "@/api/services/catalogService";
 import bannerService from "@/api/services/bannerService";
+import { toast } from "sonner";
 
 interface BannerFormProps {
   mode: "create" | "edit";
@@ -25,7 +26,7 @@ export function BannerForm({ mode, bannerId }: BannerFormProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  
+
   // Form fields
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -66,7 +67,7 @@ export function BannerForm({ mode, bannerId }: BannerFormProps) {
           }
         } catch (error) {
           console.error("Error fetching banner:", error);
-          alert("Không thể tải thông tin banner");
+          toast.error("Không thể tải thông tin banner");
         } finally {
           setLoading(false);
         }
@@ -92,12 +93,12 @@ export function BannerForm({ mode, bannerId }: BannerFormProps) {
     e.preventDefault();
 
     if (!link.trim()) {
-      alert("Vui lòng nhập link URL");
+      toast.error("Vui lòng nhập link URL");
       return;
     }
 
     if (mode === "create" && !imageFile) {
-      alert("Vui lòng chọn hình ảnh");
+      toast.error("Vui lòng chọn hình ảnh");
       return;
     }
 
@@ -116,18 +117,18 @@ export function BannerForm({ mode, bannerId }: BannerFormProps) {
 
       if (mode === "create") {
         await bannerService.createBanner(formData);
-        alert("Tạo banner thành công!");
+        toast.success("Tạo banner thành công!");
       } else if (mode === "edit" && bannerId) {
         await bannerService.updateBanner(bannerId, formData);
-        alert("Cập nhật banner thành công!");
+        toast.success("Cập nhật banner thành công!");
       }
 
       navigate("/admin/banners");
     } catch (error: any) {
       console.error("Error saving banner:", error);
-      alert(
+      toast.error(
         error?.response?.data?.message ||
-          "Có lỗi xảy ra. Vui lòng thử lại sau."
+        "Có lỗi xảy ra. Vui lòng thử lại sau."
       );
     } finally {
       setLoading(false);
@@ -191,8 +192,8 @@ export function BannerForm({ mode, bannerId }: BannerFormProps) {
         {/* Category Selection */}
         <div className="space-y-2">
           <Label htmlFor="category">Danh mục (tùy chọn)</Label>
-          <Select 
-            value={categoryId || "none"} 
+          <Select
+            value={categoryId || "none"}
             onValueChange={(value) => setCategoryId(value === "none" ? "" : value)}
           >
             <SelectTrigger>
@@ -234,8 +235,8 @@ export function BannerForm({ mode, bannerId }: BannerFormProps) {
           {loading
             ? "Đang xử lý..."
             : mode === "create"
-            ? "Tạo Banner"
-            : "Cập nhật Banner"}
+              ? "Tạo Banner"
+              : "Cập nhật Banner"}
         </Button>
         <Button
           type="button"

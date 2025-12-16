@@ -6,6 +6,7 @@ import type { CommentWithProduct, Comment } from "@/api/types";
 import commentService from "@/api/services/commentService";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { toast } from "sonner";
 
 import { ReplyModal } from "./ReplyModal";
 
@@ -46,7 +47,7 @@ export function CommentListView({
                 setReplies(prev => ({ ...prev, [commentId]: response.comments }));
             } catch (error) {
                 console.error("Error fetching replies:", error);
-                alert("Không thể tải phản hồi. Vui lòng thử lại sau.");
+                toast.error("Không thể tải phản hồi. Vui lòng thử lại sau.");
             } finally {
                 setLoadingReplies(prev => {
                     const next = new Set(prev);
@@ -93,10 +94,10 @@ export function CommentListView({
                 [parentId]: prev[parentId]?.filter(r => r._id !== replyId) || []
             }));
 
-            alert("Xóa phản hồi thành công!");
+            toast.success("Xóa phản hồi thành công!");
         } catch (error) {
             console.error("Error deleting reply:", error);
-            alert("Không thể xóa phản hồi. Vui lòng thử lại sau.");
+            toast.error("Không thể xóa phản hồi. Vui lòng thử lại sau.");
         }
     };
 

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit2, Trash2, ChevronRight, ChevronDown, Plus } from "lucide-react";
 import type { Category } from "@/types";
+import { toast } from "sonner";
 
 interface CategoryTableRowProps {
   category: Category;
@@ -56,7 +57,7 @@ export function CategoryTableRow({
           title={`${category._id} (Click để copy)`}
           onClick={() => {
             navigator.clipboard.writeText(category._id);
-            alert("Đã copy ID: " + category._id);
+            toast.success("Đã copy ID: " + category._id);
           }}
         >
           {category._id.substring(0, 10)}...

@@ -18,7 +18,7 @@ export function InventoryProductGridView({
     onAdjustClick,
     onHistoryClick,
 }: InventoryProductGridViewProps) {
-    const reorderLevel = 20;
+    const reorderLevel = 10;
 
     if (products.length === 0) {
         return (

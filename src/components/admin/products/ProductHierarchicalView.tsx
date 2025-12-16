@@ -12,6 +12,7 @@ import {
   HierarchicalBreadcrumb,
   type BreadcrumbItem,
 } from "./HierarchicalBreadcrumb";
+import { toast } from "sonner";
 
 type ViewLevel = "root" | "subcategory" | "products";
 
@@ -139,10 +140,10 @@ export function ProductHierarchicalView() {
       try {
         await productService.deleteProduct(id);
         setProducts(products.filter((product) => product._id !== id));
-        alert("Xóa sản phẩm thành công!");
+        toast.success("Xóa sản phẩm thành công!");
       } catch (error) {
         console.error("Error deleting product:", error);
-        alert("Không thể xóa sản phẩm. Vui lòng thử lại sau.");
+        toast.error("Không thể xóa sản phẩm. Vui lòng thử lại sau.");
       }
     }
   };
