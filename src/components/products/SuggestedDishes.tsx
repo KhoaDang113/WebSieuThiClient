@@ -35,13 +35,8 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
   const [selectedSpiceTab, setSelectedSpiceTab] = useState<string>("all");
 
   const spicesScrollRef = useRef<HTMLDivElement>(null);
-  const ingredientsScrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
-  const [showIngredientsLeftArrow, setShowIngredientsLeftArrow] =
-    useState(false);
-  const [showIngredientsRightArrow, setShowIngredientsRightArrow] =
-    useState(false);
 
   // Danh sách các tab gia vị
   const spiceTabs = [
@@ -160,45 +155,22 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     }
   };
 
-  const checkIngredientsScrollButtons = () => {
-    if (ingredientsScrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } =
-        ingredientsScrollRef.current;
-      setShowIngredientsLeftArrow(scrollLeft > 0);
-      setShowIngredientsRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  };
+
 
   useEffect(() => {
     checkScrollButtons();
-    checkIngredientsScrollButtons();
     const scrollContainer = spicesScrollRef.current;
-    const ingredientsContainer = ingredientsScrollRef.current;
     if (scrollContainer) {
       scrollContainer.addEventListener("scroll", checkScrollButtons);
       window.addEventListener("resize", checkScrollButtons);
-    }
-    if (ingredientsContainer) {
-      ingredientsContainer.addEventListener(
-        "scroll",
-        checkIngredientsScrollButtons
-      );
-      window.addEventListener("resize", checkIngredientsScrollButtons);
     }
     return () => {
       if (scrollContainer) {
         scrollContainer.removeEventListener("scroll", checkScrollButtons);
       }
-      if (ingredientsContainer) {
-        ingredientsContainer.removeEventListener(
-          "scroll",
-          checkIngredientsScrollButtons
-        );
-      }
       window.removeEventListener("resize", checkScrollButtons);
-      window.removeEventListener("resize", checkIngredientsScrollButtons);
     };
-  }, [dishSpices, ingredients]);
+  }, [dishSpices]);
 
   const scrollSpices = (direction: "left" | "right") => {
     if (spicesScrollRef.current) {
@@ -213,18 +185,7 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
     }
   };
 
-  const scrollIngredients = (direction: "left" | "right") => {
-    if (ingredientsScrollRef.current) {
-      const scrollAmount = 300;
-      const newScrollLeft =
-        ingredientsScrollRef.current.scrollLeft +
-        (direction === "left" ? -scrollAmount : scrollAmount);
-      ingredientsScrollRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: "smooth",
-      });
-    }
-  };
+
 
   // Nếu không có món ăn gợi ý, không hiển thị gì
   if (!isLoading && suggestedDishes.length === 0) {
@@ -333,55 +294,15 @@ export default function SuggestedDishes({ productName }: SuggestedDishesProps) {
                       Lựa chọn loại nguyên liệu chính
                     </h4>
 
-                    {/* Horizontal scroll with ProductCard */}
-                    <div className="relative">
-                      {/* Left Arrow */}
-                      {showIngredientsLeftArrow && (
-                        <button
-                          onClick={() => scrollIngredients("left")}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
-                        >
-                          <ChevronLeft className="w-4 h-4 text-gray-700" />
-                        </button>
-                      )}
-
-                      {/* Scroll Container with ProductCard */}
-                      <div
-                        ref={ingredientsScrollRef}
-                        className="overflow-x-auto no-scrollbar scroll-smooth"
-                        style={{
-                          paddingLeft: showIngredientsLeftArrow
-                            ? "40px"
-                            : "8px",
-                          paddingRight: showIngredientsRightArrow
-                            ? "40px"
-                            : "8px",
-                        }}
-                      >
-                        <div className="flex gap-3 pb-2">
-                          {ingredients.map((ingredient) => (
-                            <div
-                              key={ingredient.id}
-                              className="flex-shrink-0 w-[180px]"
-                            >
-                              <ProductCard
-                                product={ingredientToProduct(ingredient)}
-                                onAddToCart={handleAddToCart}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Right Arrow */}
-                      {showIngredientsRightArrow && (
-                        <button
-                          onClick={() => scrollIngredients("right")}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
-                        >
-                          <ChevronRight className="w-4 h-4 text-gray-700" />
-                        </button>
-                      )}
+                    {/* Grid with ProductCard - 2 columns on mobile, 3 on larger screens */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-2">
+                      {ingredients.map((ingredient) => (
+                        <ProductCard
+                          key={ingredient.id}
+                          product={ingredientToProduct(ingredient)}
+                          onAddToCart={handleAddToCart}
+                        />
+                      ))}
                     </div>
                   </div>
 
