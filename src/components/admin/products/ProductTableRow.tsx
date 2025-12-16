@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit2, Trash2, Star } from "lucide-react";
 import type { Product } from "@/types";
+import { toast } from "sonner";
 
 interface ProductTableRowProps {
   product: Product;
@@ -23,7 +24,7 @@ export function ProductTableRow({
           title={`${product._id} (Click để copy)`}
           onClick={() => {
             navigator.clipboard.writeText(product._id);
-            alert("Đã copy ID: " + product._id);
+            toast.success("Đã copy ID: " + product._id);
           }}
         >
           {product._id.substring(0, 10)}...
@@ -32,7 +33,7 @@ export function ProductTableRow({
       <td style={{ width: "80px" }}>
         <img
           src={
-            product.image_primary ||
+            (Array.isArray(product.image_primary) ? product.image_primary[0] : product.image_primary) ||
             product.image_url ||
             "/placeholder.svg"
           }
@@ -55,7 +56,7 @@ export function ProductTableRow({
       </td>
       <td className="text-foreground font-semibold" style={{ width: "120px" }}>
         <div className="truncate">
-          ₫ {product.final_price.toLocaleString()}
+          ₫ {(product.final_price || 0).toLocaleString()}
         </div>
       </td>
       <td style={{ width: "80px" }}>

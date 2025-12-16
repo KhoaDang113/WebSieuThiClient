@@ -168,7 +168,7 @@ export function InventoryHierarchicalView({
     // Calculate inventory statistics
     const getInventoryStats = () => {
         const total = products.length;
-        const lowStock = products.filter((p) => (p.quantity || 0) <= 20).length;
+        const lowStock = products.filter((p) => (p.quantity || 0) <= 10).length;
         const outOfStock = products.filter((p) => (p.quantity || 0) === 0).length;
         return { total, lowStock, outOfStock };
     };

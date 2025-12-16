@@ -8,6 +8,7 @@ import { vi } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { ReplyModal } from "./ReplyModal";
 import commentService from "@/api/services/commentService";
+import { toast } from "sonner";
 
 interface CommentTableProps {
     comments: CommentWithProduct[];
@@ -40,7 +41,7 @@ export function CommentTable({ comments, onRefresh, onDelete }: CommentTableProp
                 setReplies(prev => ({ ...prev, [commentId]: response.comments }));
             } catch (error) {
                 console.error("Error fetching replies:", error);
-                alert("Không thể tải phản hồi. Vui lòng thử lại sau.");
+                toast.error("Không thể tải phản hồi. Vui lòng thử lại sau.");
             } finally {
                 setLoadingReplies(prev => {
                     const next = new Set(prev);
@@ -68,11 +69,11 @@ export function CommentTable({ comments, onRefresh, onDelete }: CommentTableProp
 
         try {
             await commentService.adminDeleteComment(commentId);
-            alert("Xóa bình luận thành công!");
+            toast.success("Xóa bình luận thành công!");
             onRefresh();
         } catch (error) {
             console.error("Error deleting comment:", error);
-            alert("Không thể xóa bình luận. Vui lòng thử lại sau.");
+            toast.error("Không thể xóa bình luận. Vui lòng thử lại sau.");
         }
     };
 
@@ -90,12 +91,12 @@ export function CommentTable({ comments, onRefresh, onDelete }: CommentTableProp
                 [parentId]: prev[parentId]?.filter(r => r._id !== replyId) || []
             }));
 
-            alert("Xóa phản hồi thành công!");
+            toast.success("Xóa phản hồi thành công!");
             // Optional: still refresh to keep counts in sync eventually, but UI is instant
             onRefresh();
         } catch (error) {
             console.error("Error deleting reply:", error);
-            alert("Không thể xóa phản hồi. Vui lòng thử lại sau.");
+            toast.error("Không thể xóa phản hồi. Vui lòng thử lại sau.");
         }
     };
 

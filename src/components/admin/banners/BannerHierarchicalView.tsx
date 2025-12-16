@@ -12,6 +12,7 @@ import {
   HierarchicalBreadcrumb,
   type BreadcrumbItem,
 } from "../products/HierarchicalBreadcrumb";
+import { toast } from "sonner";
 
 type ViewLevel = "root" | "subcategory" | "banners";
 
@@ -146,10 +147,10 @@ export function BannerHierarchicalView() {
       try {
         await bannerService.deleteBanner(id);
         setBanners(banners.filter((banner) => banner._id !== id));
-        alert("Xóa banner thành công!");
+        toast.success("Xóa banner thành công!");
       } catch (error) {
         console.error("Error deleting banner:", error);
-        alert("Không thể xóa banner. Vui lòng thử lại sau.");
+        toast.error("Không thể xóa banner. Vui lòng thử lại sau.");
       }
     }
   };
@@ -173,9 +174,9 @@ export function BannerHierarchicalView() {
     try {
       const formData = new FormData();
       formData.append("is_active", String(isActive));
-      
+
       // Optimistic update
-      setBanners(banners.map(b => 
+      setBanners(banners.map(b =>
         (b._id === id || b.id === id) ? { ...b, is_active: isActive } : b
       ));
 
@@ -184,7 +185,7 @@ export function BannerHierarchicalView() {
       console.error("Error updating banner status:", error);
       // Revert if error
       handleRefreshBanners();
-      alert("Không thể cập nhật trạng thái banner");
+      toast.error("Không thể cập nhật trạng thái banner");
     }
   };
 

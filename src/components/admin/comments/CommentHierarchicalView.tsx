@@ -14,6 +14,7 @@ import {
     HierarchicalBreadcrumb,
     type BreadcrumbItem,
 } from "@/components/admin/products/HierarchicalBreadcrumb";
+import { toast } from "sonner";
 
 type ViewLevel = "root" | "subcategory" | "products" | "comments";
 
@@ -186,10 +187,10 @@ export function CommentHierarchicalView() {
         try {
             await commentService.adminDeleteComment(commentId);
             setComments((prev) => prev.filter((c) => c._id !== commentId));
-            alert("Xóa bình luận thành công!");
+            toast.success("Xóa bình luận thành công!");
         } catch (error) {
             console.error("Error deleting comment:", error);
-            alert("Không thể xóa bình luận. Vui lòng thử lại sau.");
+            toast.error("Không thể xóa bình luận. Vui lòng thử lại sau.");
         }
     };
 

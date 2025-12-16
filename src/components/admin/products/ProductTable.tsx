@@ -5,6 +5,7 @@ import type { Product } from "@/types";
 import productService from "@/api/services/productService";
 import { ProductTableRow } from "./ProductTableRow";
 import { ProductTablePagination } from "./ProductTablePagination";
+import { toast } from "sonner";
 
 interface ProductTableProps {
   searchTerm: string;
@@ -66,10 +67,10 @@ export function ProductTable({
       try {
         await productService.deleteProduct(id);
         setLocalProducts(localProducts.filter((product) => product._id !== id));
-        alert("Xóa sản phẩm thành công!");
+        toast.success("Xóa sản phẩm thành công!");
       } catch (error) {
         console.error("Error deleting product:", error);
-        alert("Không thể xóa sản phẩm. Vui lòng thử lại sau.");
+        toast.error("Không thể xóa sản phẩm. Vui lòng thử lại sau.");
       }
     }
   };
@@ -86,7 +87,7 @@ export function ProductTable({
       );
     } catch (error) {
       console.error("Error toggling hot status:", error);
-      alert("Không thể cập nhật trạng thái nổi bật. Vui lòng thử lại sau.");
+      toast.error("Không thể cập nhật trạng thái nổi bật. Vui lòng thử lại sau.");
     }
   };
 

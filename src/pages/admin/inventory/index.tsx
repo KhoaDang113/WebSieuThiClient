@@ -98,10 +98,10 @@ export default function InventoryPage() {
               Bảng
             </Button>
           </div>
-          <Button className="gap-2">
+          {/* <Button className="gap-2">
             <Plus className="w-4 h-4" />
             Kiểm kê Kho
-          </Button>
+          </Button> */}
         </div>
       </div>
 

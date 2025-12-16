@@ -6,6 +6,9 @@ import { Download, Upload, Settings, History, Loader2 } from "lucide-react";
 import type { Product } from "@/types/product.type";
 import productService from "@/api/services/productService";
 import { toast } from "sonner";
+import { ProductTablePagination } from "../products/ProductTablePagination";
+
+const ITEMS_PER_PAGE = 10;
 
 interface InventoryTableProps {
   searchTerm: string;
@@ -30,10 +33,16 @@ export function InventoryTable({
 }: InventoryTableProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchProducts();
   }, [refreshTrigger]);
+
+  // Reset về trang 1 khi filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, statusFilter]);
 
   const fetchProducts = async () => {
     try {
@@ -60,7 +69,7 @@ export function InventoryTable({
         "name" in item.category_id &&
         item.category_id.name === categoryFilter);
 
-    const reorderLevel = 20; // Default reorder level
+    const reorderLevel = 10; // Default reorder level
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "low" && (item.quantity || 0) <= reorderLevel) ||
@@ -68,6 +77,11 @@ export function InventoryTable({
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  // Phân trang
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -106,8 +120,8 @@ export function InventoryTable({
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map((item) => {
-                const reorderLevel = 20;
+              {paginatedItems.map((item) => {
+                const reorderLevel = 10;
                 const isLowStock = (item.quantity || 0) <= reorderLevel;
 
                 // Extract category name from populated category_id
@@ -213,6 +227,15 @@ export function InventoryTable({
           <div className="text-center py-8">
             <p className="text-muted-foreground">Không tìm thấy sản phẩm nào</p>
           </div>
+        )}
+
+        {/* Phân trang */}
+        {totalPages > 1 && (
+          <ProductTablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
       </CardContent>
     </Card>
