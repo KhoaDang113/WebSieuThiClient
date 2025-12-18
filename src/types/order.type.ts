@@ -27,7 +27,18 @@ export interface Order {
   customer_address: string;
   items: OrderItem[];
   total_amount: number;
-  status: "pending" | "confirmed" | "shipped" | "rejected" | "cancelled" | "delivered";
+  subtotal?: number;
+  shipping_fee?: number;
+  discount?: number;
+  status: "pending" | "confirmed" | "assigned" | "shipped" | "rejected" | "cancelled" | "delivered";
+  
+  // Shipper fields
+  shipper_id?: string;
+  assigned_at?: string;
+
+  // Delivery info
+  delivery_distance?: number; // in kilometers
+  estimated_delivery_time?: string; // ISO date string
 
   // Payment fields (optional) - backend may supply these
   paid?: boolean; // true if order has been paid
@@ -38,4 +49,5 @@ export interface Order {
   notes?: string;
   is_company_invoice?: boolean;
   invoice_info?: OrderInvoiceInfo | null;
+  is_rating?: boolean; // Whether order has been rated
 }

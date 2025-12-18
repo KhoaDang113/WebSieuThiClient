@@ -1,26 +1,10 @@
 "use client";
 
-import {
-  Bell,
-  Trash2,
-  MessageCircle,
-  Package,
-  X,
-  AlertCircle,
-  Info,
-} from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Bell, Trash2, MessageCircle, Package, X, AlertCircle, Info } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
-import notificationService, {
-  type NotificationData,
-} from "@/api/services/notificationService";
+import notificationService, { type NotificationData } from "@/api/services/notificationService";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants";
@@ -30,9 +14,11 @@ import { useNotification } from "@/hooks/useNotification";
 interface NotificationDrawerProps {
   // Optional filter to select a subset of notifications to display
   readonly filter?: (n: NotificationData) => boolean;
+  // Mobile mode for bottom menu styling
+  readonly mobile?: boolean;
 }
 
-export function NotificationDrawer({ filter }: NotificationDrawerProps) {
+export function NotificationDrawer({ filter, mobile }: NotificationDrawerProps) {
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -54,9 +40,9 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
           user?.role === "staff"
             ? await notificationService.getNotificationForStaff()
             : await notificationService.getMyNotifications({
-                page: pageNum,
-                limit: 20,
-              });
+              page: pageNum,
+              limit: 20,
+            });
         const newNotifications = response?.notifications || [];
 
         if (append) {
@@ -190,29 +176,6 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
         setUnreadCount(data.count);
       };
 
-      // Listen for order status updates
-      const handleOrderStatusUpdate = (payload: {
-        orderId?: string;
-        status?: string;
-        message?: string;
-        title?: string;
-      }) => {
-        // Show popup notification
-        if (payload.title || payload.message) {
-          showNotification({
-            type: "success",
-            title: payload.title || "Cập nhật đơn hàng",
-            message:
-              payload.message ||
-              `Đơn hàng của bạn đã được cập nhật: ${payload.status || ""}`,
-            duration: 5000,
-          });
-        }
-
-        fetchNotifications(1);
-        fetchUnreadCount();
-      };
-
       const handleNewOrder = (payload: {
         notificationId?: string;
         type?: string;
@@ -223,16 +186,16 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
         metadata?: { order_id?: string; customer_name?: string };
       }) => {
         // Show popup notification
-        if (payload.title) {
-          showNotification({
-            type: "info",
-            title: payload.title,
-            message:
-              payload.message ||
-              `Đơn hàng ${payload.metadata?.order_id} từ ${payload.actor?.name} - ${payload.actor?.id}`,
-            duration: 5000,
-          });
-        }
+        // if (payload.title) {
+        //   showNotification({
+        //     type: "info",
+        //     title: payload.title,
+        //     message:
+        //       payload.message ||
+        //       `Đơn hàng ${payload.metadata?.order_id} từ ${payload.actor?.name} - ${payload.actor?.id}`,
+        //     duration: 5000,
+        //   });
+        // }
 
         fetchNotifications(1);
         fetchUnreadCount();
@@ -241,7 +204,6 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
       socket.on("notification:new", handleNewNotification);
       socket.on("notification:comment-reply", handleCommentReply);
       socket.on("notification:unread-count", handleUnreadCountUpdate);
-      socket.on("order:status-updated", handleOrderStatusUpdate);
       socket.on("staff:new-order", handleNewOrder);
 
       // Cleanup listeners
@@ -249,14 +211,13 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
         socket.off("notification:new", handleNewNotification);
         socket.off("notification:comment-reply", handleCommentReply);
         socket.off("notification:unread-count", handleUnreadCountUpdate);
-        socket.off("order:status-updated", handleOrderStatusUpdate);
         socket.off("staff:new-order", handleNewOrder);
       };
     } catch (error) {
       console.error("Failed to setup socket listeners:", error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, fetchNotifications, fetchUnreadCount]);
+  }, [isAuthenticated]);
 
   // Apply filter if provided
   const filteredNotifications = filter
@@ -417,18 +378,30 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative rounded-full bg-[#008236] hover:bg-green-700 text-white transition-all duration-200 hover:scale-105"
-        >
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center shadow-lg animate-pulse px-1">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
-        </Button>
+        {mobile ? (
+          <button className="flex flex-col items-center justify-center w-full h-full text-gray-700 hover:text-[#007E42] hover:bg-gray-50 transition-colors relative">
+            <Bell className="w-5 h-5 mb-1" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-2 flex items-center justify-center rounded-full bg-red-500 w-4 h-4 text-white text-xs font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+            <span className="text-xs">Thông báo</span>
+          </button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative rounded-full bg-[#008236] hover:bg-green-700 text-white transition-all duration-200 hover:scale-105"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center shadow-lg animate-pulse px-1">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md p-0">
         <div className="flex flex-col h-full">
@@ -508,44 +481,37 @@ export function NotificationDrawer({ filter }: NotificationDrawerProps) {
                         w-full text-left
                       `}
                     >
-                      {/* Unread indicator */}
-                      {!notification.is_read && (
-                        <div className="absolute top-4 right-4">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        </div>
-                      )}
-
                       {/* Delete button */}
-                      <button
+                      <div role="button"
                         onClick={(e) =>
                           handleDeleteNotification(e, notification._id)
                         }
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-200 rounded-full transition-all"
                         aria-label="Xóa thông báo"
                       >
-                        <X className="w-4 h-4 text-gray-500" />
-                      </button>
+                        <X className="w-4 h-4 text-red-500" />
+                      </div>
 
                       <div className="flex items-start gap-3">
                         {/* Actor avatar for comment/reply notifications */}
                         {(notification.type === "comment_reply" ||
                           notification.type === "product_review") && (
-                          <img
-                            src={getActorAvatar(notification.actor_id)}
-                            alt={getActorName(notification.actor_id)}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                          />
-                        )}
+                            <img
+                              src={getActorAvatar(notification.actor_id)}
+                              alt={getActorName(notification.actor_id)}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            />
+                          )}
 
                         {/* Icon for order/system notifications */}
                         {(notification.type === "order_update" ||
                           notification.type === "system") && (
-                          <div
-                            className={`flex-shrink-0 ${styles.iconBg} rounded-full p-2.5`}
-                          >
-                            {getIcon(notification.type)}
-                          </div>
-                        )}
+                            <div
+                              className={`flex-shrink-0 ${styles.iconBg} rounded-full p-2.5`}
+                            >
+                              {getIcon(notification.type)}
+                            </div>
+                          )}
 
                         {/* Content */}
                         <div className="flex-1 min-w-0 pr-6">

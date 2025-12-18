@@ -1,5 +1,5 @@
 import api from "../axiosConfig";
-import type { Product } from "../../types";
+import type { Category, Product, Brand } from "../../types";
 
 export interface SearchProductsParams {
   skip?: number;
@@ -13,6 +13,8 @@ export interface SearchProductsResponse {
   skip: number;
   actualLimit: number;
   products: Product[];
+  categories: Category[];
+  brands: Brand[];
 }
 
 /**
@@ -129,7 +131,7 @@ class ProductService {
     const response = await api.put<Product>(`${this.basePath}/${id}`, data);
     return response.data;
   }
-   
+
   async getRelatedProducts(id: string, limit: number = 5): Promise<Product[]> {
     const response = await api.get<Product[]>(
       `${this.basePath}/${id}/related`,
@@ -150,6 +152,8 @@ class ProductService {
         skip: params?.skip ?? 0,
         actualLimit: 0,
         products: [],
+        categories: [],
+        brands: []
       };
     }
 
@@ -158,9 +162,45 @@ class ProductService {
       skip: number;
       actualLimit: number;
       products: Product[];
+      categories: Category[];
+      brands: Brand[]
     }>(`${this.basePath}/search`, {
       params: {
         key,
+        ...params,
+      },
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Lấy sản phẩm theo category với brands filter và sort
+   * GET /products/category?category=slug&brand=slug1%20slug2&sortOrder=price-asc&skip=0
+   */
+  async getCategoryProducts(
+    categorySlug: string,
+    params?: {
+      skip?: number;
+      brand?: string;
+      sortOrder?: string;
+    }
+  ): Promise<{
+    total: number;
+    skip: number;
+    actualLimit: number;
+    products: Product[];
+    brands: Brand[];
+  }> {
+    const response = await api.get<{
+      total: number;
+      skip: number;
+      actualLimit: number;
+      products: Product[];
+      brands: Brand[];
+    }>(`${this.basePath}/category`, {
+      params: {
+        category: categorySlug,
         ...params,
       },
     });

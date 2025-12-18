@@ -6,7 +6,7 @@ import { useCart } from "@/components/cart/CartContext";
 import { useNavigate } from "react-router-dom";
 
 export default function ShoppingCart() {
-  const { cartItems, updateQuantity, removeItem, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeItem, clearCart, markItemsAsOutOfStock } = useCart();
   const navigate = useNavigate();
 
   // Render theo trạng thái giỏ hàng
@@ -20,6 +20,7 @@ export default function ShoppingCart() {
           onUpdateQuantity={updateQuantity}
           onRemoveItem={removeItem}
           onClearCart={clearCart}
+          onMarkItemsAsOutOfStock={markItemsAsOutOfStock}
         />
       )}
     </div>

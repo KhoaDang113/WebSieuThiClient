@@ -9,15 +9,24 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { name: "Sản phẩm A", soluong: 400 },
-  { name: "Sản phẩm B", soluong: 300 },
-  { name: "Sản phẩm C", soluong: 200 },
-  { name: "Sản phẩm D", soluong: 278 },
-  { name: "Sản phẩm E", soluong: 189 },
-];
+interface TopProduct {
+  productId: string;
+  name: string;
+  quantity: number;
+}
 
-export function TopProducts() {
+interface TopProductsProps {
+  data?: TopProduct[];
+  loading?: boolean;
+}
+
+export function TopProducts({ data = [], loading }: TopProductsProps) {
+  const chartData = data.map((item) => ({
+    name: item.name.length > 15 ? item.name.slice(0, 15) + "..." : item.name,
+    soluong: item.quantity,
+    fullName: item.name,
+  }));
+
   return (
     <Card className="p-6">
       <div className="mb-4">
@@ -26,16 +35,40 @@ export function TopProducts() {
           Top 5 sản phẩm bán chạy nhất
         </p>
       </div>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="soluong" fill="#8b5cf6" name="Số lượng bán" />
-        </BarChart>
-      </ResponsiveContainer>
+      {loading ? (
+        <div className="h-[300px] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          Chưa có dữ liệu sản phẩm bán chạy
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-white p-2 border rounded shadow">
+                      <p className="font-medium">{data.fullName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Số lượng bán: {data.soluong}
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Bar dataKey="soluong" fill="#8b5cf6" name="Số lượng bán" />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </Card>
   );
 }
-

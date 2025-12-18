@@ -98,6 +98,61 @@ class BannerService {
     // Transform data từ backend format sang frontend format
     return response.data.map((banner) => this.transformBanner(banner));
   }
+
+  /**
+   * Lấy banners cho một category cụ thể (dùng cho admin)
+   * GET /banners?category=slug
+   */
+  async getBannersForCategory(categoryId: string): Promise<Banner[]> {
+    try {
+      const response = await api.get<any[]>(
+        `${this.basePath}?category=${encodeURIComponent(categoryId)}`
+      );
+      return (response.data || [])
+        .map((banner) => this.transformBanner(banner))
+        .filter((banner) => banner !== null);
+    } catch (error) {
+      console.error("Error fetching banners for category:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Tạo banner mới (Admin)
+   * POST /banners
+   */
+  async createBanner(formData: FormData): Promise<Banner> {
+    const response = await api.post<any>(this.basePath, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return this.transformBanner(response.data);
+  }
+
+  /**
+   * Cập nhật banner (Admin)
+   * PUT /banners/:id
+   */
+  async updateBanner(id: string, formData: FormData): Promise<Banner> {
+    const response = await api.put<any>(`${this.basePath}/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return this.transformBanner(response.data);
+  }
+
+  /**
+   * Xóa banner (Admin - soft delete)
+   * DELETE /banners/:id
+   */
+  async deleteBanner(id: string): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>(
+      `${this.basePath}/${id}`
+    );
+    return response.data;
+  }
 }
 
 export default new BannerService();

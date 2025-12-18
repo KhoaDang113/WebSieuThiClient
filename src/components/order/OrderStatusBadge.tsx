@@ -1,4 +1,4 @@
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 
 interface OrderStatusBadgeProps {
   status: Order["status"];
@@ -13,6 +13,10 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
     confirmed: {
       label: "Đã Xác Nhận",
       color: "bg-blue-500 text-white",
+    },
+    assigned: {
+      label: "Tài xế đã nhận hàng",
+      color: "bg-purple-500 text-white",
     },
     shipped: {
       label: "Đang Giao Hàng",

@@ -1,15 +1,9 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
 interface AdjustThresholdDialogProps {
   open: boolean
@@ -31,7 +25,7 @@ export function AdjustThresholdDialog({
   const handleConfirm = () => {
     const value = parseInt(newThreshold, 10)
     if (isNaN(value) || value < 0) {
-      alert("Vui lòng nhập số lượng hợp lệ")
+      toast.error("Vui lòng nhập số lượng hợp lệ")
       return
     }
     onConfirm(value)

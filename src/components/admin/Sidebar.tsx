@@ -5,9 +5,12 @@ import {
   Package,
   FolderOpen,
   LogOut,
-  MessageSquare,
   Boxes,
   Store,
+  Image,
+  Utensils,
+  Star,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authService } from "@/api";
@@ -30,9 +33,19 @@ const menuItems = [
     icon: Package,
   },
   {
+    label: "Quản lý Combo",
+    href: "/admin/combos",
+    icon: Utensils,
+  },
+  {
     label: "Quản lý Danh mục",
     href: "/admin/categories",
     icon: FolderOpen,
+  },
+  {
+    label: "Quản lý Banner",
+    href: "/admin/banners",
+    icon: Image,
   },
   {
     label: "Quản lý Kho",
@@ -45,16 +58,22 @@ const menuItems = [
     icon: Store,
   },
   {
-    label: "Quản lý Tin nhắn",
-    href: "/admin/messages",
+    label: "Quản lý Đánh giá",
+    href: "/admin/ratings",
+    icon: Star,
+  },
+  {
+    label: "Quản lý Bình luận",
+    href: "/admin/comments",
     icon: MessageSquare,
   },
+
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const pathname = location.pathname;
-  
+
 
   const handleLogout = async () => {
     try {

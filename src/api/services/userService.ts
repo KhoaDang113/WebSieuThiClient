@@ -1,5 +1,12 @@
 import api from "../axiosConfig";
-import type { User, ApiResponse } from "../types";
+import type { 
+  User, 
+  GetUsersParams,
+  GetUsersResponse,
+  UpdateUserData,
+  UpdateUserByAdminData,
+  LockUnlockUserResponse 
+} from "@/types";
 
 /**
  * User Service - Xử lý các API liên quan đến user profile
@@ -34,12 +41,7 @@ class UserService {
    * @param avatarFile - File ảnh đại diện (optional)
    */
   async updateProfile(
-    data: {
-      name?: string;
-      email?: string;
-      phone?: string;
-      gender?: "male" | "female";
-    },
+    data: UpdateUserData,
     avatarFile?: File
   ): Promise<User> {
     const formData = new FormData();
@@ -76,20 +78,8 @@ class UserService {
    * GET /users/admin/all
    * Yêu cầu: Admin role
    */
-  async getAllUsers(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  }): Promise<{
-    data: User[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  }> {
-    const response = await api.get(`${this.basePath}/admin/all`, { params });
+  async getAllUsers(params?: GetUsersParams): Promise<GetUsersResponse> {
+    const response = await api.get<GetUsersResponse>(`${this.basePath}/admin/all`, { params });
     return response.data;
   }
 
@@ -110,13 +100,7 @@ class UserService {
    */
   async updateUserByAdmin(
     id: string,
-    data: {
-      name?: string;
-      email?: string;
-      phone?: string;
-      gender?: "male" | "female";
-      role?: string;
-    },
+    data: UpdateUserByAdminData,
     avatarFile?: File
   ): Promise<User> {
     const formData = new FormData();
@@ -148,8 +132,8 @@ class UserService {
    * PATCH /users/admin/:id/lock
    * Yêu cầu: Admin role
    */
-  async lockUser(id: string): Promise<ApiResponse> {
-    const response = await api.patch<ApiResponse>(
+  async lockUser(id: string): Promise<LockUnlockUserResponse> {
+    const response = await api.patch<LockUnlockUserResponse>(
       `${this.basePath}/admin/${id}/lock`
     );
     return response.data;
@@ -160,8 +144,8 @@ class UserService {
    * PATCH /users/admin/:id/unlock
    * Yêu cầu: Admin role
    */
-  async unlockUser(id: string): Promise<ApiResponse> {
-    const response = await api.patch<ApiResponse>(
+  async unlockUser(id: string): Promise<LockUnlockUserResponse> {
+    const response = await api.patch<LockUnlockUserResponse>(
       `${this.basePath}/admin/${id}/unlock`
     );
     return response.data;

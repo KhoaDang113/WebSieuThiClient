@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, User, Phone, MapPin, StickyNote, ShoppingBag, CheckCircle, Building2, Mail } from "lucide-react";
+import { X, User, Phone, MapPin, StickyNote, ShoppingBag, CheckCircle, Building2, Mail, ChevronRight } from "lucide-react";
 import type { CartItem } from "@/types/cart.type";
 import type { CreateOrderCustomerInfo } from "@/hooks/useOrders";
+import type { Address } from "@/api/types";
 import { useAddress } from "@/components/address/AddressContext";
 import { useAuthStore } from "@/stores/authStore";
+import { AddressListModal } from "@/components/address/AddressListModal";
 import PaymentService from "@/api/services/paymentService";
+import shippingService from "@/api/services/shippingService";
+import { toast } from "sonner";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -18,6 +22,7 @@ interface CheckoutModalProps {
     customerInfo: CreateOrderCustomerInfo
   ) => Promise<string>;
   onClearCart: () => void;
+  onMarkItemsAsOutOfStock: (productNames: string[]) => void; // Thêm callback để đánh dấu sản phẩm hết hàng
 }
 
 interface CustomerInfoState {
@@ -26,6 +31,14 @@ interface CustomerInfoState {
   address: string;
   notes: string;
   addressId?: string;
+  addressForShip?: {
+    street: string;
+    ward: string;
+    district: string;
+    province: string;
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export default function CheckoutModal({
@@ -34,6 +47,7 @@ export default function CheckoutModal({
   cartItems,
   onCreateOrder,
   onClearCart,
+  onMarkItemsAsOutOfStock,
 }: CheckoutModalProps) {
   const { address } = useAddress();
   const currentUser = useAuthStore((state) => state.user);
@@ -58,13 +72,17 @@ export default function CheckoutModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [shippingFee, setShippingFee] = useState<number | null>(null);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+
+  const [selectedAddress, setSelectedAddress] = useState<Address | any>(null);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const shippingFee = total >= 300000 ? 0 : 15000;
-  const finalTotal = total + shippingFee;
+  // Note: Shipping fee will be calculated by server based on delivery address
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN").format(price) + " ₫";
@@ -73,7 +91,6 @@ export default function CheckoutModal({
   // Tự động điền thông tin khách hàng khi mở modal
   useEffect(() => {
     if (!isOpen) return;
-
     // Ưu tiên địa chỉ mặc định từ AddressContext nếu có
     if (address) {
       const fullAddress = [
@@ -91,8 +108,18 @@ export default function CheckoutModal({
         phone:
           address.phone || currentUser?.phone || currentUser?.phoneNumber || "",
         address: fullAddress,
+        addressForShip: {
+          street: address.street,
+          ward: address.ward,
+          district: address.district,
+          province: address.province,
+          latitude: address.latitude,
+          longitude: address.longitude,
+        },
         addressId: address.id || prev.addressId,
       }));
+      setSelectedAddress(address);
+
       return;
     }
 
@@ -111,16 +138,47 @@ export default function CheckoutModal({
     }
   }, [isOpen, address, currentUser]);
 
+  // Calculate shipping fee when address changes
+  useEffect(() => { 
+    async function fetchShippingFee() {
+      // Use selectedAddress if available, otherwise fall back to global address
+      // But only if we have a valid address ID selected
+      const currentLat = selectedAddress?.latitude || customerInfo.addressForShip?.latitude;
+      const currentLng = selectedAddress?.longitude || customerInfo.addressForShip?.longitude;
+
+      if (!total || currentLat === undefined || currentLng === undefined) {
+        setShippingFee(null);
+        return;
+      }
+
+      setIsLoadingShipping(true);
+      try {
+        const result = await shippingService.calculateShippingFee(
+          `${currentLat},${currentLng}`,
+          total
+        );
+        setShippingFee(result.shippingFee);
+      } catch (error: any) {
+        console.error("Error calculating shipping fee:", error);
+        setShippingFee(0);
+      } finally {
+        setIsLoadingShipping(false);
+      }
+    }
+
+    fetchShippingFee();
+  }, [customerInfo.addressId, total, selectedAddress, address]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+      toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
     if (!customerInfo.addressId) {
-      alert("Vui lòng chọn địa chỉ giao hàng hợp lệ!");
+      toast.error("Vui lòng chọn địa chỉ giao hàng hợp lệ!");
       return;
     }
 
@@ -131,13 +189,13 @@ export default function CheckoutModal({
         !invoiceInfo.taxCode ||
         !invoiceInfo.email
       ) {
-        alert("Vui lòng điền đầy đủ thông tin xuất hóa đơn công ty!");
+        toast.error("Vui lòng điền đầy đủ thông tin xuất hóa đơn công ty!");
         return;
       }
     }
 
     if (!agreedPolicy) {
-      alert(
+      toast.error(
         "Vui lòng đồng ý với chính sách xử lý dữ liệu cá nhân và chính sách đổi trả, hoàn tiền."
       );
       return;
@@ -153,7 +211,6 @@ export default function CheckoutModal({
         invoiceCompanyAddress: invoiceInfo.companyAddress,
         invoiceTaxCode: invoiceInfo.taxCode,
         invoiceEmail: invoiceInfo.email,
-        shippingFee,
         discount: 0,
       });
 
@@ -164,15 +221,13 @@ export default function CheckoutModal({
         onClearCart();
       } else {
         try {
-          console.log(newOrderId);
-
           const paymentUrl = await PaymentService.createPayment(
             newOrderId,
             paymentMethod === "vnpay" ? "vnpay" : "momo"
           );
 
           if (!paymentUrl) {
-            alert("Không tạo được link thanh toán. Vui lòng thử lại.");
+            toast.error("Không tạo được link thanh toán. Vui lòng thử lại.");
             return;
           }
 
@@ -182,12 +237,41 @@ export default function CheckoutModal({
           window.location.href = paymentUrl.data as unknown as string;
         } catch (err) {
           console.error("Error creating payment:", err);
-          alert("Không tạo được giao dịch thanh toán. Vui lòng thử lại.");
+          toast.error("Không tạo được giao dịch thanh toán. Vui lòng thử lại.");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating order:", error);
-      alert("Có lỗi xảy ra khi tạo đơn hàng!");
+
+      // Parse error message for stock issues
+      const errorMessage = error?.response?.data?.message || error?.message || "Có lỗi xảy ra khi tạo đơn hàng!";
+
+      if (errorMessage.includes("Insufficient stock")) {
+        // Extract product names only, remove "Available X, Requested Y" details
+        const details = errorMessage.replace("Insufficient stock: ", "");
+        const items = details.split(";").map((item: string) => {
+          // Extract only the product name (before the colon)
+          const productName = item.split(":")[0]?.trim();
+          return productName;
+        }).filter(Boolean);
+
+        // Mark those items as out of stock in the cart
+        onMarkItemsAsOutOfStock(items);
+
+        toast.error(
+          <div>
+            <div className="font-semibold mb-2">Sản phẩm đã hết hàng:</div>
+            <ul className="text-sm space-y-1">
+              {items.map((item: string, idx: number) => (
+                <li key={idx}>• {item}</li>
+              ))}
+            </ul>
+          </div>,
+          { duration: 5000 }
+        );
+      } else {
+        toast.error(errorMessage, { duration: 4000 });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -212,6 +296,26 @@ export default function CheckoutModal({
     setRequestInvoice(false);
     setAgreedPolicy(false);
     onClose();
+  };
+
+  const handleSelectAddress = (selectedAddr: Address) => {
+    const fullAddress = [
+      selectedAddr.address,
+      selectedAddr.ward,
+      selectedAddr.city,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setCustomerInfo((prev) => ({
+      ...prev,
+      name: selectedAddr.full_name || prev.name,
+      phone: selectedAddr.phone || prev.phone,
+      address: fullAddress,
+      addressId: selectedAddr._id || "",
+    }));
+    setSelectedAddress(selectedAddr);
+    setIsAddressModalOpen(false);
   };
 
   if (!isOpen) return null;
@@ -264,23 +368,30 @@ export default function CheckoutModal({
                   </div>
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Phí vận chuyển:</span>
-                    <span
-                      className={`font-semibold ${
-                        shippingFee === 0 ? "text-[#007E42]" : "text-gray-800"
-                      }`}
-                    >
-                      {shippingFee === 0
-                        ? "Miễn phí"
-                        : formatPrice(shippingFee)}
+                    <span className="font-semibold text-[#007E42]">
+                      {isLoadingShipping
+                        ? "Đang tính..."
+                        : shippingFee !== null
+                          ? shippingFee === 0
+                            ? "Miễn phí"
+                            : formatPrice(shippingFee)
+                          : "Chọn địa chỉ để tính"}
                     </span>
                   </div>
                   <div className="border-t border-[#007E42]/20 pt-3 mt-3">
                     <div className="flex justify-between text-lg font-bold bg-gradient-to-r from-[#007E42] to-[#00a855] bg-clip-text text-transparent">
                       <span>Tổng cộng:</span>
                       <span className="text-[#007E42]">
-                        {formatPrice(finalTotal)}
+                        {shippingFee !== null
+                          ? formatPrice(total + shippingFee)
+                          : formatPrice(total) + "+"}
                       </span>
                     </div>
+                    {shippingFee === null && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        *Phí ship sẽ được tính sau khi chọn địa chỉ
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -333,19 +444,21 @@ export default function CheckoutModal({
                       <MapPin className="w-4 h-4 text-[#007E42]" />
                       Địa chỉ giao hàng *
                     </label>
-                    <textarea
-                      value={customerInfo.address}
-                      onChange={(e) =>
-                        setCustomerInfo((prev) => ({
-                          ...prev,
-                          address: e.target.value,
-                        }))
-                      }
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#007E42] focus:border-[#007E42] transition-all resize-none outline-none"
-                      placeholder="Nhập địa chỉ giao hàng chi tiết"
-                      rows={3}
-                      required
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsAddressModalOpen(true)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl hover:border-[#007E42] focus:ring-2 focus:ring-[#007E42] focus:border-[#007E42] transition-all outline-none text-left bg-white flex items-center justify-between group"
+                    >
+                      <span className={customerInfo.address ? "text-gray-900" : "text-gray-400"}>
+                        {customerInfo.address || "Nhấn để chọn địa chỉ giao hàng"}
+                      </span>
+                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#007E42] transition-colors" />
+                    </button>
+                    {!customerInfo.addressId && customerInfo.address && (
+                      <p className="text-xs text-orange-500 mt-1">
+                        ⚠️ Vui lòng chọn lại địa chỉ từ danh sách
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -464,11 +577,10 @@ export default function CheckoutModal({
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("cod")}
-                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${
-                          paymentMethod === "cod"
-                            ? "border-[#007E42] bg-[#007E42]/5"
-                            : "border-gray-200 bg-white"
-                        }`}
+                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${paymentMethod === "cod"
+                          ? "border-[#007E42] bg-[#007E42]/5"
+                          : "border-gray-200 bg-white"
+                          }`}
                       >
                         <span>Thanh toán khi nhận hàng (COD)</span>
                         {paymentMethod === "cod" && (
@@ -481,11 +593,10 @@ export default function CheckoutModal({
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("vnpay")}
-                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${
-                          paymentMethod === "vnpay"
-                            ? "border-[#007E42] bg-[#007E42]/5"
-                            : "border-gray-200 bg-white"
-                        }`}
+                        className={`flex-1 border rounded-lg px-3 py-2 text-sm flex items-center justify-between ${paymentMethod === "vnpay"
+                          ? "border-[#007E42] bg-[#007E42]/5"
+                          : "border-gray-200 bg-white"
+                          }`}
                       >
                         <div className="flex items-center">
                           <img
@@ -557,7 +668,7 @@ export default function CheckoutModal({
                           Đang xử lý...
                         </>
                       ) : (
-                        `Đặt hàng - ${formatPrice(finalTotal)}`
+                        `Đặt hàng`
                       )}
                     </span>
                   </Button>
@@ -601,6 +712,14 @@ export default function CheckoutModal({
           </div>
         )}
       </div>
+
+      {/* Address Selection Modal */}
+      <AddressListModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSelectAddress={handleSelectAddress}
+        showSelection={true}
+      />
     </div>
   );
 }

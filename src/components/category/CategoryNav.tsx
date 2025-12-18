@@ -34,7 +34,7 @@ export function CategoryNav({
           setLoading(true);
           // Lấy root categories (cấp 1) từ API
           const data = await categoryService.getRootCategories();
-          
+
           // Convert sang CategoryNav format
           const navCategories = data.map(toCategoryNav);
           setCategories(navCategories);
@@ -157,9 +157,8 @@ export function CategoryNav({
 
     switch (variant) {
       case "product-page":
-        return `text-xs text-center leading-tight max-w-[80px] truncate ${
-          isSelected ? "text-green-600 font-semibold" : "text-foreground"
-        }`;
+        return `text-xs text-center leading-tight max-w-[80px] truncate ${isSelected ? "text-green-600 font-semibold" : "text-foreground"
+          }`;
       case "home":
       default:
         return "text-xs text-center leading-tight max-w-[80px] truncate text-foreground";

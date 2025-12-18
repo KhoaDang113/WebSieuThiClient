@@ -1,24 +1,24 @@
-import type { Order, OrderItem } from "@/types/order";
+import type { Order, OrderItem } from "@/types/order.type";
 import { PRODUCT_PLACEHOLDER_IMAGE, getProductImage } from "@/lib/constants";
 
 export interface BackendOrderItem {
   _id?: string;
   product_id:
-    | string
-    | {
-        _id?: string;
-        id?: string;
-        name?: string;
-        slug?: string;
-        image_primary?: string;
-        images?: string[];
-        image_url?: string;
-        unit_price?: number;
-        final_price?: number;
-        discount_percent?: number;
-        stock_status?: string;
-        unit?: string;
-      };
+  | string
+  | {
+    _id?: string;
+    id?: string;
+    name?: string;
+    slug?: string;
+    image_primary?: string;
+    images?: string[];
+    image_url?: string;
+    unit_price?: number;
+    final_price?: number;
+    discount_percent?: number;
+    stock_status?: string;
+    unit?: string;
+  };
   quantity: number;
   unit_price: number;
   discount_percent?: number;
@@ -30,20 +30,20 @@ export interface BackendOrder {
   id?: string;
   user_id?: string;
   address_id?:
-    | string
-    | {
-        _id?: string;
-        id?: string;
-        full_name?: string;
-        phone?: string;
-        address?: string;
-        ward?: string;
-        district?: string;
-        city?: string;
-        zip_code?: string;
-      };
+  | string
+  | {
+    _id?: string;
+    id?: string;
+    full_name?: string;
+    phone?: string;
+    address?: string;
+    ward?: string;
+    district?: string;
+    city?: string;
+    zip_code?: string;
+  };
   items: BackendOrderItem[];
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "assigned" | "shipped" | "delivered" | "cancelled";
   subtotal: number;
   discount?: number;
   shipping_fee?: number;
@@ -52,6 +52,10 @@ export interface BackendOrder {
   created_at?: string;
   updated_at?: string;
   is_company_invoice?: boolean;
+  is_rating?: boolean;
+  shipper_id?: string;
+  delivery_distance?: number;
+  estimated_delivery_time?: string;
   invoice_info?: {
     company_name?: string;
     company_address?: string;
@@ -101,8 +105,12 @@ export function transformOrderItem(
 }
 
 export function transformOrder(order: BackendOrder): Order {
+  if (!order) {
+    throw new Error("Order object is undefined or null");
+  }
+
   const address =
-    typeof order.address_id === "object" ? order.address_id : null;
+    typeof order.address_id === "object" && order.address_id ? order.address_id : null;
 
   // Map status từ backend sang frontend
   let frontendStatus: Order["status"];
@@ -115,6 +123,9 @@ export function transformOrder(order: BackendOrder): Order {
       break;
     case "confirmed":
       frontendStatus = "confirmed";
+      break;
+    case "assigned":
+      frontendStatus = "assigned";
       break;
     case "shipped":
       frontendStatus = "shipped";
@@ -134,7 +145,15 @@ export function transformOrder(order: BackendOrder): Order {
         .join(", ") || "",
     items: order.items.map((item, index) => transformOrderItem(item, index)),
     total_amount: order.total || order.subtotal || 0,
+    subtotal: order.subtotal,
+    shipping_fee: order.shipping_fee,
+    discount: order.discount,
     status: frontendStatus,
+    // Shipper fields
+    shipper_id: order.shipper_id,
+    // Delivery info
+    delivery_distance: order.delivery_distance,
+    estimated_delivery_time: order.estimated_delivery_time,
     // Map payment fields from backend
     payment_status: order.payment_status,
     paid: order.payment_status === "paid",
@@ -142,14 +161,15 @@ export function transformOrder(order: BackendOrder): Order {
     created_at: order.created_at || new Date().toISOString(),
     notes: order.notes,
     is_company_invoice: !!order.is_company_invoice,
+    is_rating: !!order.is_rating,
     invoice_info:
       order.is_company_invoice && order.invoice_info
         ? {
-            company_name: order.invoice_info.company_name || "",
-            company_address: order.invoice_info.company_address || "",
-            tax_code: order.invoice_info.tax_code || "",
-            email: order.invoice_info.email || "",
-          }
+          company_name: order.invoice_info.company_name || "",
+          company_address: order.invoice_info.company_address || "",
+          tax_code: order.invoice_info.tax_code || "",
+          email: order.invoice_info.email || "",
+        }
         : null,
   };
 }

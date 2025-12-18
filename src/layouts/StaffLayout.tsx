@@ -1,9 +1,9 @@
 "use client";
 
-import { Footer } from "@/components/navbar-and-footer/Footer";
+import { Footer } from "@/components/navbar-and-footer/user/Footer";
 import { ScrollToTop } from "@/components/scroll/ScrollToTop";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { StaffNavbar } from "@/components/navbar-and-footer/StaffNavbar";
+import { StaffNavbar } from "@/components/navbar-and-footer/staff/Navbar";
 import { useOrders } from "@/hooks/useOrders";
 import { useNotification } from "@/hooks/useNotification";
 import { useEffect, useRef } from "react";
@@ -55,9 +55,8 @@ export default function StaffLayout() {
         showNotification({
           type: "info",
           title: "Đơn hàng mới",
-          message: `Đơn hàng ${order.id} từ ${
-            order.customer_name
-          } - ${order.total_amount.toLocaleString("vi-VN")}đ`,
+          message: `Đơn hàng ${order.id} từ ${order.customer_name
+            } - ${order.total_amount.toLocaleString("vi-VN")}đ`,
           duration: 6000,
         });
       });
@@ -84,10 +83,9 @@ export default function StaffLayout() {
             <button
               onClick={handleGoOrders}
               className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-colors
-                ${
-                  isOrdersPage
-                    ? "bg-green-600 text-white shadow-sm"
-                    : "bg-transparent text-gray-700 hover:bg-gray-100"
+                ${isOrdersPage
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "bg-transparent text-gray-700 hover:bg-gray-100"
                 }`}
             >
               Đơn hàng
@@ -95,10 +93,9 @@ export default function StaffLayout() {
             <button
               onClick={handleGoMessages}
               className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-colors
-                ${
-                  isMessagesPage
-                    ? "bg-green-600 text-white shadow-sm"
-                    : "bg-transparent text-gray-700 hover:bg-gray-100"
+                ${isMessagesPage
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "bg-transparent text-gray-700 hover:bg-gray-100"
                 }`}
             >
               Tin nhắn

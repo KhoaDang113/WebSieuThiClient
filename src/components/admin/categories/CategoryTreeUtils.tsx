@@ -1,7 +1,6 @@
 import type { Category } from "@/types";
 import { searchVietnamese } from "@/lib/helpers";
 
-// Helper để tìm category và children theo search term
 export function searchInCategory(category: Category, searchTerm: string): boolean {
   if (searchVietnamese(category.name, searchTerm)) {
     return true;

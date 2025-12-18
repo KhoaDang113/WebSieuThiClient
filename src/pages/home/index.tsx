@@ -27,11 +27,11 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Lấy danh sách categories
         const categoriesData = await categoryService.getRootCategories();
         setCategories(categoriesData);
-        
+
         // Lấy main banners (không có category - lấy tất cả banners active)
         try {
           const banners = await bannerService.getBanners(); // Không truyền categorySlug để lấy tất cả
@@ -60,7 +60,9 @@ export default function HomePage() {
       price: product.final_price || product.unit_price,
       image: getProductImage(product),
       unit: product.unit || "1 sản phẩm",
+      stock: product.quantity || product.stock_quantity || 0,
       quantity: product.selectedQuantity || 1,
+      original_price: product.unit_price,
     });
 
     // TODO: Hiển thị thông báo đã thêm vào giỏ hàng
@@ -99,10 +101,10 @@ export default function HomePage() {
               key={category._id || category.id}
               title={category.name}
               categorySlug={category.slug}
-            onAddToCart={handleAddToCart}
-          />
+              onAddToCart={handleAddToCart}
+            />
           ))}
-          
+
           {/* Hiển thị message nếu chưa có categories */}
           {categories.length === 0 && (
             <div className="bg-white rounded-lg p-8 text-center">

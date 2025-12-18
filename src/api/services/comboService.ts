@@ -73,7 +73,8 @@ class ComboService {
   async getCombosAdmin(
     page: number = 1,
     limit: number = 10,
-    key?: string
+    key?: string,
+    type_combo_id?: string
   ): Promise<{
     total: number;
     page: number;
@@ -86,8 +87,28 @@ class ComboService {
       limit: number;
       combos: MenuCombo[];
     }>(`${this.basePath}/combos-admin`, {
-      params: { page, limit, key },
+      params: { page, limit, key, type_combo_id },
     });
+    return response.data;
+  }
+
+  /**
+   * Lấy danh sách các loại combo
+   * GET /combos/types
+   */
+  async getTypes(): Promise<string[]> {
+    const response = await api.get<string[]>(`${this.basePath}/types`);
+    return response.data;
+  }
+
+  /**
+   * Lấy danh sách combo theo loại
+   * GET /combos/by-type/:type
+   */
+  async getByType(type: string): Promise<MenuCombo[]> {
+    const response = await api.get<MenuCombo[]>(
+      `${this.basePath}/by-type/${encodeURIComponent(type)}`
+    );
     return response.data;
   }
 }

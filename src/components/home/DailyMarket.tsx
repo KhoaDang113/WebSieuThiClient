@@ -1,13 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import type {
-  MenuCombo,
-  MenuComboWithIngredients,
-  Ingredient,
-} from "@/types/menu.type";
+import type { MenuCombo, MenuComboWithIngredients, Ingredient } from "@/types/menu.type";
 import type { Product } from "@/types";
-import { getIngredientsForDish } from "@/lib/geminiService";
-import productService from "@/api/services/productService";
+import type { TypeCombo } from "@/types/typeCombo.type";
+import { getIngredientsForDish, getSpicesForDish } from "@/lib/geminiService";
 import comboService from "@/api/services/comboService";
+import typeComboService from "@/api/services/typeComboService";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/products/ProductCard";
 import { useCart } from "@/components/cart/CartContext";
@@ -22,37 +19,52 @@ export default function DailyMarket() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [spices, setSpices] = useState<Product[]>([]);
+  const [dishSpices, setDishSpices] = useState<(Product & { spice_type?: string })[]>([]);
   const [isLoadingSpices, setIsLoadingSpices] = useState(false);
+  const [selectedSpiceTab, setSelectedSpiceTab] = useState<string>("all");
   const spicesScrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const combosScrollRef = useRef<HTMLDivElement>(null);
+  const [showCombosLeftArrow, setShowCombosLeftArrow] = useState(false);
+  const [showCombosRightArrow, setShowCombosRightArrow] = useState(false);
 
-  // Danh sách các tab món ăn
-  const tabs = [
-    { id: "all", name: "Món măn" },
-    { id: "appetizer", name: "Món xào, lược" },
-    { id: "fish", name: "Món canh" },
-    { id: "vegetable", name: "Rau sống, nêm" },
-    { id: "fruit", name: "Trái cây" },
-    { id: "dessert", name: "Đồ ăn nhanh" },
-    { id: "drink", name: "Tráng miệng" },
+  // State cho danh sách loại món ăn
+  const [dishTypes, setDishTypes] = useState<TypeCombo[]>([]);
+  const [selectedType, setSelectedType] = useState<string>("all");
+
+  // Danh sách các tab gia vị
+  const spiceTabs = [
+    { id: "all", name: "Tất cả", type: null },
+    { id: "oil", name: "Dầu ăn", type: "oil" },
+    { id: "sauce", name: "Nước chấm", type: "sauce" },
+    { id: "dry_spice", name: "Gia vị khô", type: "dry_spice" },
+    { id: "other", name: "Khác", type: "other" },
   ];
 
   const handleBuyIngredients = async (combo: MenuComboWithIngredients) => {
     setSelectedCombo(combo);
     setIsModalOpen(true);
     setIsLoadingIngredients(true);
+    setIsLoadingSpices(true);
     setError(null);
     setIngredients([]);
+    setDishSpices([]);
+    setSelectedSpiceTab("all"); // Reset spice tab
 
     try {
-      const fetchedIngredients = await getIngredientsForDish(combo.name);
+      // Fetch ingredients and spices in parallel
+      const [fetchedIngredients, fetchedSpices] = await Promise.all([
+        getIngredientsForDish(combo.name),
+        getSpicesForDish(combo.name),
+      ]);
       setIngredients(fetchedIngredients);
+      setDishSpices(fetchedSpices);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
       setIsLoadingIngredients(false);
+      setIsLoadingSpices(false);
     }
   };
 
@@ -60,7 +72,9 @@ export default function DailyMarket() {
     setIsModalOpen(false);
     setSelectedCombo(null);
     setIngredients([]);
+    setDishSpices([]);
     setError(null);
+    setSelectedSpiceTab("all");
   };
 
   // Convert Ingredient to Product for ProductCard
@@ -88,41 +102,43 @@ export default function DailyMarket() {
     product: Product & { selectedQuantity?: number }
   ) => {
     const productId = typeof product.id === "string" ? product.id : product._id;
+    const imageUrl = product.image_url ||
+      (Array.isArray(product.image_primary)
+        ? product.image_primary[0]
+        : product.image_primary) || "";
+
     addToCart({
       id: productId || product._id,
       name: product.name,
       price: product.final_price || product.unit_price,
-      image: product.image_url || product.image_primary || "",
+      image: imageUrl,
       unit: product.unit || "1 sản phẩm",
+      stock: product.quantity || product.stock_quantity || 0,
       quantity: product.selectedQuantity || 1,
     });
   };
 
-  // Fetch combos và spices từ database khi component mount
+  // Fetch combos và types từ database khi component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch combos
         setIsLoadingCombos(true);
-        const combosData = await comboService.getCombos();
+        const [combosData, typesData] = await Promise.all([
+          comboService.getCombos(),
+          typeComboService.getTypeCombos()
+        ]);
+        
         setCombos(combosData);
+        
+        // Sort types by order_index
+        const sortedTypes = typesData.sort((a, b) => 
+          (a.order_index || 0) - (b.order_index || 0)
+        );
+        setDishTypes(sortedTypes);
       } catch (err) {
-        console.error("Error fetching combos:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setIsLoadingCombos(false);
-      }
-
-      try {
-        // Fetch spices
-        setIsLoadingSpices(true);
-        const spicesProducts = await productService.getProducts(
-          "dau-an-nuoc-cham-gia-vi"
-        );
-        setSpices(spicesProducts);
-      } catch (err) {
-        console.error("Error fetching spices:", err);
-      } finally {
-        setIsLoadingSpices(false);
       }
     };
 
@@ -137,6 +153,14 @@ export default function DailyMarket() {
     }
   };
 
+  const checkCombosScroll = () => {
+    if (combosScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = combosScrollRef.current;
+      setShowCombosLeftArrow(scrollLeft > 0);
+      setShowCombosRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
   useEffect(() => {
     checkScrollButtons();
     const scrollContainer = spicesScrollRef.current;
@@ -148,7 +172,20 @@ export default function DailyMarket() {
         window.removeEventListener("resize", checkScrollButtons);
       };
     }
-  }, [spices]);
+  }, [dishSpices]);
+
+  useEffect(() => {
+    checkCombosScroll();
+    const scrollContainer = combosScrollRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", checkCombosScroll);
+      window.addEventListener("resize", checkCombosScroll);
+      return () => {
+        scrollContainer.removeEventListener("scroll", checkCombosScroll);
+        window.removeEventListener("resize", checkCombosScroll);
+      };
+    }
+  }, [combos, selectedType]);
 
   const scrollSpices = (direction: "left" | "right") => {
     if (spicesScrollRef.current) {
@@ -163,8 +200,33 @@ export default function DailyMarket() {
     }
   };
 
+  const scrollCombos = (direction: "left" | "right") => {
+    if (combosScrollRef.current) {
+      const scrollAmount = 300;
+      const newScrollLeft =
+        combosScrollRef.current.scrollLeft +
+        (direction === "left" ? -scrollAmount : scrollAmount);
+      combosScrollRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  // Filter combos based on selected type
+  const filteredCombos = selectedType === "all"
+    ? combos
+    : combos.filter(combo => {
+        // Handle case where type_combo_id is populated as an object
+        const typeId = typeof combo.type_combo_id === 'object' && combo.type_combo_id !== null
+          ? (combo.type_combo_id as any)._id 
+          : combo.type_combo_id;
+          
+        return typeId === selectedType || combo.type_combo?._id === selectedType;
+      });
+
   return (
-    <div className="mb-6 sm:mb-8">
+    <div className="mb-6 sm:mb-8 bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 min-h-[350px]">
       {/* Section Header */}
       <div className="mb-4">
         <h2 className="text-lg sm:text-2xl font-bold text-green-700 uppercase mb-3">
@@ -173,61 +235,100 @@ export default function DailyMarket() {
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {tabs.map((tab) => (
+          <button
+            onClick={() => setSelectedType("all")}
+            className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap text-xs sm:text-sm font-medium transition-colors ${
+              selectedType === "all"
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Tất cả
+          </button>
+          {dishTypes.map((type) => (
             <button
-              key={tab.id}
+              key={type._id}
+              onClick={() => setSelectedType(type._id)}
               className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap text-xs sm:text-sm font-medium transition-colors ${
-                tab.id === "all"
+                selectedType === type._id
                   ? "bg-green-600 text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              {tab.name}
+              {type.name}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Dishes Grid */}
+      {/* Dishes Carousel */}
       {isLoadingCombos ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12 h-[240px]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
         </div>
-      ) : combos.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {combos.map((combo) => (
-            <div
-              key={combo._id}
-              className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
+      ) : filteredCombos.length > 0 ? (
+        <div className="relative min-h-[240px]">
+          {/* Left Arrow */}
+          {showCombosLeftArrow && (
+            <button
+              onClick={() => scrollCombos("left")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 transition-all"
             >
-              {/* Image */}
-              <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center p-2">
-                <img
-                  src={combo.image || combo.image_url}
-                  alt={combo.name}
-                  className="max-w-full max-h-full w-auto h-auto object-contain hover:scale-105 transition-transform duration-300"
-                />
-              </div>
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+          )}
 
-              {/* Content */}
-              <div className="p-3">
-                <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-1 line-clamp-2">
-                  {combo.name}
-                </h3>
-
-                {/* Button */}
-                <button
-                  onClick={() => handleBuyIngredients(combo)}
-                  className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-medium py-2 rounded-md transition-colors"
+          {/* Scroll Container */}
+          <div
+            ref={combosScrollRef}
+            className="overflow-x-auto no-scrollbar scroll-smooth px-2"
+          >
+            <div className="flex gap-4 pb-2">
+              {filteredCombos.map((combo) => (
+                <div
+                  key={combo._id}
+                  className="flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(33.33%-11px)] md:w-[calc(25%-12px)] xl:w-[calc(20%-13px)] bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200"
                 >
-                  MUA NGUYÊN LIỆU
-                </button>
-              </div>
+                  {/* Image */}
+                  <div className="relative aspect-square overflow-hidden bg-white">
+                    <img
+                      src={combo.image || combo.image_url}
+                      alt={combo.name}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-3">
+                    <h3 className="font-semibold text-sm text-gray-800 mb-2 line-clamp-2 h-10">
+                      {combo.name}
+                    </h3>
+
+                    {/* Button */}
+                    <button
+                      onClick={() => handleBuyIngredients(combo)}
+                      className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-medium py-2 rounded-md transition-colors"
+                    >
+                      MUA NGUYÊN LIỆU
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Right Arrow */}
+          {showCombosRightArrow && (
+            <button
+              onClick={() => scrollCombos("right")}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 transition-all"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
+          )}
         </div>
       ) : (
-        <div className="text-center py-12">
+        <div className="flex items-center justify-center h-[240px]">
           <p className="text-gray-600">Không có combo món ăn nào</p>
         </div>
       )}
@@ -305,63 +406,89 @@ export default function DailyMarket() {
                       Mua thêm gia vị
                     </h4>
 
+                    {/* Spice Tabs */}
+                    <div className="flex gap-2 overflow-x-auto pb-3 px-2 no-scrollbar">
+                      {spiceTabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setSelectedSpiceTab(tab.id)}
+                          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${selectedSpiceTab === tab.id
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            }`}
+                        >
+                          {tab.name}
+                        </button>
+                      ))}
+                    </div>
+
                     {isLoadingSpices ? (
                       <div className="flex items-center justify-center w-full py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                       </div>
-                    ) : spices.length > 0 ? (
-                      <div className="relative">
-                        {/* Left Arrow */}
-                        {showLeftArrow && (
-                          <button
-                            onClick={() => scrollSpices("left")}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
-                          >
-                            <ChevronLeft className="w-4 h-4 text-gray-700" />
-                          </button>
-                        )}
+                    ) : (() => {
+                      // Filter spices based on selected tab
+                      const filteredSpices = selectedSpiceTab === "all"
+                        ? dishSpices
+                        : dishSpices.filter((spice) => spice.spice_type === selectedSpiceTab);
 
-                        {/* Scroll Container with ProductCard */}
-                        <div
-                          ref={spicesScrollRef}
-                          className="overflow-x-auto no-scrollbar scroll-smooth"
-                          style={{
-                            paddingLeft: showLeftArrow ? "40px" : "8px",
-                            paddingRight: showRightArrow ? "40px" : "8px",
-                          }}
-                        >
-                          <div className="flex gap-3 pb-2">
-                            {spices.map((spice) => (
-                              <div
-                                key={spice.id}
-                                className="flex-shrink-0 w-[180px]"
-                              >
-                                <ProductCard
-                                  product={spice}
-                                  onAddToCart={handleAddToCart}
-                                />
-                              </div>
-                            ))}
+                      return filteredSpices.length > 0 ? (
+                        <div className="relative">
+                          {/* Left Arrow */}
+                          {showLeftArrow && (
+                            <button
+                              onClick={() => scrollSpices("left")}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
+                            >
+                              <ChevronLeft className="w-4 h-4 text-gray-700" />
+                            </button>
+                          )}
+
+                          {/* Scroll Container with ProductCard */}
+                          <div
+                            ref={spicesScrollRef}
+                            className="overflow-x-auto no-scrollbar scroll-smooth"
+                            style={{
+                              paddingLeft: showLeftArrow ? "40px" : "8px",
+                              paddingRight: showRightArrow ? "40px" : "8px",
+                            }}
+                          >
+                            <div className="flex gap-3 pb-2">
+                              {filteredSpices.map((spice) => (
+                                <div
+                                  key={spice.id}
+                                  className="flex-shrink-0 w-[180px]"
+                                >
+                                  <ProductCard
+                                    product={spice}
+                                    onAddToCart={handleAddToCart}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Right Arrow */}
-                        {showRightArrow && (
-                          <button
-                            onClick={() => scrollSpices("right")}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
-                          >
-                            <ChevronRight className="w-4 h-4 text-gray-700" />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-full py-8">
-                        <p className="text-gray-500 text-sm">
-                          Không có gia vị nào
-                        </p>
-                      </div>
-                    )}
+                          {/* Right Arrow */}
+                          {showRightArrow && (
+                            <button
+                              onClick={() => scrollSpices("right")}
+                              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 hover:bg-white shadow-lg rounded-full p-1.5 transition-all"
+                            >
+                              <ChevronRight className="w-4 h-4 text-gray-700" />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-full py-8">
+                          <p className="text-gray-500 text-sm">
+                            {selectedSpiceTab === "all"
+                              ? "Không có gia vị nào cho món này"
+                              : `Không có gia vị loại "${spiceTabs.find(t => t.id === selectedSpiceTab)?.name}" cho món này`
+                            }
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </>
               ) : (

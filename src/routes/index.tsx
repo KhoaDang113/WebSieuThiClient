@@ -7,6 +7,15 @@ import AdminProducts from "@/pages/admin/products";
 import AdminCategories from "@/pages/admin/categories";
 import AddProductPage from "@/pages/admin/products/add";
 import EditProductPage from "@/pages/admin/products/edit/[id]";
+import AdminBanners from "@/pages/admin/banners";
+import AddBannerPage from "@/pages/admin/banners/add";
+import EditBannerPage from "@/pages/admin/banners/edit/[id]";
+import AdminCombos from "@/pages/admin/combos";
+import AddComboPage from "@/pages/admin/combos/add";
+import EditComboPage from "@/pages/admin/combos/edit/[id]";
+import AdminRatings from "@/pages/admin/ratings";
+import AdminComments from "@/pages/admin/comments";
+
 import StaffMessage from "@/pages/messages";
 import ConversationDetailPage from "@/pages/messages/detail";
 import AdminInventory from "@/pages/admin/inventory";
@@ -23,6 +32,7 @@ import VerifyEmailPage from "@/pages/verify-email";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import AuthCallbackPage from "@/pages/auth-callback";
 import OrdersPage from "@/pages/order-management";
+import OrderDetailPage from "@/components/order/OrderDetailView";
 import CustomerOrdersPage from "@/pages/customer-orders";
 import KhuyenMaiPage from "@/pages/sale";
 import AccountPage from "@/pages/account";
@@ -34,7 +44,12 @@ import {
   PublicRoute,
   AdminRoute,
   StaffRoute,
+  ShipperRoute,
 } from "@/components/auth/ProtectedRoute";
+import ShipperDashboard from "@/pages/shipper";
+import ShipperProfile from "@/pages/shipper/ShipperProfile";
+import ShipperLayout from "@/layouts/ShipperLayout";
+
 
 const router: RouteObject[] = [
   // User
@@ -175,6 +190,38 @@ const router: RouteObject[] = [
         path: "/admin/brands",
         element: <AdminBrands />,
       },
+      {
+        path: "/admin/banners",
+        element: <AdminBanners />,
+      },
+      {
+        path: "/admin/banners/add",
+        element: <AddBannerPage />,
+      },
+      {
+        path: "/admin/banners/edit/:id",
+        element: <EditBannerPage />,
+      },
+      {
+        path: "/admin/combos",
+        element: <AdminCombos />,
+      },
+      {
+        path: "/admin/combos/add",
+        element: <AddComboPage />,
+      },
+      {
+        path: "/admin/combos/edit/:id",
+        element: <EditComboPage />,
+      },
+      {
+        path: "/admin/ratings",
+        element: <AdminRatings />,
+      },
+      {
+        path: "/admin/comments",
+        element: <AdminComments />,
+      },
     ],
   },
 
@@ -192,6 +239,10 @@ const router: RouteObject[] = [
         element: <OrdersPage />,
       },
       {
+        path: "/staff/orders/order/:id",
+        element: <OrderDetailPage />,
+      },
+      {
         path: "/staff/messages",
         element: <StaffMessage />,
       },
@@ -201,7 +252,37 @@ const router: RouteObject[] = [
       },
     ],
   },
+
+  // Shipper routes
+  {
+    path: "/shipper",
+    element: (
+      <ShipperRoute>
+        <ShipperLayout />
+      </ShipperRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <ShipperDashboard />,
+      },
+      {
+        path: "profile",
+        element: <ShipperProfile />,
+      },
+    ],
+  },
 ];
 
-const routerBroswer = createBrowserRouter(router);
+const routerBroswer = createBrowserRouter(router, {
+  future: {
+    v7_startTransition: true,
+  },
+});
+
+// Disable browser's default scroll restoration
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 export default routerBroswer;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import type { CartItem } from "@/types/cart.type";
 import { orderService } from "@/api";
 import paymentService from "@/api/services/paymentService";
@@ -20,7 +20,6 @@ export interface CreateOrderCustomerInfo {
   invoiceCompanyAddress?: string;
   invoiceTaxCode?: string;
   invoiceEmail?: string;
-  shippingFee?: number;
   discount?: number;
 }
 
@@ -70,7 +69,15 @@ export function useOrders() {
     message: string;
     order: BackendOrder;
   }) => {
-    setOrders((prevOrders) => [transformOrder(payload.order), ...prevOrders]);
+    if (!payload.order) {
+      console.error("Received new order event with undefined order:", payload);
+      return;
+    }
+    try {
+      setOrders((prevOrders) => [transformOrder(payload.order), ...prevOrders]);
+    } catch (error) {
+      console.error("Error transforming new order:", error, payload);
+    }
   };
 
   const handleOrderUpdated = (payload: {
@@ -83,9 +90,9 @@ export function useOrders() {
       prevOrders.map((order) =>
         order.id === payload.orderId
           ? {
-              ...order,
-              status: payload.newStatus as Order["status"],
-            }
+            ...order,
+            status: payload.newStatus as Order["status"],
+          }
           : order
       )
     );
@@ -93,9 +100,18 @@ export function useOrders() {
 
   useEffect(() => {
     if (socket) {
-      socket.on("staff:order-updated", handleOrderUpdated);
+      socket.on("shipper:order-updated", handleOrderUpdated);
       socket.on("order:new", handleNewOrder);
+      socket.on("order:updated", handleOrderUpdated);
     }
+
+    return () => {
+      if (socket) {
+        socket.off("shipper:order-updated", handleOrderUpdated);
+        socket.off("order:new", handleNewOrder);
+        socket.off("order:updated", handleOrderUpdated);
+      }
+    };
   }, [socket]);
 
   const replaceOrderInState = useCallback((updatedOrder: Order) => {
@@ -210,16 +226,15 @@ export function useOrders() {
           productId: String(item.id),
           quantity: item.quantity,
         })),
-        shippingFee: customerInfo.shippingFee,
         discount: customerInfo.discount,
         requestInvoice: customerInfo.requestInvoice,
         invoiceInfo: customerInfo.requestInvoice
           ? {
-              companyName: customerInfo.invoiceCompanyName || "",
-              companyAddress: customerInfo.invoiceCompanyAddress || "",
-              taxCode: customerInfo.invoiceTaxCode || "",
-              email: customerInfo.invoiceEmail || "",
-            }
+            companyName: customerInfo.invoiceCompanyName || "",
+            companyAddress: customerInfo.invoiceCompanyAddress || "",
+            taxCode: customerInfo.invoiceTaxCode || "",
+            email: customerInfo.invoiceEmail || "",
+          }
           : undefined,
       };
 
@@ -251,8 +266,9 @@ export function useOrders() {
           (jobId ? jobId.toString() : `JOB-${Date.now()}`);
 
         return idForReturn;
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error creating order:", err);
+        // Don't show toast here - let CheckoutModal handle it to avoid double notifications
         throw err;
       }
     },
@@ -263,6 +279,7 @@ export function useOrders() {
     orders,
     loading,
     error,
+    fetchOrders, // Export fetchOrders to allow manual refresh
     confirmOrder,
     rejectOrder,
     deliverOrder,

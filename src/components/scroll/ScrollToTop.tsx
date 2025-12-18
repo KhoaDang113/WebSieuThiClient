@@ -6,8 +6,13 @@ export function ScrollToTop() {
 
   useEffect(() => {
     // Scroll to top when route changes
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname]);
+
+  // Also scroll to top on initial mount (page refresh)
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
 
   return null;
 }

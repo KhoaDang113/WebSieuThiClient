@@ -5,6 +5,7 @@ import { Paperclip, Smile, X, FileIcon, Send } from "lucide-react";
 import chatAdminService from "@/api/services/chatAdminService";
 import { useParams } from "react-router-dom";
 import EmojiPicker, { type EmojiClickData } from "emoji-picker-react";
+import { Input } from "../ui/input";
 
 export function ReplyForm() {
   const [message, setMessage] = useState("");
@@ -115,7 +116,7 @@ export function ReplyForm() {
       <div className="p-4">
         <div className="flex items-end gap-2">
           {/* File attachment button */}
-          <input
+          <Input
             ref={fileInputRef}
             type="file"
             multiple

@@ -80,12 +80,46 @@ class CategoryService {
   }
 
   /**
+   * Kiểm tra slug đã tồn tại hay chưa
+   * GET /categories/check-slug?slug=xxx&excludeId=xxx
+   */
+  async checkSlug(slug: string, excludeId?: string): Promise<boolean> {
+    const response = await api.get<{ exists: boolean }>(
+      `${this.basePath}/check-slug`,
+      { params: { slug, excludeId } }
+    );
+    return response.data.exists;
+  }
+
+  /**
    * Xóa danh mục (soft delete)
    * DELETE /categories/:id
    */
   async deleteCategory(id: string): Promise<{ message: string }> {
     const response = await api.delete<{ message: string }>(
       `${this.basePath}/${id}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Đếm số sản phẩm trong danh mục
+   * GET /categories/:id/product-count
+   */
+  async getProductCount(id: string): Promise<{ count: number }> {
+    const response = await api.get<{ count: number }>(
+      `${this.basePath}/${id}/product-count`
+    );
+    return response.data;
+  }
+
+  /**
+   * Xóa danh mục và tất cả sản phẩm trong đó
+   * DELETE /categories/:id/with-products
+   */
+  async deleteCategoryWithProducts(id: string): Promise<{ message: string; deletedProductsCount: number }> {
+    const response = await api.delete<{ message: string; deletedProductsCount: number }>(
+      `${this.basePath}/${id}/with-products`
     );
     return response.data;
   }
@@ -101,7 +135,7 @@ class CategoryService {
     const config = data instanceof FormData
       ? { headers: { "Content-Type": "multipart/form-data" } }
       : {};
-    
+
     const response = await api.put<Category>(`${this.basePath}/${id}`, data, config);
     return response.data;
   }
@@ -114,7 +148,7 @@ class CategoryService {
     const config = data instanceof FormData
       ? { headers: { "Content-Type": "multipart/form-data" } }
       : {};
-    
+
     const response = await api.post<Category>(this.basePath, data, config);
     return response.data;
   }

@@ -12,6 +12,8 @@ interface AddressData {
   street: string;
   recipient: string;
   phone: string;
+  latitude: number;
+  longitude: number;
   callAnotherPerson: boolean;
 }
 
@@ -29,7 +31,8 @@ export function AddressProvider({ children }: { children: ReactNode }) {
 
   const loadDefaultAddress = useCallback(async () => {
     try {
-      const response = await addressService.getAddresses();
+      const response = await addressService.getAddresses()
+      
       const addresses = response.addresses || [];
       const defaultAddress = addresses.find((addr) => addr.is_default);
 
@@ -40,6 +43,8 @@ export function AddressProvider({ children }: { children: ReactNode }) {
           district: defaultAddress.district || "",
           ward: defaultAddress.ward || "",
           street: defaultAddress.address || "",
+          latitude: defaultAddress.latitude || 0,
+          longitude: defaultAddress.longitude || 0,
           recipient: defaultAddress.full_name || "",
           phone: defaultAddress.phone || "",
           callAnotherPerson: false,

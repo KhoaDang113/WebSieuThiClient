@@ -1,5 +1,5 @@
 import api from "../axiosConfig";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import { transformOrder, type BackendOrder } from "@/lib/order.mapper";
 
 interface CreateOrderPayload {
@@ -8,7 +8,6 @@ interface CreateOrderPayload {
     productId: string;
     quantity: number;
   }>;
-  shippingFee?: number;
   discount?: number;
   requestInvoice?: boolean;
   invoiceInfo?: {
@@ -48,7 +47,6 @@ class OrderService {
       address_id: string;
       items: Array<{ product_id: string; quantity: number }>;
       discount?: number;
-      shipping_fee?: number;
       is_company_invoice?: boolean;
       invoice_info?: {
         company_name: string;
@@ -66,10 +64,6 @@ class OrderService {
 
     if (typeof payload.discount === "number") {
       body.discount = payload.discount;
-    }
-
-    if (typeof payload.shippingFee === "number") {
-      body.shipping_fee = payload.shippingFee;
     }
 
     if (payload.requestInvoice) {
@@ -98,8 +92,8 @@ class OrderService {
 
   private async waitForJobCompletion(
     jobId: string,
-    timeoutMs = 20000,
-    intervalMs = 1000
+    timeoutMs = 10000, // Reduced from 20s to 10s for faster response
+    intervalMs = 500   // Reduced from 1s to 500ms for faster polling
   ): Promise<{
     jobId: string;
     orderId?: string;
@@ -129,7 +123,8 @@ class OrderService {
         }
       } catch (error) {
         console.error(`[OrderService] Error polling job ${jobId}:`, error);
-        // Nếu time out sẽ break ở điều kiện while, nên tiếp tục loop tới khi hết thời gian
+        // Re-throw the error to stop polling and let the caller handle it
+        throw error;
       }
 
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -139,7 +134,7 @@ class OrderService {
       `[OrderService] Timeout while waiting for order job ${jobId} completion`
     );
 
-    return { jobId };
+    throw new Error("Timeout: Đơn hàng đang được xử lý. Vui lòng kiểm tra lại sau.");
   }
 
   /**
@@ -164,11 +159,13 @@ class OrderService {
    * Lấy chi tiết order theo ID
    * GET /orders/:id
    */
-  async getOrderById(orderId: string): Promise<Order> {
+  async getOrderById(orderId: string, isAdmin = false): Promise<Order> {
     try {
-      const response = await api.get<BackendOrder>(
-        `${this.basePath}/${orderId}`
-      );
+      const url = isAdmin 
+        ? `${this.basePath}/admin/${orderId}`
+        : `${this.basePath}/${orderId}`;
+        
+      const response = await api.get<BackendOrder>(url);
       return transformOrder(response.data);
     } catch (error) {
       console.error(`[OrderService] Error fetching order ${orderId}:`, error);
@@ -230,6 +227,25 @@ class OrderService {
       };
     } catch (error) {
       console.error(`[OrderService] Error fetching staff orders:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Staff/Admin: Lấy chi tiết đơn hàng theo ID
+   * GET /orders/admin/:id
+   */
+  async getStaffOrderById(orderId: string): Promise<Order> {
+    try {
+      const response = await api.get<BackendOrder>(
+        `${this.basePath}/admin/${orderId}`
+      );
+      return transformOrder(response.data);
+    } catch (error) {
+      console.error(
+        `[OrderService] Error fetching staff order ${orderId}:`,
+        error
+      );
       throw error;
     }
   }

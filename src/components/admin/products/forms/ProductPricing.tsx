@@ -26,10 +26,10 @@ export function ProductPricing({
 
     // Nếu thay đổi giá gốc hoặc % giảm giá, tự động tính giá bán
     if (name === "unit_price" || name === "discount_percent") {
-      const unitPrice = name === "unit_price" 
-        ? parseFloat(value) || 0 
+      const unitPrice = name === "unit_price"
+        ? parseFloat(value) || 0
         : parseFloat(formData.unit_price) || 0;
-      
+
       const discountPercent = name === "discount_percent"
         ? parseFloat(value) || 0
         : parseFloat(formData.discount_percent) || 0;
@@ -38,7 +38,7 @@ export function ProductPricing({
         const finalPrice = discountPercent > 0
           ? unitPrice * (1 - discountPercent / 100)
           : unitPrice;
-        
+
         const finalPriceStr = finalPrice.toFixed(0);
         if (onFinalPriceChange) {
           onFinalPriceChange(finalPriceStr);
@@ -63,7 +63,7 @@ export function ProductPricing({
               onChange={handlePriceInputChange}
               placeholder="0"
               min="0"
-              step="1000"
+              step="1"
               className={errors.unit_price ? "border-destructive" : ""}
             />
             {errors.unit_price && (

@@ -3,13 +3,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Search } from "lucide-react"
 
-const categories = [
-  { value: "all", label: "Tất cả danh mục" },
-  { value: "Rau - Củ", label: "Rau - Củ" },
-  { value: "Trái cây", label: "Trái cây" },
-  { value: "Thịt - Cá", label: "Thịt - Cá" },
-  { value: "Sữa - Sản phẩm sữa", label: "Sữa - Sản phẩm sữa" },
-]
+// const categories = [
+//   { value: "all", label: "Tất cả danh mục" },
+//   { value: "Rau - Củ", label: "Rau - Củ" },
+//   { value: "Trái cây", label: "Trái cây" },
+//   { value: "Thịt - Cá", label: "Thịt - Cá" },
+//   { value: "Sữa - Sản phẩm sữa", label: "Sữa - Sản phẩm sữa" },
+// ]
 
 const statusOptions = [
   { value: "all", label: "Tất cả trạng thái" },
@@ -29,8 +29,8 @@ interface InventoryFiltersProps {
 export function InventoryFilters({
   searchTerm,
   onSearchChange,
-  categoryFilter,
-  onCategoryChange,
+  // categoryFilter,
+  // onCategoryChange,
   statusFilter,
   onStatusChange,
 }: InventoryFiltersProps) {
@@ -48,7 +48,7 @@ export function InventoryFilters({
             />
           </div>
 
-          <Select value={categoryFilter} onValueChange={onCategoryChange}>
+          {/* <Select value={categoryFilter} onValueChange={onCategoryChange}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -59,7 +59,7 @@ export function InventoryFilters({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select> */}
 
           <Select value={statusFilter} onValueChange={onStatusChange}>
             <SelectTrigger>

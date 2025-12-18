@@ -37,12 +37,16 @@ export default function CategorySection({
         {/* Products Grid - Inside the frame */}
         <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {products.slice(0, 5).map((product) => (
-              <ProductCard
+            {products.slice(0, 5).map((product, index) => (
+              <div
                 key={product.id || product._id}
-                product={product}
-                onAddToCart={onAddToCart}
-              />
+                className={`h-full ${index === 4 ? "hidden xl:block" : ""}`}
+              >
+                <ProductCard
+                  product={product}
+                  onAddToCart={onAddToCart}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -56,10 +60,10 @@ export default function CategorySection({
               className="inline-flex items-center text-gray-700 hover:text-green-700 font-semibold text-sm sm:text-base transition-colors duration-200 group"
             >
               <span>Xem thêm {categoryName}</span>
-              <svg 
-                className="ml-1.5 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="ml-1.5 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />

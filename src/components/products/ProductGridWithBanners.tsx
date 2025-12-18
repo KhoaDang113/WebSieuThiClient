@@ -32,7 +32,7 @@ export default function ProductGridWithBanners({
       } else if (width >= 640) {
         setCurrentProductsPerRow(2); // sm: 2 columns
       } else {
-        setCurrentProductsPerRow(1); // mobile: 1 column
+        setCurrentProductsPerRow(2); // mobile: 2 columns
       }
     };
 
@@ -97,7 +97,7 @@ export default function ProductGridWithBanners({
 
   if (products.length === 0) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <p className="col-span-full text-center text-gray-500 py-8">
           Chưa có sản phẩm nào trong danh mục này
         </p>
@@ -106,7 +106,7 @@ export default function ProductGridWithBanners({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {createGridItems()}
     </div>
   );

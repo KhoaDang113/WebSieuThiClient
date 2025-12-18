@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Trash2, Eye, Phone, MapPin, Calendar, User, Truck } from "lucide-react";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/order.type";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 
 interface OrderListItemProps {
@@ -191,26 +191,8 @@ export function OrderListItem({
           )}
           {order.status === "confirmed" && (
             <>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onClick={handleDeliver}
-                  size="sm"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={actionLoading !== null}
-                >
-                  <Truck className="w-4 h-4 mr-1" />
-                  {actionLoading === "deliver" ? "Đang giao..." : "Giao hàng"}
-                </Button>
-                <Button
-                  onClick={handleCancel}
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 border-red-500 text-red-600 hover:bg-red-50"
-                  disabled={actionLoading !== null}
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  {actionLoading === "cancel" ? "Đang hủy..." : "Hủy"}
-                </Button>
+              <div className="w-full text-center text-sm font-medium py-2 text-yellow-600 bg-yellow-50 rounded">
+                Đơn hàng đang được giao cho tài xế
               </div>
               <Button
                 onClick={() => onViewDetail(order)}
@@ -223,6 +205,24 @@ export function OrderListItem({
               </Button>
             </>
           )}
+          {
+            order.status === "assigned" && (
+              <>
+                <div className="w-full text-center text-sm font-medium py-2 text-purple-600 bg-purple-50 rounded">
+                  Tài xế đã nhận hàng, đợi tài xế đi giao
+                </div>
+                <Button
+                  onClick={() => onViewDetail(order)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-green-500 text-green-600 hover:bg-green-50"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Xem chi tiết
+                </Button>
+              </>
+            )
+          }
           {order.status === "shipped" && (
             <>
               <div className="w-full text-center text-sm font-medium py-2 text-blue-600 bg-blue-50 rounded">

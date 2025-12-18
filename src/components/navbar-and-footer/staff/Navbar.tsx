@@ -84,17 +84,12 @@ export function StaffNavbar() {
                 filter={(n) => n.title?.toLowerCase().includes("đơn hàng")}
               />
             )}
-            
+
             {/* User Menu */}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full bg-[#008236] px-4 py-2 text-white cursor-pointer hover:bg-green-900 transition-colors">
-                    <img 
-                      src={user?.avatar || user?.avatarUrl || DEFAULT_AVATAR_URL} 
-                      alt="Avatar" 
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
                     <span className="whitespace-nowrap text-white">
                       {displayName}
                     </span>
