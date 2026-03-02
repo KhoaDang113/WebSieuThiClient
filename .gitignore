@@ -131,7 +131,3 @@ website/src/pages/contributors.md
 
 # Local Netlify folder
 .netlify
-
-# Lock-files
-package-lock.json
-yarn.lock
